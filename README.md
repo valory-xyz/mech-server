@@ -1,12 +1,8 @@
-<p align="center">
-   <img src="./docs/imgs/mechs-logo.png" width=300>
-</p>
-
 <h1 align="center" style="margin-bottom: 0;">
     Mech Server
     <br>
-    <a href="https://github.com/valory-xyz/mech-tools-dev/blob/main/LICENSE">
-        <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/valory-xyz/mech-tools-dev">
+    <a href="https://github.com/valory-xyz/mech-server/blob/main/LICENSE">
+        <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/valory-xyz/mech-server">
     </a>
     <a href="https://github.com/valory-xyz/mech/releases/tag/v0.10.0">
         <img alt="Mech Core: Mech 0.10.0" src="https://img.shields.io/badge/Mech%20Core%20-0.10.0-blueviolet">
@@ -24,7 +20,7 @@ You need the following requirements installed in your system:
 - [Poetry](https://python-poetry.org/docs/)
 - [Docker Engine](https://docs.docker.com/engine/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
-- [Tendermint](https://docs.tendermint.com/v0.34/introduction/install.html) `==0.34.19`
+- [Tendermint](https://docs.tendermint.com/v0.34/introduction/install.html) `==0.34.19` (only required for `--dev` mode)
 
 ## CLI
 
@@ -41,7 +37,7 @@ All mech service operations are available through the `mech` CLI. Install the pa
 | `mech deploy-mech -c <chain>` | Deploy a mech on the marketplace for an existing service (also runs automatically during setup) |
 | `mech push-metadata` | Generate `metadata.json` from packages and publish to IPFS |
 | `mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
-| `mech add-tool` | Scaffold a new mech tool (interactive) |
+| `mech add-tool <author> <name>` | Scaffold a new mech tool |
 
 Supported chains: `gnosis`, `base`, `polygon`, `optimism`.
 

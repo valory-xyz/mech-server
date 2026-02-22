@@ -21,10 +21,10 @@ Any AI agent registered in the Olas Service Registry can deploy a Mech contract 
 Requesters can submit service requests directly through the Mech Marketplace. On-chain contracts handle payments and service delivery transparently between requesters and Mechs.
 
 - **Guaranteed Task Completion**
-If a designated Mech fails to respond within the requester’s specified deadline, a take-over mechanism allows other available Mechs to complete the task, ensuring high reliability and fulfillment rates.
+If a designated Mech fails to respond within the requester's specified deadline, a take-over mechanism allows other available Mechs to complete the task, ensuring high reliability and fulfillment rates.
 
 - **Karma Reputation System**
-Each Mech’s performance is tracked via the Karma contract, which maintains a reputation score based on successful task completions and failures. High Karma scores signal trustworthiness to requesters under honest participation assumptions.
+Each Mech's performance is tracked via the Karma contract, which maintains a reputation score based on successful task completions and failures. High Karma scores signal trustworthiness to requesters under honest participation assumptions.
 
 - **A Competitive Environment**
 Mechs are incentivized to complete tasks promptly and reliably to maintain high Karma scores, improving their chances of receiving more tasks over time.
@@ -36,7 +36,7 @@ Through Mechs and the Mech Marketplace, agents in the Olas ecosystem gain modula
 
 When creating a Mech, deployers can select between the following payment models:
 
-- **Native**: a fixed-price model where the requester pays using the chain with native token for each delivered service.
+- **Native**: a fixed-price model where the requester pays using the chain's native token for each delivered service.
 
 - **Token**: similar to the Native model, but payments are made using a specified ERC20 token.
 
@@ -96,11 +96,9 @@ See some examples of requests and responses on the [Mech Hub](https://mech.olas.
 
 ## Mech Hello World: running a Mech with a dummy tool
 
-In this example, we will locally run a Mech with a dummy "echo" tool.
+In this example, we will run a Mech with a dummy "echo" tool.
 
-### Workspace-first quickstart
-
-For installed-package usage (no repo clone), use:
+### Quickstart (installed package)
 
 ```bash
 pip install mech-server
@@ -108,14 +106,14 @@ mech setup -c <gnosis|base|polygon|optimism>
 mech run -c <gnosis|base|polygon|optimism>
 ```
 
-`mech setup` auto-bootstraps the default workspace if it does not exist yet.
+`mech setup` auto-bootstraps the default workspace at `~/.operate-mech/` if it does not exist yet.
 
-`--dev` mode is only for local package development and requires `packages/` in the workspace.
+### From source
 
-1. First, clone the following repository:
+1. Clone the repository:
     ```bash
-    git clone https://github.com/valory-xyz/mech-tools-dev.git
-    cd mech-tools-dev/
+    git clone https://github.com/valory-xyz/mech-server.git
+    cd mech-server/
     ```
 
 2. Install all Python dependencies:
@@ -134,91 +132,62 @@ mech run -c <gnosis|base|polygon|optimism>
     poetry run mech setup -c <gnosis|base|polygon|optimism>
     ```
 
-    You will be prompted to select a chain (`gnosis`, `base`, `polygon`, `optimism`) and fill in some details, including the RPC for that chain. Here, you can get one from a provider like [Quiknode](https://www.quicknode.com/) but we encourage you to first test against a virtual network using [Tenderly](https://tenderly.co/). This way, you can also use the faucet to fund the required wallets.
+    You will be prompted to fill in some details, including the RPC for your chosen chain. You can get one from a provider like [Quiknode](https://www.quicknode.com/) but we encourage you to first test against a virtual network using [Tenderly](https://tenderly.co/). This way, you can also use the faucet to fund the required wallets.
 
-5. Update the tool metadata hash onchain:
+5. Run your mech:
     ```bash
-    poetry run python utils/update_metadata.py
+    poetry run mech run -c <gnosis|base|polygon|optimism>
     ```
 
-6. And just run your agent instance:
+    For local development and debugging, use dev mode (no Docker):
     ```bash
-    ./run_agent.sh
-    ```
-    This option is recommended to quickly test or debug agents, so it's the one we recommend the first time you run this tutorial.
-    The next time you use this command, it will ask you for your sudo password to remove the previous build.
-
-7. Alternatively, you can also run the full dockerized AI agent with:
-    ```bash
-    ./run_service.sh
+    poetry run mech run -c <gnosis|base|polygon|optimism> --dev
     ```
 
-    You can check your Mech's logs with:
+6. Once your agent instance is running, get your mech address from the workspace `.env`:
     ```bash
-    docker logs -f mechw_Me_abci_0
+    grep MECH_TO_CONFIG ~/.operate-mech/.env
+    # MECH_TO_CONFIG='{"<your_mech_address>":{"use_dynamic_pricing":false,"is_marketplace_mech":true}}'
     ```
 
-    Replace the Mech name with the one that appears after the `run_service.sh` script has finished.
-    This option is recommended when your AI agent is ready to be deployed.
-
-8. Once your agent instance is running, and from another terminal (within the same virtual environment), send a request to it. First, load all the RPCs required for the mech client to work:
-    ```bash
-    source .env
-    ```
-
-    Now, get your mech address from the `.env` file. You will see the following variable containing it:
-    ```bash
-    MECH_TO_CONFIG='{"<your_mech_address>":{"use_dynamic_pricing":false,"is_marketplace_mech":true}}'
-    ```
-
-    Finally, send the request (replacing your mech address):
+    Then send a request from another terminal (replacing your mech address):
 
     ```bash
     poetry run mechx request --prompts "hello, mech!" --priority-mech <your_mech_address> --tools echo --chain-config <gnosis|base|polygon|optimism>
     ```
 
-    The echo tool will respond with the same text from the request. You will see something like:
+    The echo tool will respond with the same text. You will see something like:
     ```bash
     Fetching Mech Info...
     Sending Mech Marketplace request...
-    - Prompt uploaded: https://gateway.autonolas.tech/ipfs/f01701220fe7480a472cc8dffe481d5883e235346793a20a25415160ad2feade0d809f9db
     - Transaction sent: <chain-explorer-tx-url>
     - Waiting for transaction receipt...
     - Created on-chain request with ID 63113231565093422774445497789782682647110838977840831205387629469951062204223
     ```
 
-    In your agent instance logs, you will see something like:
-    ```bash
-    [2025-07-24 16:41:58,679][INFO] [agent] Task result for request 63113231565093422774445497789782682647110838977840831205387629469951062204223: ('Echo: hello, mech!', 'hello, mech!', None, None)
-    ```
-    Which means that the Mech has successfully received the request and ran the tool. After some time (give it a minute or so) you will see the response in the terminal you sent the request from:
+    After some time you will see the response:
 
-    ```bash
-    Off chain to be implemented
-    - Data arrived: https://gateway.autonolas.tech/ipfs/f0170122068f1ed6661ac9c7f067c998d12ccf0bd29367c4373f4d91bf61ed98a068e3528
-    - Data from agent:
+    ```json
     {
-    "requestId": 28039871184902372191260032967003278816287653243679554051485992027223235273470,
-    "result": "Echo: hello, mech!",
-    "prompt": "hello, mech!",
-    "cost_dict": {},
-    "metadata": {
+      "requestId": 28039871184902372191260032967003278816287653243679554051485992027223235273470,
+      "result": "Echo: hello, mech!",
+      "prompt": "hello, mech!",
+      "cost_dict": {},
+      "metadata": {
         "model": null,
         "tool": "echo",
         "params": {}
-    },
-    "is_offchain": false
+      },
+      "is_offchain": false
     }
     ```
 
-9. Stop your agent instance. If you have run the `run_agent.sh` script, just hit `ctrl+c`. If you are using `run_service.sh`, run:
+7. Stop your mech:
     ```bash
-    ./stop_service.sh
+    poetry run mech stop -c <gnosis|base|polygon|optimism>
     ```
 
 ## Creating and publishing a tool
-
-In order to contribute to Mechs' abilities, one can create and publish a tool. In order to do so, follow the instructions below.
 
 ### 1. Creating a tool
 
@@ -226,53 +195,41 @@ In order to contribute to Mechs' abilities, one can create and publish a tool. I
   - [Python](https://www.python.org/) `>=3.10`
   - [Poetry](https://python-poetry.org/docs/) `>=1.4.0`
 
-In order to create a tool, the steps are as follows:
+1. Ensure `mech setup` has been run for your chosen chain.
 
-1. Ensure you have followed the instructions from the previous section to setup the `mech-tools-dev` repository.
+2. Scaffold the tool, replacing `AUTHOR_NAME` and `TOOL_NAME` with your values:
 
+    ```bash
+    poetry run mech add-tool AUTHOR_NAME TOOL_NAME -d "My tool description"
+    ```
 
-2. Create the tool's structure by using the following command, after replacing the values for the `AUTHOR_NAME` and `TOOL_NAME` variables:
+    After the command finishes, it generates the following structure:
 
-```bash
-poetry run mech add-tool -d AUTHOR_NAME TOOL_NAME
-```
+    ```
+    ~/.operate-mech/packages/
+     └── author_name/
+         └── customs/
+             └── tool_name/
+                 ├── component.yaml
+                 ├── tool_name.py
+                 └── __init__.py
+    ```
 
-You will be asked whether this is a dev or a third-party package. Select dev package.
-After the command finishes, it will generate the following structure, with template code:
+3. Configure the tool in `component.yaml`:
 
-```
-packages/
- ├── author_name/
- │   ├── customs/
- │   │   ├── tool_name/
- │   │   │   ├── component.yaml
- │   │   │   ├── tool_name.py
- │   │   │   ├── __init__.py
-```
-
-For more options, use the tool helper:
-```bash
-poetry run mech --help
-```
-
-3. Now that your tool's structure is set up, all that's left is to configure the tool component and implement the tool's functionality in Python.
-The [component.yaml](https://github.com/valory-xyz/mech-tools-dev/blob/main/mtd/templates/config.template) file contains the tool's configuration and looks as follows:
-
-    Here is an explanation of its fields:
     - `name`: the name of the tool.
     - `author`: the author's name.
     - `version`: the version of the tool.
-    - `type`: the component type of the `open-autonomy` framework. This should be `custom`.
+    - `type`: the component type. Should be `custom`.
     - `description`: the description of the tool.
-    - `license`: the licencing of the tool. It should be Apache-2.0.
+    - `license`: should be `Apache-2.0`.
     - `aea_version`: the supported `open-aea` version.
-    - `fingerprint`: unique hash of the tool. This is auto-generated by the framework's `autonomy packages lock` command.
-    - `fingerprint_ignore_patterns`: ignore patterns for the fingerprint's generation.
-    - `entry_point`: the module which contains the tool's implementation.
-    - `callable`: points to the function which is called in the tool's module.
-    - `dependencies`: the module's dependencies. You may specify them in the following format:
+    - `fingerprint`: auto-generated by `autonomy packages lock`.
+    - `entry_point`: the module containing the tool's implementation.
+    - `callable`: the function called in the entry point module.
+    - `dependencies`: the tool's Python dependencies, for example:
 
-    ```
+    ```yaml
     dependencies:
         dependency_1:
             version: ==0.5.3
@@ -280,21 +237,23 @@ The [component.yaml](https://github.com/valory-xyz/mech-tools-dev/blob/main/mtd/
             version: '>=2.20.0'
     ```
 
-    The main function in your tool (the one referenced in the callable field in  `component.yaml`) should follow the following signature:
+4. Implement the tool logic in `tool_name.py`. The callable must follow this signature:
 
     ```python
-    def run(**kwargs) -> Tuple[Optional[str], Optional[Dict[str, Any]], Any, Any]:
+    MechResponse = Tuple[str, Optional[str], Optional[Dict[str, Any]], Any, Any]
+
+    def run(**kwargs) -> MechResponse:
+        """Run the tool."""
+        prompt = kwargs.get("prompt")
+        # ... tool logic ...
+        return response, prompt, None, None, None
     ```
 
-    Where the first return value is the tool response and the second one is the request. As reference, you could do the following at the end of the tool execution:
-
-    ```python
-    return response, prompt, None, None, None
-    ```
+    Where the first return value is the tool response and the second is the prompt.
 
 ### 2. Publishing the tool
 
-1. Update the package hash by running the following command from the project root:
+1. Update the package hash:
 
     ```bash
     poetry run autonomy packages lock
@@ -308,128 +267,108 @@ The [component.yaml](https://github.com/valory-xyz/mech-tools-dev/blob/main/mtd/
 
 3. Mint the tool [here](https://marketplace.olas.network/ethereum/components/mint) as a component on the Olas Registry.
     You will need an address (EOA) and the hash of the metadata file.
-    In order to generate this hash, click on “Generate Hash & File” and provide the following information:
+    Click on "Generate Hash & File" and provide:
     - name (name of the tool)
     - description (of the tool)
-    - version (this needs to match the version in the file `component.yaml`)
-    - package hash (this can be found in `packages.json` under the `packages` folder)
-    - Optionally, NFT image URL. You can push an image to IPFS and use the corresponding hash.
+    - version (must match the version in `component.yaml`)
+    - package hash (found in `packages/packages.json`)
+    - Optionally, an NFT image URL. To push an image to IPFS:
 
-    In order to push an image on IPFS, use the [mech-client](https://github.com/valory-xyz/mech-client.git) cli tool, replacing `<file_name>` with the name of your file:
-
-        ```bash
-        poetry run mechx push-to-ipfs ./<file_name>
-        ```
-
-After this, the tool can be deployed and used by a Mech, as shown in the next steps.
-
+    ```bash
+    poetry run mechx push-to-ipfs ./<file_name>
+    ```
 
 ### 3. Deploying a Mech with custom tools
 
-In order to test a tool you developed, let's update the Mech you created in the previous sections.
-
-
-1. Create the `metadata.json` for your mech:
+1. Generate `metadata.json` and publish to IPFS:
     ```bash
-    poetry run python utils/generate_metadata.py
+    poetry run mech push-metadata
     ```
 
-2. Publish the tool metadata hash to IPFS:
+2. Update the tool metadata hash onchain:
     ```bash
-    poetry run python utils/publish_metadata.py
+    poetry run mech update-metadata
     ```
 
-3. Update the `METADATA_HASH` variable in your `.env` file with the hash you got in the previous step.
-
-4. Update the tool metadata hash onchain:
+3. Run your mech:
     ```bash
-    poetry run python utils/update_metadata.py
+    poetry run mech run -c <gnosis|base|polygon|optimism>
     ```
-
-5. Copy your tool hash from `packages/packages.json` and add it to the `TOOLS_TO_PACKAGE_HASH` variable in your `.env`.
-   This variable is a dictionary, so you need to add a new entry with your tool name as key and the tool hash as value.
-
-
-6. Run your mech using `run_agent.sh` or `run_service.sh` as seen in the previous sections.
 
 
 ### 4. Sending a request to your custom Mech
 
-1. Copy your Mech's address from the `.env` file. There should be a variable called `MECH_TO_CONFIG` that includes it.
-
-2. Send the request similarly to how you did it in the first section:
+1. Copy your Mech's address from the workspace `.env`:
     ```bash
-    source .env
+    grep MECH_TO_CONFIG ~/.operate-mech/.env
+    ```
+
+2. Send the request:
+    ```bash
     poetry run mechx request --prompts <your_prompt> --priority-mech <your_mech_address> --tools <your_tool_name> --chain-config <gnosis|base|polygon|optimism>
     ```
 
-3. Wait for some time and you will receive the response. If there's an error in the tool, you will see it in the Mech's logs.
+3. Wait for the response. If there's an error in the tool, you will see it in the Mech's logs.
 
 
 ## Troubleshooting
 
 1. **Issue**: `0xa25d624C49eE3691a2B25223e3a899c77738FDa3` not in list of participants: "[`0xc062E6cfdCb48700de374905BF66A0BAD1Ef36E7`]"
 
-    **Solution**: Make sure the private keys inside keys.json match the address in ALL_PARTICIPANTS env
+    **Solution**: Make sure the private keys inside `keys.json` match the address in `ALL_PARTICIPANTS` in the workspace `.env`.
 
-2. **Issue**: Exception raised while executing task: No module named 'anthropic'
-    **Solution**: Make sure the deps are listed in tool/component.yaml and aea-config.yaml and are pinned
+2. **Issue**: Exception raised while executing task: `No module named 'anthropic'`
 
-3. **Issue**: Tool changes not being reflected <br>
+    **Solution**: Make sure the dependency is listed under `dependencies` in the tool's `component.yaml` and is pinned to a specific version.
 
-    **Solution**: Update the tool hash if there are any changes inside the tools or configs. To update run `poetry run autonomy packages lock` and update the tool hash (if needed) inside TOOLS_TO_PACKAGE_HASH
+3. **Issue**: Tool changes not being reflected.
 
-4. **Issue**: env formatting issues <br>
+    **Solution**: Update the package hash after any changes to tools or configs:
+    ```bash
+    poetry run autonomy packages lock
+    ```
+    Then run `mech push-metadata` and `mech update-metadata` to propagate the change on-chain.
 
-    **Solution**: Make sure there are no whitespaces in dicts and lists and are represented as a string. So example this is the correct format. Also pay attention to utf coding of the " in str fields.
+4. **Issue**: env formatting issues.
+
+    **Solution**: Make sure there are no whitespaces in dicts and lists — they must be represented as a single-line string. Also check for non-standard quotation mark characters (`\u201c`/`\u201d`) and replace with standard `"`.
     ```
     MECH_TO_CONFIG='{"0xbead38e4C4777341bB3FD44e8cd4D1ba1a7Ad9D7":{"use_dynamic_pricing":false,"is_marketplace_mech":true}}'
     ```
-    ⚠️ It is possible sometimes for the env to contain \\u201c or \\u201d. This means it is using a quotation mark character that is not accepted, replace the quotation mark character " for a compatible one.
 
-5. **Issue**: ValueError: {'code': -32603, 'message': 'Filter with id: 1950087 does not exist.'}. Error when requesting transaction digest: {'code': -32010, 'message': 'AlreadyKnown'} <br>
+5. **Issue**: `ValueError: {'code': -32603, 'message': 'Filter with id: 1950087 does not exist.'}` or `AlreadyKnown`.
 
-    **Solution**: Please check RPC is correct or change to a different provider
+    **Solution**: Check your RPC URL is correct or switch to a different provider.
 
-6. **Issue**: Service `\'\'api_key\'\'` not found in KeyChain. <br>
+6. **Issue**: `Service ''api_key'' not found in KeyChain`.
 
-    **Solution**: Make sure to add proper key names inside API_KEYS env
+    **Solution**: Make sure the correct key names are set inside the `API_KEYS` env variable.
 
-7. **Issue**: Error: Number of agent instances cannot be greater than available keys.
+7. **Issue**: `Error: Number of agent instances cannot be greater than available keys`.
 
-    **Solution**: It's possible the code editor is formatting env files so double check the format of the keys and values.
-So for example, for 1 agent instance system
-
-    ```txt
-    Wrong:
+    **Solution**: Check that your editor hasn't reformatted the `.env` file. RPC values must be on a single line:
+    ```
+    # Wrong:
     ETHEREUM_LEDGER_RPC_0 = (
         "https://1rpc.io/gnosis"
     )
 
-    Right: ETHEREUM_LEDGER_RPC_0="https://1rpc.io/gnosis"
+    # Right:
+    ETHEREUM_LEDGER_RPC_0="https://1rpc.io/gnosis"
     ```
 
-8. **Issue**: Client.__init__() got an unexpected keyword argument 'proxies'"
+8. **Issue**: `Tool <tool_name> is not supported`.
 
-    **Solution**: Try to pin httpx to 0.25.2 inside tool's component.yaml and aea-config.yaml
+    **Solution**: Make sure `tool_name` is listed in `ALLOWED_TOOLS` inside the tool's Python file.
 
-9. **Issue**: Tool  <tool_name>  is not supported. <br>
+9. **Issue**: `Incompatible counter_callback`.
 
-    **Solution**: Make sure the tool_name is inside the ALLOWED_TOOLS inside the tool.py
+    **Solution**: If your tool uses `counter_callback` and your model is not in [this list](https://github.com/valory-xyz/mech/blob/main/packages/valory/skills/task_execution/utils/benchmarks.py#L31), either contact the mech developers to have it added or do not use `counter_callback`.
 
-10. **Issue**: Incompatible counter_callback. <br>
+10. **Issue**: Port already in use (`listen tcp 127.0.0.1:26658: bind: address already in use`). Only applies to `--dev` mode.
 
-    **Solution**: If your tool is going to use the counter_callback function available at the run template and your tool is using a model that is not in [this](https://github.com/valory-xyz/mech/blob/main/packages/valory/skills/task_execution/utils/benchmarks.py#L31) list, please contact the mech developers for your model to be included, otherwise do not use the counter_callback function
-
-11. **Issue**: Port already in use. <br>
-
-    **Solution**: When running locally the mech agent instance if you face an error of the type
-`ERROR: failed to start node: failed to listen on 127.0.0.1:26658: listen tcp 127.0.0.1:26658: bind: address already in use` <br>
-Then check at the CLI which process is using the port:
+    **Solution**: Find and kill the process holding the port:
     ```bash
-    $ lsof -i :26658
-    ```
-    and kill the process with:
-    ```bash
-    $ kill -9 process_id
+    lsof -i :26658
+    kill -9 <process_id>
     ```
