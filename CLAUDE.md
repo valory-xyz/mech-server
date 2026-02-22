@@ -139,11 +139,9 @@ Also update `SECURITY.md` to reflect the new supported version.
 
 ## Releasing
 
-```bash
-./make_release.sh <VERSION> <ENV_NAME> [DESCRIPTION]
-```
-
-Requires `gh` CLI. Releases are tagged as `v<VERSION> (<ENV_NAME>)`. GitHub Actions publishes to PyPI on release.
+1. Bump the version in `pyproject.toml`, `mtd/__init__.py`, and `SECURITY.md`
+2. Commit and push to `main`
+3. Create and publish a GitHub release — the `release.yaml` workflow triggers automatically and publishes to PyPI using `PYPI_API_TOKEN`
 
 ---
 
