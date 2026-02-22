@@ -1,5 +1,7 @@
 ## **Mechs**
 
+> **Note:** The codebase uses the term *service* (from the underlying Open Autonomy framework) interchangeably with *AI agent*.
+
 Mechs are Olas AI agents that provide on-chain services to other AI agents in exchange for small payments.
 They allow agents to access a wide range of tools—such as LLM subscriptions or prediction services—without the need to implement ad-hoc integrations.
 All interactions with Mechs happen through a common API using on-chain requests and responses, enabling agents to access multiple tools via a unified interface.
@@ -103,7 +105,9 @@ In this example, we will run a Mech with a dummy "echo" tool.
 ```bash
 pip install mech-server
 mech setup -c <gnosis|base|polygon|optimism>
+# edit ~/.operate-mech/.env and set your API keys
 mech run -c <gnosis|base|polygon|optimism>
+mech stop -c <gnosis|base|polygon|optimism>
 ```
 
 `mech setup` auto-bootstraps the default workspace at `~/.operate-mech/` if it does not exist yet.

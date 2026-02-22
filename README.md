@@ -117,15 +117,7 @@ See the [documentation](https://stack.olas.network) for the full tool creation, 
 - **`setup` auto-bootstraps the workspace** if it is missing; `run` and `stop` still require an initialized workspace.
 - **`--dev` mode** requires `packages/` inside the workspace and a running Tendermint instance.
 
-1. **Issue**: `0xa25d...` not in list of participants
-
-    **Solution**: Make sure the private keys inside `keys.json` match the address in `ALL_PARTICIPANTS` in the workspace `.env`.
-
-2. **Issue**: `No module named 'anthropic'`
-
-    **Solution**: List the dependency under `dependencies` in the tool's `component.yaml`, pinned to a specific version.
-
-3. **Issue**: Tool changes not reflected
+1. **Issue**: Tool changes not reflected
 
     **Solution**: After any change to tools or configs, run:
     ```bash
@@ -134,43 +126,15 @@ See the [documentation](https://stack.olas.network) for the full tool creation, 
     mech update-metadata
     ```
 
-4. **Issue**: env formatting issues
+2. **Issue**: env formatting issues
 
     **Solution**: No whitespace in dicts/lists — they must be single-line strings. Check for non-standard quote characters (`\u201c`/`\u201d`).
-    ```
-    MECH_TO_CONFIG='{"0xbead38e4C4777341bB3FD44e8cd4D1ba1a7Ad9D7":{"use_dynamic_pricing":false,"is_marketplace_mech":true}}'
-    ```
 
-5. **Issue**: `ValueError: {'code': -32603, 'message': 'Filter with id: ... does not exist.'}` or `AlreadyKnown`
+3. **Issue**: `ValueError: Filter with id: ... does not exist` or `AlreadyKnown`
 
     **Solution**: Check your RPC URL or switch to a different provider.
 
-6. **Issue**: `Service ''api_key'' not found in KeyChain`
-
-    **Solution**: Check the key names inside the `API_KEYS` env variable.
-
-7. **Issue**: `Error: Number of agent instances cannot be greater than available keys`
-
-    **Solution**: RPC values must be on a single line in `.env`:
-    ```
-    ETHEREUM_LEDGER_RPC_0="https://1rpc.io/gnosis"
-    ```
-
-8. **Issue**: `Tool <tool_name> is not supported`
-
-    **Solution**: Make sure `tool_name` is listed in `ALLOWED_TOOLS` inside the tool's Python file.
-
-9. **Issue**: `Incompatible counter_callback`
-
-    **Solution**: Either have your model added to [the supported list](https://github.com/valory-xyz/mech/blob/main/packages/valory/skills/task_execution/utils/benchmarks.py#L31) or remove `counter_callback` from your tool.
-
-10. **Issue**: Port already in use (`listen tcp 127.0.0.1:26658: bind: address already in use`) — `--dev` mode only
-
-    **Solution**:
-    ```bash
-    lsof -i :26658
-    kill -9 <process_id>
-    ```
+For the full list of known issues see the [documentation](https://stack.olas.network).
 
 ## Documentation
 
