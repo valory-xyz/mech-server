@@ -81,6 +81,26 @@ make code-checks     # flake8, mypy, pylint, darglint (via tomte)
 make security        # bandit, safety, gitleaks
 ```
 
+### Before every commit (mandatory)
+
+Always run the `mtd`/`tests` linters before committing any changes to `mtd/` or `tests/`:
+
+```bash
+tox -e black-check-mtd,isort-check-mtd,flake8-mtd,mypy-mtd,pylint-mtd
+```
+
+To auto-fix formatting first:
+
+```bash
+tox -e black-mtd,isort-mtd   # format, then re-run the checks above
+```
+
+Common lint pitfalls to watch for:
+- **D403**: docstring first word must be properly capitalized — use an imperative verb (`Return`, `Raise`, `Check`) rather than a CamelCase type name or lowercase word
+- **W1514**: always pass `encoding="utf-8"` to `open()`, `read_text()`, and `write_text()`
+- **pylint inline disable**: must be `# pylint: disable=` (with space) on the **opening** line of multi-line expressions
+- **mypy dict-item**: use `# type: ignore[dict-item]` when unpacking a typed dict with overriding keys in tests
+
 ### Before opening a PR (run in this order)
 
 ```bash
