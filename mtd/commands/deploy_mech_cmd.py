@@ -45,7 +45,7 @@ from mtd.deploy_mech import (
 )
 @click.pass_context
 def deploy_mech_command(ctx: click.Context, chain_config: str) -> None:
-    """Deploy a mech on the marketplace for an existing service."""
+    """Deploy a mech on the marketplace (runs automatically during setup)."""
     context = get_mtd_context(ctx)
     require_initialized(context)
     with _workspace_cwd(context):

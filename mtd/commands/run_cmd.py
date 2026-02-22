@@ -104,21 +104,21 @@ def _run_dev_mode(config_path: Path, context: MtdContext) -> None:
     "--chain-config",
     type=click.Choice(SUPPORTED_CHAINS, case_sensitive=False),
     required=True,
-    help="Target chain for the mech service.",
+    help="Target chain for the mech agent.",
 )
 @click.option(
     "--dev",
     is_flag=True,
     default=False,
-    help="Dev mode: push local packages, then run via host deployment.",
+    help="Dev mode: push local packages to IPFS, then run on host (no Docker).",
 )
 @click.pass_context
 def run(ctx: click.Context, chain_config: str, dev: bool) -> None:
-    """Run the mech agent service.
+    """Run the mech AI agent.
 
     In production mode (default), runs via Docker deployment.
     In dev mode (--dev), pushes local packages to IPFS and runs
-    via host deployment (Tendermint + agent process).
+    on the host (Tendermint + agent process, no Docker).
 
     Examples:
         mech run -c gnosis

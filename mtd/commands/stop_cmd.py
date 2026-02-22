@@ -37,11 +37,11 @@ from mtd.commands.context_utils import (
     "--chain-config",
     type=click.Choice(SUPPORTED_CHAINS, case_sensitive=False),
     required=True,
-    help="Target chain for the mech service.",
+    help="Target chain for the mech agent.",
 )
 @click.pass_context
 def stop(ctx: click.Context, chain_config: str) -> None:
-    """Stop the mech agent service.
+    """Stop a running mech AI agent.
 
     Example: mech stop -c gnosis
     """

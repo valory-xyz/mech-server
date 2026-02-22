@@ -36,7 +36,7 @@ from mtd.context import build_context
 @click.group()
 @click.pass_context
 def cli(ctx: click.Context) -> None:
-    """Dev CLI tool."""
+    """CLI to create, deploy and manage Mechs on the Olas Marketplace."""
     ctx.ensure_object(dict)
     ctx.obj["mtd_context"] = build_context()
 
