@@ -19,12 +19,28 @@
 """Tests for context_utils helpers."""
 
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import click
 import pytest
 
-from mtd.commands.context_utils import require_initialized
-from mtd.context import build_context
+from mtd.commands.context_utils import get_mtd_context, require_initialized
+from mtd.context import MtdContext, build_context
+
+
+def test_get_mtd_context_returns_existing_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Return the existing MtdContext when already stored in click context obj."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    existing = build_context()
+    mock_ctx = MagicMock(spec=click.Context)
+    mock_ctx.ensure_object.return_value = {"mtd_context": existing}
+
+    result = get_mtd_context(mock_ctx)
+
+    assert result is existing
+    assert isinstance(result, MtdContext)
 
 
 def test_require_initialized_raises_when_workspace_not_initialized(

@@ -195,6 +195,24 @@ class TestPushAllPackages:
         with pytest.raises(click.ClickException, match="Dev mode requires"):
             _push_all_packages(context=context)
 
+    @patch(f"{MOCK_PATH}.subprocess.run")
+    def test_runs_autonomy_push_all_when_packages_dir_exists(
+        self, mock_subproc: MagicMock, tmp_path: Path
+    ) -> None:
+        """Run autonomy push-all when packages_dir exists."""
+        context = MagicMock()
+        context.packages_dir = tmp_path / "packages"
+        context.packages_dir.mkdir()
+        context.workspace_path = tmp_path
+
+        _push_all_packages(context=context)
+
+        mock_subproc.assert_called_once_with(
+            ["autonomy", "push-all"],
+            check=True,
+            cwd=str(tmp_path),
+        )
+
 
 class TestRunDevMode:
     """Tests for _run_dev_mode."""

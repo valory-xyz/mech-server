@@ -169,6 +169,18 @@ def test_normalize_nullable_env_vars_missing_key_is_skipped() -> None:
     assert changed is False
 
 
+def test_normalize_template_nullable_env_vars_returns_early_when_no_env_variables(
+    tmp_path: Path,
+) -> None:
+    """Return early without writing when env_variables key is absent."""
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({"name": "Mech"}), encoding="utf-8")
+
+    _normalize_template_nullable_env_vars(config_path=config_path)
+
+    assert json.loads(config_path.read_text(encoding="utf-8")) == {"name": "Mech"}
+
+
 def test_normalize_template_nullable_env_vars(tmp_path: Path) -> None:
     """Template nullable env vars should be converted from empty strings."""
     config_path = tmp_path / "config_mech_polygon.json"
@@ -191,6 +203,23 @@ def test_normalize_template_nullable_env_vars(tmp_path: Path) -> None:
     assert data["env_variables"]["ON_CHAIN_SERVICE_ID"]["value"] == "null"
     assert data["env_variables"]["MECH_TO_CONFIG"]["value"] == "{}"
     assert data["env_variables"]["MECH_TO_MAX_DELIVERY_RATE"]["value"] == "{}"
+
+
+def test_normalize_service_nullable_env_vars_skips_non_dict_env_variables(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Skip service config files where env_variables is not a dict."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    service_dir = context.operate_dir / "services" / "sc-test"
+    service_dir.mkdir(parents=True, exist_ok=True)
+    config_path = service_dir / "config.json"
+    config_path.write_text(json.dumps({"env_variables": "notadict"}), encoding="utf-8")
+
+    _normalize_service_nullable_env_vars(context=context)
+
+    data = json.loads(config_path.read_text(encoding="utf-8"))
+    assert data["env_variables"] == "notadict"
 
 
 def test_normalize_service_nullable_env_vars(
@@ -623,9 +652,56 @@ def test_read_and_update_env_writes_env_file(
     assert "SAFE_CONTRACT_ADDRESS=0xsafe" in content
 
 
+def test_read_and_update_env_covers_comment_lines_and_dict_values(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Cover non-'=' template lines, non-computed keys, and dict env values."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.workspace_path.mkdir(parents=True, exist_ok=True)
+    context.env_path.touch()
+    data: dict = {
+        "home_chain": "gnosis",
+        "chain_configs": {"gnosis": {"chain_data": {"multisig": "0xsafe"}}},
+        "agent_addresses": ["0xagent"],
+        "env_variables": {
+            "MECH_TO_MAX_DELIVERY_RATE": {"value": "{}"},
+            "GNOSIS_LEDGER_RPC_0": {"value": "https://rpc.gnosis.io"},
+            "CUSTOM_KEY": {"value": {"nested": "dict"}},
+        },
+    }
+    # Template: one comment line (no "="), one computed key, one non-computed key with dict value
+    template = "# comment line\nSAFE_CONTRACT_ADDRESS=\nCUSTOM_KEY=\n"
+
+    with patch(f"{MOD}.read_text_resource", return_value=template):
+        _read_and_update_env(data=data, context=context)
+
+    content = context.env_path.read_text(encoding="utf-8")
+    assert "# comment line" in content
+    assert "SAFE_CONTRACT_ADDRESS=0xsafe" in content
+    assert 'CUSTOM_KEY={"nested":"dict"}' in content
+
+
 # ---------------------------------------------------------------------------
 # _setup_env
 # ---------------------------------------------------------------------------
+
+
+def test_setup_env_reads_config_and_delegates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Read operate config file and delegate to _read_and_update_env."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    service_dir = context.operate_dir / "services" / "sc-test"
+    service_dir.mkdir(parents=True, exist_ok=True)
+    config_data = {"home_chain": "gnosis", "env_variables": {}}
+    (service_dir / "config.json").write_text(json.dumps(config_data), encoding="utf-8")
+
+    with patch(f"{MOD}._read_and_update_env") as mock_read_update:
+        _setup_env(context=context)
+
+    mock_read_update.assert_called_once_with(data=config_data, context=context)
 
 
 def test_setup_env_raises_when_no_config(
