@@ -40,11 +40,21 @@
   </a>
 </p>
 
-A CLI to create, deploy and manage Mechs - AI agents providing services - on the [Olas Marketplace](https://olas.network/mech-marketplace). It allows developers an easy way to create, configure and deploy an AI agent to monetize a service.
+A CLI to create, deploy and manage Mechs — AI agents that execute tasks on-chain for payment — on the [Olas Marketplace](https://olas.network/mech-marketplace).
+
+> **Note:** The codebase uses the term *service* (from the underlying Open Autonomy framework) interchangeably with *AI agent*.
+
+## Quick Start
+
+```bash
+pip install mech-server
+mech setup -c <chain>      # first-time setup; prompts for RPC URL and wallet funding
+# edit ~/.operate-mech/.env and set your API keys
+mech run -c <chain>        # run via Docker
+mech stop -c <chain>       # stop when done
+```
 
 ## Supported Chains
-
-**Supported chains:** `gnosis`, `base`, `polygon`, `optimism`
 
 | Chain | Native | OLAS Token | USDC Token | Nevermined |
 |-------|--------|------------|------------|------------|
@@ -57,188 +67,111 @@ The mech payment type is selected at deployment time via the `MECH_TYPE` env var
 
 ## Requirements
 
-- [Python](https://www.python.org/) `>=3.10, <3.12` (Python 3.10 or 3.11)
+- [Python](https://www.python.org/) `>=3.10, <3.12`
 - [Poetry](https://python-poetry.org/docs/)
-- [Docker Engine](https://docs.docker.com/engine/install/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-- [Tendermint](https://docs.tendermint.com/v0.34/introduction/install.html) `==0.34.19` (only required for `--dev` mode)
+- [Docker Engine](https://docs.docker.com/engine/install/) + [Docker Compose](https://docs.docker.com/compose/install/)
+- [Tendermint](https://docs.tendermint.com/v0.34/introduction/install.html) `==0.34.19` (only for `--dev` mode)
 
-## CLI
-
-All operations are available through the `mech` CLI. Install the package and run `mech --help` to see available commands.
-
-### Commands
+## Commands
 
 | Command | Description |
 |---|---|
-| `mech setup -c <chain>` | Full first-time setup: operate build, mech deployment, env config, key setup, metadata generation, IPFS publish, and on-chain update |
-| `mech run -c <chain>` | Run the mech AI agent via Docker deployment |
-| `mech run -c <chain> --dev` | Dev mode: push local packages to IPFS, refresh AI agent hash, then run via host deployment (no Docker) |
+| `mech setup -c <chain>` | Full first-time setup: agent build, mech deployment, env config, key setup, metadata generation, IPFS publish, and on-chain update |
+| `mech run -c <chain>` | Run the mech AI agent via Docker |
+| `mech run -c <chain> --dev` | Dev mode: push local packages to IPFS, then run on host (no Docker) |
 | `mech stop -c <chain>` | Stop a running mech AI agent |
-| `mech deploy-mech -c <chain>` | Deploy a mech AI agent on the marketplace for an existing agent blueprint (also runs automatically during setup) |
+| `mech deploy-mech -c <chain>` | Deploy a mech on the marketplace (runs automatically during setup) |
 | `mech push-metadata` | Generate `metadata.json` from packages and publish to IPFS |
 | `mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
 | `mech add-tool <author> <name>` | Scaffold a new mech tool |
 
-Supported chains: `gnosis`, `base`, `polygon`, `optimism`.
+## What `mech setup` does
 
-### Recommended user flow
+`mech setup` runs the following steps in order:
 
-Use this sequence for normal operations:
+1. **Agent build** — creates the AI agent via `olas-operate-middleware` (skipped if already set up)
+2. **Mech deployment** — deploys a mech on the marketplace (skipped if already deployed)
+3. **Env configuration** — writes `~/.operate-mech/.env` with required variables
+4. **Private key setup** — configures operator and agent keys
+5. **Metadata generation** — generates `metadata.json` from package definitions
+6. **IPFS publish** — pushes metadata to IPFS
+7. **On-chain update** — updates the metadata hash on-chain via Safe transaction
 
-1. **Initial setup**
-
-```bash
-mech setup -c <chain>
-```
-
-2. **Update API keys in workspace `.env`**
-
-After setup generates `.env`, set your real API keys (replace any `dummy_api_key` values), for example:
-
-```env
-API_KEYS={"openai":["<YOUR_OPENAI_KEY>"],"google_api_key":["<YOUR_GOOGLE_KEY>"]}
-```
-
-3. **If tools/packages changed, refresh metadata**
-
-```bash
-mech push-metadata
-mech update-metadata
-```
-
-4. **Run the agent**
-
-```bash
-mech run -c <chain>
-```
-
-5. **Stop when needed**
-
-```bash
-mech stop -c <chain>
-```
-
-### Setup
-
-Run the full setup flow for a new mech deployment:
-
-```bash
-mech setup -c gnosis
-```
-
-This runs the following steps in order:
-
-1. **Operate build** - Creates the AI agent via olas-operate-middleware (skipped if already set up)
-2. **Mech deployment** - Deploys a mech on the marketplace if needed (skipped if already deployed)
-3. **Env configuration** - Sets up the `.env` file with required variables
-4. **Private key setup** - Configures operator and agent keys
-5. **Metadata generation** - Generates `metadata.json` from package definitions
-6. **IPFS publish** - Pushes metadata to IPFS
-7. **On-chain update** - Updates the metadata hash on-chain via Safe transaction
-
-### Running the agent
-
-**Production mode** (Docker deployment):
-
-```bash
-mech run -c gnosis
-```
-
-**Dev mode** (host deployment, no Docker):
-
-```bash
-mech run -c gnosis --dev
-```
-
-Dev mode pushes your local packages to IPFS, updates the config template with the new agent blueprint hash, and runs the mech directly on the host using `olas-operate-middleware` with `use_docker=False`. Dev mode requires a local workspace `packages/` directory.
-
-### Stopping the agent
-
-```bash
-mech stop -c gnosis
-```
-
-### Mech deployment
-
-Deploy a mech on the marketplace. This runs automatically during `mech setup`, but can also be run standalone for an existing agent:
-
-```bash
-mech deploy-mech -c gnosis
-```
-
-The mech payment type is determined by the `MECH_TYPE` env variable. See the [Supported Chains](#supported-chains) table above for available types per chain.
-
-If the agent already has `AGENT_ID` and `MECH_TO_CONFIG` set, deployment is skipped.
-
-### Metadata operations
-
-Generate and publish metadata independently of the full setup:
-
-```bash
-# Generate metadata.json and publish to IPFS
-mech push-metadata
-
-# Use a custom IPFS node
-mech push-metadata --ipfs-node /dns/custom.node/tcp/5001/http
-
-# Update the on-chain metadata hash
-mech update-metadata
-```
-
-### Adding a new tool
-
-Use this workflow to add and run a custom tool with the current setup-first model:
-
-1. Ensure workspace/setup is initialized:
-
-```bash
-mech setup -c <gnosis|base|polygon|optimism>
-```
-
-2. Scaffold the tool:
+## Adding a tool
 
 ```bash
 mech add-tool <author> <tool_name> -d "My tool description"
 ```
 
-3. Implement tool logic in:
-
-```text
-~/.operate-mech/packages/<author>/customs/<tool_name>/<tool_name>.py
-```
-
-4. Update component metadata in:
-
-```text
-~/.operate-mech/packages/<author>/customs/<tool_name>/component.yaml
-```
-
-5. Refresh metadata and update on-chain hash:
+Implement the tool in `~/.operate-mech/packages/<author>/customs/<tool_name>/<tool_name>.py`, then publish and register on-chain:
 
 ```bash
 mech push-metadata
 mech update-metadata
 ```
 
-6. Run the mech:
+See the [documentation](https://stack.olas.network) for the full tool creation, publishing, and on-chain registration workflow.
 
-```bash
-mech run -c <chain>
-```
+## Troubleshooting
 
-Optional: use a custom packages location when scaffolding:
+- **`setup` auto-bootstraps the workspace** if it is missing; `run` and `stop` still require an initialized workspace.
+- **`--dev` mode** requires `packages/` inside the workspace and a running Tendermint instance.
 
-```bash
-mech add-tool <author> <tool_name> --packages-dir /path/to/packages
-```
+1. **Issue**: `0xa25d...` not in list of participants
 
-## Workspace troubleshooting
+    **Solution**: Make sure the private keys inside `keys.json` match the address in `ALL_PARTICIPANTS` in the workspace `.env`.
 
-- `setup` auto-bootstraps workspace if missing; `run/stop` still require initialized workspace.
-- `--dev` mode is for local package development and requires `packages/` inside the workspace.
+2. **Issue**: `No module named 'anthropic'`
 
-## Instructions
+    **Solution**: List the dependency under `dependencies` in the tool's `component.yaml`, pinned to a specific version.
 
-Find more information on how to create, publish, and run your own mech tools in
-[our documentation](https://stack.olas.network).
+3. **Issue**: Tool changes not reflected
+
+    **Solution**: After any change to tools or configs, run:
+    ```bash
+    poetry run autonomy packages lock
+    mech push-metadata
+    mech update-metadata
+    ```
+
+4. **Issue**: env formatting issues
+
+    **Solution**: No whitespace in dicts/lists — they must be single-line strings. Check for non-standard quote characters (`\u201c`/`\u201d`).
+    ```
+    MECH_TO_CONFIG='{"0xbead38e4C4777341bB3FD44e8cd4D1ba1a7Ad9D7":{"use_dynamic_pricing":false,"is_marketplace_mech":true}}'
+    ```
+
+5. **Issue**: `ValueError: {'code': -32603, 'message': 'Filter with id: ... does not exist.'}` or `AlreadyKnown`
+
+    **Solution**: Check your RPC URL or switch to a different provider.
+
+6. **Issue**: `Service ''api_key'' not found in KeyChain`
+
+    **Solution**: Check the key names inside the `API_KEYS` env variable.
+
+7. **Issue**: `Error: Number of agent instances cannot be greater than available keys`
+
+    **Solution**: RPC values must be on a single line in `.env`:
+    ```
+    ETHEREUM_LEDGER_RPC_0="https://1rpc.io/gnosis"
+    ```
+
+8. **Issue**: `Tool <tool_name> is not supported`
+
+    **Solution**: Make sure `tool_name` is listed in `ALLOWED_TOOLS` inside the tool's Python file.
+
+9. **Issue**: `Incompatible counter_callback`
+
+    **Solution**: Either have your model added to [the supported list](https://github.com/valory-xyz/mech/blob/main/packages/valory/skills/task_execution/utils/benchmarks.py#L31) or remove `counter_callback` from your tool.
+
+10. **Issue**: Port already in use (`listen tcp 127.0.0.1:26658: bind: address already in use`) — `--dev` mode only
+
+    **Solution**:
+    ```bash
+    lsof -i :26658
+    kill -9 <process_id>
+    ```
+
+## Documentation
+
+Find the full tutorial (Hello World, creating and publishing tools, sending requests) at [stack.olas.network](https://stack.olas.network).
