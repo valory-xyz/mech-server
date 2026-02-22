@@ -138,42 +138,29 @@ mech run -c <gnosis|base|polygon|optimism>
 
 5. Update the tool metadata hash onchain:
     ```bash
-    poetry run python utils/update_metadata.py
+    poetry run mech push-metadata
+    poetry run mech update-metadata
     ```
 
-6. And just run your agent instance:
+6. Run your mech:
     ```bash
-    ./run_agent.sh
+    poetry run mech run -c <gnosis|base|polygon|optimism>
     ```
-    This option is recommended to quickly test or debug agents, so it's the one we recommend the first time you run this tutorial.
-    The next time you use this command, it will ask you for your sudo password to remove the previous build.
 
-7. Alternatively, you can also run the full dockerized AI agent with:
+    For local development and debugging, use dev mode (no Docker):
     ```bash
-    ./run_service.sh
+    poetry run mech run -c <gnosis|base|polygon|optimism> --dev
     ```
 
-    You can check your Mech's logs with:
-    ```bash
-    docker logs -f mechw_Me_abci_0
-    ```
-
-    Replace the Mech name with the one that appears after the `run_service.sh` script has finished.
-    This option is recommended when your AI agent is ready to be deployed.
-
-8. Once your agent instance is running, and from another terminal (within the same virtual environment), send a request to it. First, load all the RPCs required for the mech client to work:
-    ```bash
-    source .env
-    ```
-
-    Now, get your mech address from the `.env` file. You will see the following variable containing it:
+7. Once your agent instance is running, and from another terminal (within the same virtual environment), send a request to it. First, get your mech address from the `.env` file:
     ```bash
     MECH_TO_CONFIG='{"<your_mech_address>":{"use_dynamic_pricing":false,"is_marketplace_mech":true}}'
     ```
 
-    Finally, send the request (replacing your mech address):
+    Then send the request (replacing your mech address):
 
     ```bash
+    source .env
     poetry run mechx request --prompts "hello, mech!" --priority-mech <your_mech_address> --tools echo --chain-config <gnosis|base|polygon|optimism>
     ```
 
@@ -181,22 +168,14 @@ mech run -c <gnosis|base|polygon|optimism>
     ```bash
     Fetching Mech Info...
     Sending Mech Marketplace request...
-    - Prompt uploaded: https://gateway.autonolas.tech/ipfs/f01701220fe7480a472cc8dffe481d5883e235346793a20a25415160ad2feade0d809f9db
     - Transaction sent: <chain-explorer-tx-url>
     - Waiting for transaction receipt...
     - Created on-chain request with ID 63113231565093422774445497789782682647110838977840831205387629469951062204223
     ```
 
-    In your agent instance logs, you will see something like:
-    ```bash
-    [2025-07-24 16:41:58,679][INFO] [agent] Task result for request 63113231565093422774445497789782682647110838977840831205387629469951062204223: ('Echo: hello, mech!', 'hello, mech!', None, None)
-    ```
-    Which means that the Mech has successfully received the request and ran the tool. After some time (give it a minute or so) you will see the response in the terminal you sent the request from:
+    After some time you will see the response:
 
     ```bash
-    Off chain to be implemented
-    - Data arrived: https://gateway.autonolas.tech/ipfs/f0170122068f1ed6661ac9c7f067c998d12ccf0bd29367c4373f4d91bf61ed98a068e3528
-    - Data from agent:
     {
     "requestId": 28039871184902372191260032967003278816287653243679554051485992027223235273470,
     "result": "Echo: hello, mech!",
@@ -211,9 +190,9 @@ mech run -c <gnosis|base|polygon|optimism>
     }
     ```
 
-9. Stop your agent instance. If you have run the `run_agent.sh` script, just hit `ctrl+c`. If you are using `run_service.sh`, run:
+8. Stop your mech:
     ```bash
-    ./stop_service.sh
+    poetry run mech stop -c <gnosis|base|polygon|optimism>
     ```
 
 ## Creating and publishing a tool
@@ -350,7 +329,10 @@ In order to test a tool you developed, let's update the Mech you created in the 
    This variable is a dictionary, so you need to add a new entry with your tool name as key and the tool hash as value.
 
 
-6. Run your mech using `run_agent.sh` or `run_service.sh` as seen in the previous sections.
+6. Run your mech as seen in the previous sections:
+    ```bash
+    poetry run mech run -c <gnosis|base|polygon|optimism>
+    ```
 
 
 ### 4. Sending a request to your custom Mech
