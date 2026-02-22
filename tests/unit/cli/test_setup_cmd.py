@@ -95,4 +95,4 @@ class TestSetupCommand:
 
         assert result.exit_code == 0
         assert "chain-config" in result.output
-        assert "Setup on-chain requirements" in result.output
+        assert "Full first-time setup for a mech AI agent" in result.output

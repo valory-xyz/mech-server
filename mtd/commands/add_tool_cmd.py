@@ -138,7 +138,7 @@ def add_tool(
     skip_lock: bool,
     packages_dir: Path,
 ) -> None:
-    """Add a new mech tool."""
+    """Scaffold a new mech tool."""
     context = get_mtd_context(ctx)
     require_initialized(context)
 

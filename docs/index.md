@@ -1,5 +1,7 @@
 ## **Mechs**
 
+> **Note:** The codebase uses the term *service* (from the underlying Open Autonomy framework) interchangeably with *AI agent*.
+
 Mechs are Olas AI agents that provide on-chain services to other AI agents in exchange for small payments.
 They allow agents to access a wide range of tools—such as LLM subscriptions or prediction services—without the need to implement ad-hoc integrations.
 All interactions with Mechs happen through a common API using on-chain requests and responses, enabling agents to access multiple tools via a unified interface.
@@ -103,7 +105,9 @@ In this example, we will run a Mech with a dummy "echo" tool.
 ```bash
 pip install mech-server
 mech setup -c <gnosis|base|polygon|optimism>
+# edit ~/.operate-mech/.env and set your API keys
 mech run -c <gnosis|base|polygon|optimism>
+mech stop -c <gnosis|base|polygon|optimism>
 ```
 
 `mech setup` auto-bootstraps the default workspace at `~/.operate-mech/` if it does not exist yet.
@@ -311,64 +315,3 @@ mech run -c <gnosis|base|polygon|optimism>
 3. Wait for the response. If there's an error in the tool, you will see it in the Mech's logs.
 
 
-## Troubleshooting
-
-1. **Issue**: `0xa25d624C49eE3691a2B25223e3a899c77738FDa3` not in list of participants: "[`0xc062E6cfdCb48700de374905BF66A0BAD1Ef36E7`]"
-
-    **Solution**: Make sure the private keys inside `keys.json` match the address in `ALL_PARTICIPANTS` in the workspace `.env`.
-
-2. **Issue**: Exception raised while executing task: `No module named 'anthropic'`
-
-    **Solution**: Make sure the dependency is listed under `dependencies` in the tool's `component.yaml` and is pinned to a specific version.
-
-3. **Issue**: Tool changes not being reflected.
-
-    **Solution**: Update the package hash after any changes to tools or configs:
-    ```bash
-    poetry run autonomy packages lock
-    ```
-    Then run `mech push-metadata` and `mech update-metadata` to propagate the change on-chain.
-
-4. **Issue**: env formatting issues.
-
-    **Solution**: Make sure there are no whitespaces in dicts and lists — they must be represented as a single-line string. Also check for non-standard quotation mark characters (`\u201c`/`\u201d`) and replace with standard `"`.
-    ```
-    MECH_TO_CONFIG='{"0xbead38e4C4777341bB3FD44e8cd4D1ba1a7Ad9D7":{"use_dynamic_pricing":false,"is_marketplace_mech":true}}'
-    ```
-
-5. **Issue**: `ValueError: {'code': -32603, 'message': 'Filter with id: 1950087 does not exist.'}` or `AlreadyKnown`.
-
-    **Solution**: Check your RPC URL is correct or switch to a different provider.
-
-6. **Issue**: `Service ''api_key'' not found in KeyChain`.
-
-    **Solution**: Make sure the correct key names are set inside the `API_KEYS` env variable.
-
-7. **Issue**: `Error: Number of agent instances cannot be greater than available keys`.
-
-    **Solution**: Check that your editor hasn't reformatted the `.env` file. RPC values must be on a single line:
-    ```
-    # Wrong:
-    ETHEREUM_LEDGER_RPC_0 = (
-        "https://1rpc.io/gnosis"
-    )
-
-    # Right:
-    ETHEREUM_LEDGER_RPC_0="https://1rpc.io/gnosis"
-    ```
-
-8. **Issue**: `Tool <tool_name> is not supported`.
-
-    **Solution**: Make sure `tool_name` is listed in `ALLOWED_TOOLS` inside the tool's Python file.
-
-9. **Issue**: `Incompatible counter_callback`.
-
-    **Solution**: If your tool uses `counter_callback` and your model is not in [this list](https://github.com/valory-xyz/mech/blob/main/packages/valory/skills/task_execution/utils/benchmarks.py#L31), either contact the mech developers to have it added or do not use `counter_callback`.
-
-10. **Issue**: Port already in use (`listen tcp 127.0.0.1:26658: bind: address already in use`). Only applies to `--dev` mode.
-
-    **Solution**: Find and kill the process holding the port:
-    ```bash
-    lsof -i :26658
-    kill -9 <process_id>
-    ```

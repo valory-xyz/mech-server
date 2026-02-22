@@ -32,15 +32,15 @@ from mtd.workspace import initialize_workspace
     "--chain-config",
     type=click.Choice(SUPPORTED_CHAINS, case_sensitive=False),
     required=True,
-    help="Target chain for the mech service.",
+    help="Target chain for the mech agent.",
 )
 @click.pass_context
 def setup(ctx: click.Context, chain_config: str) -> None:
-    """Setup on-chain requirements for running a mech agent.
+    """Full first-time setup for a mech AI agent.
 
-    Runs the full setup flow: operate build, env configuration,
-    private key setup, metadata generation, IPFS publish, and
-    on-chain metadata hash update.
+    Runs the full setup flow: agent build, mech deployment, env
+    configuration, private key setup, metadata generation, IPFS
+    publish, and on-chain metadata hash update.
 
     Example: mech setup -c gnosis
     """
