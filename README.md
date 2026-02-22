@@ -9,7 +9,7 @@
   <a href="https://pypi.org/project/mech-server/">
     <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/mech-server">
   </a>
-  <a>
+  <a href="https://pypi.org/project/mech-server/">
     <img alt="PyPI - Wheel" src="https://img.shields.io/pypi/wheel/mech-server">
   </a>
   <a href="https://github.com/valory-xyz/mech-server/blob/main/LICENSE">
@@ -23,7 +23,7 @@
   <a href="https://github.com/valory-xyz/mech-server/actions/workflows/common_checks.yaml">
     <img alt="Sanity checks and tests" src="https://github.com/valory-xyz/mech-server/workflows/main_workflow/badge.svg?branch=main">
   </a>
-  <a href="https://img.shields.io/badge/lint-flake8-blueviolet">
+  <a href="https://flake8.pycqa.org">
     <img alt="flake8" src="https://img.shields.io/badge/lint-flake8-yellow">
   </a>
   <a href="https://github.com/python/mypy">
