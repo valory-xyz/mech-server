@@ -5,6 +5,46 @@ All critical, high, minor, and CI/linting issues from the previous review cycle 
 
 ---
 
+## CLI improvements
+
+The following issues currently surface as user-visible errors with no guidance. Each could be
+caught early and turned into a clear, actionable message — eliminating the need for a
+troubleshooting guide.
+
+- [ ] **Validate `keys.json` against `ALL_PARTICIPANTS` at startup** — if the agent key address
+  in `keys.json` is not present in `ALL_PARTICIPANTS` in `.env`, the agent fails deep inside
+  the middleware with an opaque address-mismatch error. Add a startup check that compares the
+  two and raises a `ClickException` with the specific mismatch and a fix hint.
+
+- [ ] **Detect stale package hashes before `mech push-metadata`** — if `packages.json`
+  fingerprints are out of sync with the on-disk tool files, metadata is published with stale
+  hashes silently. Check whether `autonomy packages lock` needs to be run first (by comparing
+  file hashes to `packages.json`) and warn or abort with instructions.
+
+- [ ] **Validate `.env` values for formatting on read** — dict/list values with embedded
+  whitespace or non-standard quote characters (`\u201c`/`\u201d`) cause downstream failures
+  with no indication of the root cause. Parse each relevant env variable at startup and reject
+  with the specific variable name and a concrete example of the correct format.
+
+- [ ] **Detect multiline RPC values in `.env`** — editors sometimes reformat long RPC URLs
+  across multiple lines, causing `Number of agent instances cannot be greater than available
+  keys`. Detect newlines inside env values and fail with a targeted message.
+
+- [ ] **Surface missing tool dependencies clearly** — when a tool file imports a package not
+  listed in `component.yaml`, the current `RuntimeError` from `_import_module_from_path` is
+  generic. Catch `ModuleNotFoundError` specifically and suggest adding the module to
+  `dependencies` in `component.yaml`.
+
+- [ ] **Hint on RPC filter / `AlreadyKnown` errors** — `ValueError: Filter with id: ... does
+  not exist` and `AlreadyKnown` are provider-side failures that cannot be prevented, but they
+  can be caught and re-raised with a message suggesting an RPC provider switch.
+
+- [ ] **Detect port conflict before `--dev` mode starts** — check whether port `26658`
+  (Tendermint) is already bound before launching and print the `lsof`/`kill` hint immediately
+  rather than letting the process crash.
+
+---
+
 ## Medium
 
 - [ ] **Hardcoded gas values in `update_onchain.py`** — `update_metadata_onchain()` passes

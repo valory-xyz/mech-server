@@ -112,30 +112,6 @@ poetry run mech update-metadata
 
 See the [documentation](https://stack.olas.network) for the full tool creation, publishing, and on-chain registration workflow.
 
-## Troubleshooting
-
-- **`setup` auto-bootstraps the workspace** if it is missing; `run` and `stop` still require an initialized workspace.
-- **`--dev` mode** requires `packages/` inside the workspace and a running Tendermint instance.
-
-1. **Issue**: Tool changes not reflected
-
-    **Solution**: After any change to tools or configs, run:
-    ```bash
-    poetry run autonomy packages lock
-    poetry run mech push-metadata
-    poetry run mech update-metadata
-    ```
-
-2. **Issue**: env formatting issues
-
-    **Solution**: No whitespace in dicts/lists — they must be single-line strings. Check for non-standard quote characters (`\u201c`/`\u201d`).
-
-3. **Issue**: `ValueError: Filter with id: ... does not exist` or `AlreadyKnown`
-
-    **Solution**: Check your RPC URL or switch to a different provider.
-
-For the full list of known issues see the [documentation](https://stack.olas.network).
-
 ## Documentation
 
 Find the full tutorial (Hello World, creating and publishing tools, sending requests) at [stack.olas.network](https://stack.olas.network).
