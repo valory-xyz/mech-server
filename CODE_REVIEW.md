@@ -6,9 +6,9 @@ Generated from a full codebase review. Items are grouped by severity and tracked
 
 ## Critical
 
-- [ ] **Duplicate `_workspace_cwd()` context manager** — identical definition in `setup_flow.py`, `deploy_mech_cmd.py`, `run_cmd.py`, `stop_cmd.py`. Extract to shared module.
-- [ ] **Duplicate `SUPPORTED_CHAINS` constant** — identical tuple defined in the same 4 files. Extract to shared constants module.
-- [ ] **`deploy_mech_cmd` missing `require_initialized()` guard** — every other command checks for an initialised workspace; this one doesn't, leading to confusing downstream failures.
+- [x] **Duplicate `_workspace_cwd()` context manager** — extracted to `mtd/context.py` as `workspace_cwd()`; re-exported via `context_utils.py`; circular import resolved by having `setup_flow.py` import directly from `mtd.context`.
+- [x] **Duplicate `SUPPORTED_CHAINS` constant** — extracted to `mtd/context.py`; re-exported via `context_utils.py`.
+- [x] **`deploy_mech_cmd` missing `require_initialized()` guard** — added; test fixtures updated to patch it.
 
 ---
 
@@ -43,4 +43,11 @@ Generated from a full codebase review. Items are grouped by severity and tracked
 
 ## Completed
 
-_Nothing yet._
+### Linting / CI
+- Added `MTD_PACKAGES = mtd tests` env var to `tox.ini` and dedicated tox environments (`black-check-mtd`, `isort-check-mtd`, `flake8-mtd`, `mypy-mtd`, `pylint-mtd`) — `mtd/` was previously never linted in CI.
+- Wired new environments into `common_checks.yaml` `linter_checks` job.
+- Applied `black` + `isort` formatting across all previously unformatted `mtd/` and `tests/` files.
+- Fixed 2 mypy `no-untyped-def` errors (pytest fixture annotations in `test_context.py`, `test_resources.py`).
+- Fixed 1 flake8 D403 docstring capitalisation in `test_deploy_mech.py`.
+
+### Architecture (Critical items above)
