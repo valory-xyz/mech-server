@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**mech-server** is a developer toolkit for the [Autonolas](https://olas.network/) Mech ecosystem. It provides:
+**mech-server** is a developer toolkit for the [Olas](https://olas.network/) Mech ecosystem. It provides:
 - The `mech` CLI for setting up, running, and managing mech agent services
 - Core mech logic and tool scaffolding
 - Metadata generation, IPFS publishing, and on-chain updates via Safe transactions

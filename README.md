@@ -5,8 +5,8 @@
 <h1 align="center" style="margin-bottom: 0;">
     Mech Server
     <br>
-    <a href="https://github.com/valory-xyz/mech-tools-dev/blob/main/LICENSE">
-        <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/valory-xyz/mech-tools-dev">
+    <a href="https://github.com/valory-xyz/mech-server/blob/main/LICENSE">
+        <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/valory-xyz/mech-server">
     </a>
     <a href="https://github.com/valory-xyz/mech/releases/tag/v0.10.0">
         <img alt="Mech Core: Mech 0.10.0" src="https://img.shields.io/badge/Mech%20Core%20-0.10.0-blueviolet">

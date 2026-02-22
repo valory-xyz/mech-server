@@ -114,8 +114,8 @@ mech run -c <gnosis|base|polygon|optimism>
 
 1. First, clone the following repository:
     ```bash
-    git clone https://github.com/valory-xyz/mech-tools-dev.git
-    cd mech-tools-dev/
+    git clone https://github.com/valory-xyz/mech-server.git
+    cd mech-server/
     ```
 
 2. Install all Python dependencies:
@@ -228,7 +228,7 @@ In order to contribute to Mechs' abilities, one can create and publish a tool. I
 
 In order to create a tool, the steps are as follows:
 
-1. Ensure you have followed the instructions from the previous section to setup the `mech-tools-dev` repository.
+1. Ensure you have followed the instructions from the previous section to setup the `mech-server` repository.
 
 
 2. Create the tool's structure by using the following command, after replacing the values for the `AUTHOR_NAME` and `TOOL_NAME` variables:
@@ -256,7 +256,7 @@ poetry run mech --help
 ```
 
 3. Now that your tool's structure is set up, all that's left is to configure the tool component and implement the tool's functionality in Python.
-The [component.yaml](https://github.com/valory-xyz/mech-tools-dev/blob/main/mtd/templates/config.template) file contains the tool's configuration and looks as follows:
+The [component.yaml](https://github.com/valory-xyz/mech-server/blob/main/mtd/templates/config.template) file contains the tool's configuration and looks as follows:
 
     Here is an explanation of its fields:
     - `name`: the name of the tool.
