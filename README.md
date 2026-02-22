@@ -40,8 +40,7 @@
   </a>
 </p>
 
-Development toolkit for the Mech ecosystem.
-Provides the mech core logic, supporting easy tools integration, streamlining their development and testing.
+A CLI to create, deploy and manage Mechs - AI agents providing services - on the [Olas Marketplace](https://olas.network/mech-marketplace). It allows developers an easy way to create, configure and deploy an AI agent to monetize a service.
 
 ## Supported Chains
 
@@ -66,17 +65,17 @@ The mech payment type is selected at deployment time via the `MECH_TYPE` env var
 
 ## CLI
 
-All mech service operations are available through the `mech` CLI. Install the package and run `mech --help` to see available commands.
+All operations are available through the `mech` CLI. Install the package and run `mech --help` to see available commands.
 
 ### Commands
 
 | Command | Description |
 |---|---|
 | `mech setup -c <chain>` | Full first-time setup: operate build, mech deployment, env config, key setup, metadata generation, IPFS publish, and on-chain update |
-| `mech run -c <chain>` | Run the mech service via Docker deployment |
-| `mech run -c <chain> --dev` | Dev mode: push local packages to IPFS, refresh service hash, then run via host deployment (no Docker) |
-| `mech stop -c <chain>` | Stop a running mech service |
-| `mech deploy-mech -c <chain>` | Deploy a mech on the marketplace for an existing service (also runs automatically during setup) |
+| `mech run -c <chain>` | Run the mech AI agent via Docker deployment |
+| `mech run -c <chain> --dev` | Dev mode: push local packages to IPFS, refresh AI agent hash, then run via host deployment (no Docker) |
+| `mech stop -c <chain>` | Stop a running mech AI agent |
+| `mech deploy-mech -c <chain>` | Deploy a mech AI agent on the marketplace for an existing agent blueprint (also runs automatically during setup) |
 | `mech push-metadata` | Generate `metadata.json` from packages and publish to IPFS |
 | `mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
 | `mech add-tool <author> <name>` | Scaffold a new mech tool |
@@ -108,7 +107,7 @@ mech push-metadata
 mech update-metadata
 ```
 
-4. **Run the service**
+4. **Run the agent**
 
 ```bash
 mech run -c <chain>
@@ -130,7 +129,7 @@ mech setup -c gnosis
 
 This runs the following steps in order:
 
-1. **Operate build** - Creates the service via olas-operate-middleware (skipped if service already exists)
+1. **Operate build** - Creates the AI agent via olas-operate-middleware (skipped if already set up)
 2. **Mech deployment** - Deploys a mech on the marketplace if needed (skipped if already deployed)
 3. **Env configuration** - Sets up the `.env` file with required variables
 4. **Private key setup** - Configures operator and agent keys
@@ -138,7 +137,7 @@ This runs the following steps in order:
 6. **IPFS publish** - Pushes metadata to IPFS
 7. **On-chain update** - Updates the metadata hash on-chain via Safe transaction
 
-### Running the service
+### Running the agent
 
 **Production mode** (Docker deployment):
 
@@ -152,9 +151,9 @@ mech run -c gnosis
 mech run -c gnosis --dev
 ```
 
-Dev mode pushes your local packages to IPFS, updates the config template with the new service hash, and runs the service directly on the host using `olas-operate-middleware` with `use_docker=False`. Dev mode requires a local workspace `packages/` directory.
+Dev mode pushes your local packages to IPFS, updates the config template with the new agent blueprint hash, and runs the mech directly on the host using `olas-operate-middleware` with `use_docker=False`. Dev mode requires a local workspace `packages/` directory.
 
-### Stopping the service
+### Stopping the agent
 
 ```bash
 mech stop -c gnosis
@@ -162,7 +161,7 @@ mech stop -c gnosis
 
 ### Mech deployment
 
-Deploy a mech on the marketplace. This runs automatically during `mech setup`, but can also be run standalone for an existing service:
+Deploy a mech on the marketplace. This runs automatically during `mech setup`, but can also be run standalone for an existing agent:
 
 ```bash
 mech deploy-mech -c gnosis
@@ -170,7 +169,7 @@ mech deploy-mech -c gnosis
 
 The mech payment type is determined by the `MECH_TYPE` env variable. See the [Supported Chains](#supported-chains) table above for available types per chain.
 
-If the service already has `AGENT_ID` and `MECH_TO_CONFIG` set, deployment is skipped.
+If the agent already has `AGENT_ID` and `MECH_TO_CONFIG` set, deployment is skipped.
 
 ### Metadata operations
 
@@ -222,7 +221,7 @@ mech push-metadata
 mech update-metadata
 ```
 
-6. Run the service:
+6. Run the mech:
 
 ```bash
 mech run -c <chain>

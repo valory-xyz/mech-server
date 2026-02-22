@@ -102,7 +102,18 @@ def deploy_mech(sftxb: EthSafeTxBuilder, service: Service) -> Tuple[str, str]:
         )
 
     mech_type = service.env_variables.get("MECH_TYPE", {}).get("value", "Native")
-    abi = requests.get(MECH_MARKETPLACE_JSON_URL, timeout=DEFAULT_TIMEOUT).json()["abi"]
+    try:
+        response = requests.get(MECH_MARKETPLACE_JSON_URL, timeout=DEFAULT_TIMEOUT)
+        response.raise_for_status()
+        abi = response.json()["abi"]
+    except requests.RequestException as exc:
+        raise click.ClickException(
+            f"Failed to fetch MechMarketplace ABI from {MECH_MARKETPLACE_JSON_URL}: {exc}"
+        ) from exc
+    except (KeyError, ValueError) as exc:
+        raise click.ClickException(
+            f"Unexpected response format from {MECH_MARKETPLACE_JSON_URL}: {exc}"
+        ) from exc
     mech_marketplace_address = service.env_variables["MECH_MARKETPLACE_ADDRESS"][
         "value"
     ]
