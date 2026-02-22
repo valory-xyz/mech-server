@@ -305,6 +305,43 @@ Python file and extract `ALLOWED_TOOLS` / `AVAILABLE_TOOLS`. All exceptions from
 `_validate_tool_output` → `_validate_output_schema` → `_validate_schema_properties`), each
 returning `Optional[str]` (None = ok, string = error message).
 
+### `packages/` directory and PyPI installation
+
+`packages/` serves a dual role: AEA component definitions (agents, services, customs) used at
+dev time, and the initial content seeded into every new workspace.
+
+**How it reaches the user after `pip install mech-server`:**
+
+```
+pyproject.toml: [[tool.poetry.packages]] include = "packages"
+    ↓
+site-packages/packages/   (AEA components land alongside mtd/)
+    ↓
+mech init  →  workspace.py:initialize_workspace()
+    Path(__file__).parent.parent / "packages"  ←  resolves to site-packages/packages/
+    shutil.copytree(...)  →  ~/.operate-mech/packages/
+```
+
+`mech setup` then calls `run_service(..., build_only=True)` which fetches the mech agent
+definition from **IPFS** using the hash in `config_mech_<chain>.json` — the local `packages/`
+content is NOT needed by the operate middleware at that point.
+
+**What the workspace `packages/` is used for at runtime:**
+
+| Use case | Requires `~/.operate-mech/packages/` |
+|----------|--------------------------------------|
+| `generate_metadata` | Yes — scans `packages/valory/customs/` for tool definitions |
+| `mech add-tool` | Yes — writes new tool scaffold there |
+| `mech run --dev` | Yes — `autonomy push-all` reads it to push to IPFS |
+| `mech run` (production Docker) | No — operate fetches from IPFS by hash |
+| `mech setup` | No — operate fetches from IPFS by hash |
+
+**Fragile assumption:** `workspace.py` uses `Path(__file__).parent.parent / "packages"` (not
+`importlib.resources`) to locate the bundled `packages/`. This works as long as `packages/`
+continues to be installed one level above the `mtd/` package in `site-packages/`. If the wheel
+layout ever changes, `initialize_workspace()` will raise a `ClickException("Packaged tools
+directory not found")` immediately.
+
 ### Templates (`mtd/templates/`)
 
 Two kinds:
