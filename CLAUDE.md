@@ -136,14 +136,14 @@ make common-checks-2      # check-abci-docstrings, check-abciapp-specs, check-ha
 ## Testing
 
 ```bash
-poetry run pytest tests/                                      # all unit tests (161 tests)
+poetry run pytest tests/                                      # all unit tests
 poetry run pytest tests/unit/cli/                            # CLI tests only
 poetry run pytest -vv tests/                                 # verbose
 poetry run pytest -m "not integration and not e2e" tests/   # skip slow tests
 poetry run pytest tests/ --cov=mtd --cov-report=term-missing # coverage report
 ```
 
-Current state: **161 tests, 100% line coverage (837/837 statements).** Maintain 100% when adding new code — run the coverage command to verify before committing.
+Current state: **170 tests, 100% line coverage (880/880 statements).** Maintain 100% when adding new code — run the coverage command to verify before committing.
 
 Pytest config in `tox.ini`: log level DEBUG, asyncio mode strict. Markers: `integration`, `e2e`.
 
@@ -188,3 +188,140 @@ Also update `SECURITY.md` to reflect the new supported version.
 - `safe-eth-py^7.18.0` — Gnosis Safe on-chain operations
 - `ipfshttpclient==0.8.0a2` — IPFS uploads
 - `click==8.1.8` — CLI framework
+
+---
+
+## Architecture
+
+### Layers
+
+```
+CLI entry point  ──►  commands/  ──►  core modules  ──►  external services
+  cli.py                *.py           setup_flow.py       olas-operate-middleware
+  (Click group)         context_utils  deploy_mech.py      IPFS
+                        require_init   services/metadata/  Gnosis Safe / web3
+                                       workspace.py        autonomy CLI
+```
+
+### Context (`mtd/context.py`)
+
+`MtdContext` is a **frozen dataclass** that holds every resolved workspace path. It is created
+once per CLI invocation inside the `cli` group callback in `cli.py` and stored in
+`ctx.obj["mtd_context"]`. All subcommands retrieve it via `get_mtd_context(ctx)` in
+`context_utils.py`.
+
+```
+~/.operate-mech/          ← workspace_path / operate_dir
+  .env                    ← env_path      (runtime env vars filled by setup_flow)
+  .mech_initialized       ← marker file   (presence = workspace is set up)
+  config/                 ← config_dir    (chain JSON configs)
+  keys/                   ← operate's encrypted key store (read-only by mtd)
+  ethereum_private_key.txt  ← decrypted agent key (written by _create_private_key_files)
+  keys.json               ← decrypted key bundle (written by _create_private_key_files)
+  metadata.json           ← metadata_path (generated / uploaded)
+  packages/               ← packages_dir  (user's custom tools)
+  services/               ← operate service config (JSON written by operate)
+```
+
+`is_initialized()` returns `True` only when the marker file, `config/`, and `.env` all exist.
+`workspace_cwd()` is a context manager that `chdir`s to `workspace_path` and sets `OPERATE_HOME`
+for the duration of an operate subprocess call, restoring both on exit.
+
+### CLI → command wiring (`mtd/cli.py`, `mtd/commands/`)
+
+```
+cli (group) ─┬─ setup          setup_cmd.py   → setup_flow.run_setup_flow()
+             ├─ run            run_cmd.py     → operate / autonomy subprocesses
+             ├─ stop           stop_cmd.py    → operate subprocess
+             ├─ deploy-mech    deploy_mech_cmd.py → deploy_mech.deploy_mech()
+             ├─ push-metadata  push_metadata_cmd.py → generate + publish pipeline
+             ├─ update-metadata update_metadata_cmd.py → update_onchain
+             └─ add-tool       add_tool_cmd.py → Template scaffolding
+```
+
+Every command that touches a workspace calls `require_initialized(context)` before doing any
+work; this raises a `ClickException` with a helpful message rather than failing deep inside.
+
+### Setup flow (`mtd/setup_flow.py`)
+
+The most complex module — orchestrates the full first-time setup in order:
+
+1. `workspace.py:bootstrap_workspace()` — copies runtime templates from the package
+   (`mtd/templates/runtime/`) into the workspace directory via `resources.py`.
+2. Calls into `olas-operate-middleware` to create/fund the on-chain service. operate writes its
+   own JSON config under `~/.operate-mech/services/`.
+3. `_sanitize_local_quickstart_user_args()` — patches the operate config with any values
+   already present in a local `.env` (used in quickstart / re-setup scenarios).
+4. `_setup_env()` / `_read_and_update_env()` — reads the operate config JSON, computes derived
+   values (`SAFE_CONTRACT_ADDRESS`, `ALL_PARTICIPANTS`, `MECH_TO_MAX_DELIVERY_RATE`), and fills
+   `.env` by iterating over the template lines from `config/`.
+5. `_setup_private_keys()` — reads operate's encrypted key file from `~/.operate-mech/keys/`,
+   prompts for (or reads from env) the operate password, decrypts, and calls
+   `_create_private_key_files()` to write `ethereum_private_key.txt` and `keys.json`.
+6. `_deploy_mech()` — calls `deploy_mech.needs_mech_deployment()` and if needed runs
+   `deploy_mech.deploy_mech()` followed by `update_service_after_deploy()`.
+7. Writes the `.mech_initialized` marker to mark the workspace as ready.
+
+### Mech deployment (`mtd/deploy_mech.py`)
+
+Standalone module for on-chain mech registration. Key data structure:
+
+```python
+MECH_FACTORY_ADDRESS = {
+    Chain.GNOSIS: { marketplace_address: { mech_type: factory_address } },
+    Chain.BASE:   { ... },
+    ...
+}
+```
+
+`deploy_mech()` flow:
+1. Validates `service.home_chain` → `Chain` enum; checks chain is in the factory map.
+2. Fetches the `MechMarketplace` ABI from GitHub (with error handling).
+3. Looks up `mech_factory_address` from the table (falls back to first known address if the
+   configured marketplace address is unrecognised).
+4. Builds and sends a `create` call to the marketplace contract via `EthSafeTxBuilder`.
+5. Parses the `CreateMech` event from the receipt to extract `mech_address` and `agent_id`.
+
+### Metadata pipeline (`mtd/services/metadata/`)
+
+Three-stage pipeline, each stage in its own module:
+
+```
+generate.py           publish.py               update_onchain.py
+─────────────         ──────────────────────   ─────────────────────
+scan packages/        validate metadata JSON   load .env
+  customs/*/          upload to IPFS           build web3 contract call
+import .py files      return on-chain hash     send via Gnosis Safe tx
+read component.yaml                            return (success, tx_hash)
+build metadata.json
+```
+
+`generate.py` uses `importlib.util.spec_from_file_location` to dynamically import each tool's
+Python file and extract `ALLOWED_TOOLS` / `AVAILABLE_TOOLS`. All exceptions from `exec_module`
+(SyntaxError, ImportError, etc.) are caught and re-raised as `RuntimeError` with context.
+
+`publish.py` validates the metadata through a hierarchy of focused helpers
+(`_validate_metadata_structure` → `_validate_tool_entry` → `_validate_tool_input` /
+`_validate_tool_output` → `_validate_output_schema` → `_validate_schema_properties`), each
+returning `Optional[str]` (None = ok, string = error message).
+
+### Templates (`mtd/templates/`)
+
+Two kinds:
+
+| Directory | Purpose | Loaded by |
+|-----------|---------|-----------|
+| `templates/runtime/` | Chain configs, `.example.env`, `metadata.template.json` | `resources.py` via `importlib.resources` → copied to workspace at setup |
+| `templates/*.template` | Code scaffolding (init, config, tool Python file) | `add_tool_cmd._read_template()` via `importlib.resources` |
+
+Both use `importlib.resources.files("mtd.templates[.runtime]")` so they work correctly when
+installed from PyPI (not just from source).
+
+### Error handling strategy
+
+| Exception type | When to use |
+|----------------|-------------|
+| `ValueError` | Bad or missing input (env vars, config keys, invalid data) |
+| `RuntimeError` | Execution / network failure (IPFS, Safe tx, module load) |
+| `click.ClickException` | User-facing CLI errors (invalid chain, fetch failure, not-initialized) |
+| `FileNotFoundError` | Missing required files (packages dir, operate config) |
