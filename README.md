@@ -12,11 +12,22 @@
 Development toolkit for the Mech ecosystem.
 Provides the mech core logic, supporting easy tools integration, streamlining their development and testing.
 
+## Supported Chains
+
+**Supported chains:** `gnosis`, `base`, `polygon`, `optimism`
+
+| Chain | Native | OLAS Token | USDC Token | Nevermined |
+|-------|--------|------------|------------|------------|
+| Gnosis | ✅ | ✅ | ❌ | ✅ |
+| Base | ✅ | ✅ | ❌ | ✅ |
+| Polygon | ✅ | ✅ | ✅ | ✅ |
+| Optimism | ✅ | ✅ | ❌ | ✅ |
+
+The mech payment type is selected at deployment time via the `MECH_TYPE` env variable.
+
 ## Requirements
 
-You need the following requirements installed in your system:
-
-- [Python](https://www.python.org/) (recommended `3.10`)
+- [Python](https://www.python.org/) `>=3.10, <3.12` (Python 3.10 or 3.11)
 - [Poetry](https://python-poetry.org/docs/)
 - [Docker Engine](https://docs.docker.com/engine/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
@@ -126,14 +137,7 @@ Deploy a mech on the marketplace. This runs automatically during `mech setup`, b
 mech deploy-mech -c gnosis
 ```
 
-The mech type is determined by the `MECH_TYPE` env variable on the service. Supported types per chain:
-
-| Chain | Native | Token | TokenUSDC | Nevermined |
-|---|---|---|---|---|
-| Gnosis | Yes | Yes | - | Yes |
-| Base | Yes | Yes | - | Yes |
-| Polygon | Yes | Yes | Yes | Yes |
-| Optimism | Yes | Yes | - | Yes |
+The mech payment type is determined by the `MECH_TYPE` env variable. See the [Supported Chains](#supported-chains) table above for available types per chain.
 
 If the service already has `AGENT_ID` and `MECH_TO_CONFIG` set, deployment is skipped.
 
