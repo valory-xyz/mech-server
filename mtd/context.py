@@ -65,11 +65,6 @@ def get_default_workspace() -> Path:
     return Path("~/.operate-mech").expanduser().resolve()
 
 
-def resolve_workspace_path() -> Path:
-    """Resolve workspace path."""
-    return get_default_workspace()
-
-
 @contextmanager
 def workspace_cwd(context: "MtdContext") -> Iterator[None]:
     """Change to workspace root and set OPERATE_HOME, restoring both on exit."""
@@ -90,7 +85,7 @@ def workspace_cwd(context: "MtdContext") -> Iterator[None]:
 
 def build_context() -> MtdContext:
     """Build runtime context."""
-    workspace_path = resolve_workspace_path()
+    workspace_path = get_default_workspace()
     return MtdContext(
         workspace_path=workspace_path,
         env_path=workspace_path / ".env",

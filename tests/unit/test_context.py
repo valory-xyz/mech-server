@@ -22,17 +22,12 @@ from pathlib import Path
 
 import pytest
 
-from mtd.context import build_context, get_default_workspace, resolve_workspace_path
+from mtd.context import build_context, get_default_workspace
 
 
 def test_get_default_workspace() -> None:
     """Default workspace should point to ~/.operate-mech."""
     assert get_default_workspace() == Path("~/.operate-mech").expanduser().resolve()
-
-
-def test_resolve_workspace_path_uses_default() -> None:
-    """Workspace resolver should always return default workspace."""
-    assert resolve_workspace_path() == get_default_workspace()
 
 
 def test_context_is_initialized_false_then_true(
