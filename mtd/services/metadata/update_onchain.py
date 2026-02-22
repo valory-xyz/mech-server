@@ -27,8 +27,8 @@ from typing import Dict, Optional, Tuple
 import dotenv
 from multibase import multibase
 from multicodec import multicodec
-from safe_eth.eth import EthereumClient  # pylint:disable=import-error
-from safe_eth.safe import Safe  # pylint:disable=import-error
+from safe_eth.eth import EthereumClient  # pylint: disable=import-error
+from safe_eth.safe import Safe  # pylint: disable=import-error
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract import Contract
@@ -103,9 +103,9 @@ def _send_safe_tx(
     value: int = 0,
 ) -> Optional[TxReceipt]:
     """Send a Safe transaction."""
-    safe = Safe(
+    safe = Safe(  # pylint: disable=abstract-class-instantiated
         safe_address, ethereum_client
-    )  # pylint:disable=abstract-class-instantiated
+    )
     safe_tx = safe.build_multisig_tx(
         to=to_address,
         value=value,
@@ -151,9 +151,9 @@ def update_metadata_onchain(
     metadata_bytes = _fetch_metadata_hash(runtime["METADATA_HASH"])
     safe_address = web3_client.to_checksum_address(runtime["SAFE_CONTRACT_ADDRESS"])
 
-    safe = Safe(
+    safe = Safe(  # pylint: disable=abstract-class-instantiated
         safe_address, ethereum_client
-    )  # pylint:disable=abstract-class-instantiated
+    )
     safe_nonce = safe.retrieve_nonce()
 
     function = contract.functions.changeHash(

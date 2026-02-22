@@ -21,8 +21,11 @@
 
 import click
 
-from mtd.context import MtdContext, SUPPORTED_CHAINS, build_context  # noqa: F401
-from mtd.context import workspace_cwd as _workspace_cwd  # noqa: F401
+from mtd.context import SUPPORTED_CHAINS  # noqa: F401  # pylint: disable=unused-import
+from mtd.context import MtdContext, build_context
+from mtd.context import (  # noqa: F401  # pylint: disable=unused-import
+    workspace_cwd as _workspace_cwd,
+)
 
 
 def get_mtd_context(ctx: click.Context) -> MtdContext:

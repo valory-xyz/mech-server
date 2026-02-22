@@ -74,7 +74,7 @@ properties_data_schema = {
 }
 
 
-def _validate_metadata_file(
+def _validate_metadata_file(  # pylint: disable=too-many-return-statements,too-many-statements
     file_path: Path,
 ) -> Tuple[bool, str]:  # pylint: disable=too-many-return-statements,too-many-statements
     status = False

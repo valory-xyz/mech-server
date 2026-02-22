@@ -56,6 +56,7 @@ def _get_latest_service_hash(context: MtdContext) -> str:
     """Get the latest service hash from autonomy packages."""
     subprocess.run(
         ["autonomy", "packages", "lock", "--check"],
+        check=False,
         capture_output=True,
         text=True,
         cwd=str(context.workspace_path),
@@ -88,7 +89,7 @@ def _run_dev_mode(config_path: Path, context: MtdContext) -> None:
     with _workspace_cwd(context):
         operate = OperateApp(home=context.operate_dir)
         operate.setup()
-        run_service(
+        run_service(  # pylint: disable=unexpected-keyword-arg
             operate=operate,
             config_path=config_path,
             build_only=False,
