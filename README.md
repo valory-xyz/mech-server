@@ -24,7 +24,7 @@ You need the following requirements installed in your system:
 - [Poetry](https://python-poetry.org/docs/)
 - [Docker Engine](https://docs.docker.com/engine/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
-- [Tendermint](https://docs.tendermint.com/v0.34/introduction/install.html) `==0.34.19`
+- [Tendermint](https://docs.tendermint.com/v0.34/introduction/install.html) `==0.34.19` (only required for `--dev` mode)
 
 ## CLI
 
@@ -41,7 +41,7 @@ All mech service operations are available through the `mech` CLI. Install the pa
 | `mech deploy-mech -c <chain>` | Deploy a mech on the marketplace for an existing service (also runs automatically during setup) |
 | `mech push-metadata` | Generate `metadata.json` from packages and publish to IPFS |
 | `mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
-| `mech add-tool` | Scaffold a new mech tool (interactive) |
+| `mech add-tool <author> <name>` | Scaffold a new mech tool |
 
 Supported chains: `gnosis`, `base`, `polygon`, `optimism`.
 
