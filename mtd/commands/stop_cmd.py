@@ -19,38 +19,16 @@
 
 """Stop command for stopping the mech agent service."""
 
-import os
-from contextlib import contextmanager
-from pathlib import Path
-from typing import Iterator
-
 import click
 from operate.cli import OperateApp
 from operate.quickstart.stop_service import stop_service
 
-from mtd.commands.context_utils import get_mtd_context, require_initialized
-from mtd.context import MtdContext
-
-
-SUPPORTED_CHAINS = ("gnosis", "base", "polygon", "optimism")
-
-
-@contextmanager
-def _workspace_cwd(context: MtdContext) -> Iterator[None]:
-    """Run operations from workspace root."""
-    previous = Path.cwd()
-    previous_operate_home = os.environ.get("OPERATE_HOME")
-    context.operate_dir.mkdir(parents=True, exist_ok=True)
-    os.environ["OPERATE_HOME"] = str(context.operate_dir)
-    os.chdir(context.workspace_path)
-    try:
-        yield
-    finally:
-        os.chdir(previous)
-        if previous_operate_home is None:
-            os.environ.pop("OPERATE_HOME", None)
-        else:
-            os.environ["OPERATE_HOME"] = previous_operate_home
+from mtd.commands.context_utils import (
+    SUPPORTED_CHAINS,
+    _workspace_cwd,
+    get_mtd_context,
+    require_initialized,
+)
 
 
 @click.command()

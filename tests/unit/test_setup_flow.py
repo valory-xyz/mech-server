@@ -132,7 +132,9 @@ def test_normalize_template_nullable_env_vars(tmp_path: Path) -> None:
     assert data["env_variables"]["MECH_TO_MAX_DELIVERY_RATE"]["value"] == "{}"
 
 
-def test_normalize_service_nullable_env_vars(tmp_path: Path, monkeypatch: MagicMock) -> None:
+def test_normalize_service_nullable_env_vars(
+    tmp_path: Path, monkeypatch: MagicMock
+) -> None:
     """Existing service config nullable env vars should be normalized."""
     monkeypatch.setenv("HOME", str(tmp_path))
     context = build_context()

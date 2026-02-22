@@ -19,11 +19,15 @@
 
 """Workspace context and path resolution for mech runtime."""
 
+import os
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterator, Tuple
 
 
 INITIALIZED_MARKER = ".mech_initialized"
+SUPPORTED_CHAINS: Tuple[str, ...] = ("gnosis", "base", "polygon", "optimism")
 
 
 @dataclass(frozen=True)
@@ -64,6 +68,24 @@ def get_default_workspace() -> Path:
 def resolve_workspace_path() -> Path:
     """Resolve workspace path."""
     return get_default_workspace()
+
+
+@contextmanager
+def workspace_cwd(context: "MtdContext") -> Iterator[None]:
+    """Change to workspace root and set OPERATE_HOME, restoring both on exit."""
+    previous = Path.cwd()
+    previous_operate_home = os.environ.get("OPERATE_HOME")
+    context.operate_dir.mkdir(parents=True, exist_ok=True)
+    os.environ["OPERATE_HOME"] = str(context.operate_dir)
+    os.chdir(context.workspace_path)
+    try:
+        yield
+    finally:
+        os.chdir(previous)
+        if previous_operate_home is None:
+            os.environ.pop("OPERATE_HOME", None)
+        else:
+            os.environ["OPERATE_HOME"] = previous_operate_home
 
 
 def build_context() -> MtdContext:

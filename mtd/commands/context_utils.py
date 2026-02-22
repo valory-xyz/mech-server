@@ -21,7 +21,8 @@
 
 import click
 
-from mtd.context import MtdContext, build_context
+from mtd.context import MtdContext, SUPPORTED_CHAINS, build_context  # noqa: F401
+from mtd.context import workspace_cwd as _workspace_cwd  # noqa: F401
 
 
 def get_mtd_context(ctx: click.Context) -> MtdContext:

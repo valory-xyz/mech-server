@@ -30,6 +30,7 @@ from operate.services.protocol import EthSafeTxBuilder
 from operate.services.service import Service
 from operate.utils.gnosis import SafeOperation
 
+
 MECH_MARKETPLACE_JSON_URL = (
     "https://raw.githubusercontent.com/valory-xyz/mech-quickstart/"
     "refs/heads/main/contracts/MechMarketplace.json"
@@ -145,24 +146,31 @@ def update_service_after_deploy(
     service: Service, mech_address: str, agent_id: str
 ) -> None:
     """Update service env variables after mech deployment."""
-    mech_request_price = service.env_variables.get(
-        "MECH_REQUEST_PRICE", {}
-    ).get("value", 10000000000000000)
+    mech_request_price = service.env_variables.get("MECH_REQUEST_PRICE", {}).get(
+        "value", 10000000000000000
+    )
     home_chain = service.home_chain
     chain_config = service.chain_configs[home_chain]
     chain_rpc = chain_config.ledger_config.rpc
     chain_rpc_env_var = f"{home_chain.upper()}_LEDGER_RPC_0"
-    service.update_env_variables_values({
-        "AGENT_ID": agent_id,
-        "MECH_TO_CONFIG": json.dumps(
-            {mech_address: {"use_dynamic_pricing": False, "is_marketplace_mech": True}},
-            separators=(",", ":"),
-        ),
-        "MECH_TO_MAX_DELIVERY_RATE": json.dumps(
-            {mech_address: mech_request_price},
-            separators=(",", ":"),
-        ),
-        "ON_CHAIN_SERVICE_ID": chain_config.chain_data.token,
-        "ETHEREUM_LEDGER_RPC_0": chain_rpc,
-        chain_rpc_env_var: chain_rpc,
-    })
+    service.update_env_variables_values(
+        {
+            "AGENT_ID": agent_id,
+            "MECH_TO_CONFIG": json.dumps(
+                {
+                    mech_address: {
+                        "use_dynamic_pricing": False,
+                        "is_marketplace_mech": True,
+                    }
+                },
+                separators=(",", ":"),
+            ),
+            "MECH_TO_MAX_DELIVERY_RATE": json.dumps(
+                {mech_address: mech_request_price},
+                separators=(",", ":"),
+            ),
+            "ON_CHAIN_SERVICE_ID": chain_config.chain_data.token,
+            "ETHEREUM_LEDGER_RPC_0": chain_rpc,
+            chain_rpc_env_var: chain_rpc,
+        }
+    )

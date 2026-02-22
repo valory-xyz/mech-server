@@ -99,6 +99,8 @@ jobs:
     - name: Security checks
        # TODO: tomte check-security
       run: echo "Skipped until service is bumped"
+    - name: MTD package code checks
+      run: tox -e black-check-mtd,isort-check-mtd,flake8-mtd,mypy-mtd,pylint-mtd
     - name: Check packages
       run: tox -e check-packages
     - name: Check hash

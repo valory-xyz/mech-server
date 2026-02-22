@@ -42,7 +42,9 @@ def iter_runtime_templates() -> Iterable[Tuple[str, str]]:
             yield item.name, item.read_text(encoding="utf-8")
 
 
-def copy_runtime_templates_to_workspace(context: MtdContext, force: bool = False) -> None:
+def copy_runtime_templates_to_workspace(
+    context: MtdContext, force: bool = False
+) -> None:
     """Copy packaged runtime templates into a workspace."""
     context.ensure_workspace_exists()
     context.config_dir.mkdir(parents=True, exist_ok=True)

@@ -21,8 +21,8 @@
 
 import click
 
-from mtd.commands.context_utils import get_mtd_context
-from mtd.setup_flow import SUPPORTED_CHAINS, run_setup
+from mtd.commands.context_utils import SUPPORTED_CHAINS, get_mtd_context
+from mtd.setup_flow import run_setup
 from mtd.workspace import initialize_workspace
 
 

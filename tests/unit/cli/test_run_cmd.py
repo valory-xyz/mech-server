@@ -49,7 +49,9 @@ class TestRunCommand:
         context.workspace_path = tmp_path
         context.config_dir = tmp_path / "config"
         context.config_dir.mkdir(parents=True)
-        (context.config_dir / "config_mech_gnosis.json").write_text("{}", encoding="utf-8")
+        (context.config_dir / "config_mech_gnosis.json").write_text(
+            "{}", encoding="utf-8"
+        )
         mock_get_context.return_value = context
 
         mock_app = MagicMock()
@@ -82,7 +84,9 @@ class TestRunCommand:
         context = MagicMock()
         context.config_dir = tmp_path / "config"
         context.config_dir.mkdir(parents=True)
-        (context.config_dir / "config_mech_gnosis.json").write_text("{}", encoding="utf-8")
+        (context.config_dir / "config_mech_gnosis.json").write_text(
+            "{}", encoding="utf-8"
+        )
         mock_get_context.return_value = context
 
         runner = CliRunner()

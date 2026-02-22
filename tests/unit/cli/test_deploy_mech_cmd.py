@@ -36,8 +36,10 @@ class TestDeployMechCommand:
     @patch(f"{MOD}.deploy_mech", return_value=("0xMechAddr", "42"))
     @patch(f"{MOD}.needs_mech_deployment", return_value=True)
     @patch(f"{MOD}.OperateApp")
+    @patch(f"{MOD}.require_initialized")
     def test_deploy_mech_command_success(
         self,
+        mock_require: MagicMock,
         mock_operate: MagicMock,
         mock_needs: MagicMock,
         mock_deploy: MagicMock,
@@ -64,7 +66,10 @@ class TestDeployMechCommand:
         mock_update.assert_called_once_with(mock_service, "0xMechAddr", "42")
 
     @patch(f"{MOD}.OperateApp")
-    def test_deploy_mech_command_no_service(self, mock_operate: MagicMock) -> None:
+    @patch(f"{MOD}.require_initialized")
+    def test_deploy_mech_command_no_service(
+        self, mock_require: MagicMock, mock_operate: MagicMock
+    ) -> None:
         """Test deploy-mech with no services found raises ClickException."""
         mock_app = MagicMock()
         mock_operate.return_value = mock_app
@@ -81,8 +86,10 @@ class TestDeployMechCommand:
     @patch(f"{MOD}.deploy_mech")
     @patch(f"{MOD}.needs_mech_deployment", return_value=False)
     @patch(f"{MOD}.OperateApp")
+    @patch(f"{MOD}.require_initialized")
     def test_deploy_mech_command_already_deployed(
         self,
+        mock_require: MagicMock,
         mock_operate: MagicMock,
         mock_needs: MagicMock,
         mock_deploy: MagicMock,
@@ -115,8 +122,10 @@ class TestDeployMechCommand:
     @patch(f"{MOD}.deploy_mech", return_value=("0xMech", "1"))
     @patch(f"{MOD}.needs_mech_deployment", return_value=True)
     @patch(f"{MOD}.OperateApp")
+    @patch(f"{MOD}.require_initialized")
     def test_deploy_mech_command_all_chains(
         self,
+        mock_require: MagicMock,
         mock_operate: MagicMock,
         mock_needs: MagicMock,
         mock_deploy: MagicMock,

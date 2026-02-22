@@ -72,7 +72,9 @@ def _load_env(env_path: Path) -> Dict[str, str]:
     return required
 
 
-def _load_contract(web3_client: Web3, abi_dir: Path, contract_address: str, abi_file: str) -> Contract:
+def _load_contract(
+    web3_client: Web3, abi_dir: Path, contract_address: str, abi_file: str
+) -> Contract:
     """Load a contract from an abi file."""
     abi_path = abi_dir / f"{abi_file}.json"
     contract_abi = json.loads(abi_path.read_text(encoding="utf-8"))["abi"]
@@ -101,7 +103,9 @@ def _send_safe_tx(
     value: int = 0,
 ) -> Optional[TxReceipt]:
     """Send a Safe transaction."""
-    safe = Safe(safe_address, ethereum_client)  # pylint:disable=abstract-class-instantiated
+    safe = Safe(
+        safe_address, ethereum_client
+    )  # pylint:disable=abstract-class-instantiated
     safe_tx = safe.build_multisig_tx(
         to=to_address,
         value=value,
@@ -147,7 +151,9 @@ def update_metadata_onchain(
     metadata_bytes = _fetch_metadata_hash(runtime["METADATA_HASH"])
     safe_address = web3_client.to_checksum_address(runtime["SAFE_CONTRACT_ADDRESS"])
 
-    safe = Safe(safe_address, ethereum_client)  # pylint:disable=abstract-class-instantiated
+    safe = Safe(
+        safe_address, ethereum_client
+    )  # pylint:disable=abstract-class-instantiated
     safe_nonce = safe.retrieve_nonce()
 
     function = contract.functions.changeHash(

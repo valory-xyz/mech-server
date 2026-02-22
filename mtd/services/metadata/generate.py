@@ -86,7 +86,9 @@ def _build_tools_data(packages_dir: Path) -> List[Dict[str, Any]]:
     tools_data: List[Dict[str, Any]] = []
 
     customs_folders = [
-        path for path in packages_dir.rglob("*") if path.is_dir() and path.name == CUSTOMS
+        path
+        for path in packages_dir.rglob("*")
+        if path.is_dir() and path.name == CUSTOMS
     ]
     for customs_folder in customs_folders:
         for tool_folder in [item for item in customs_folder.iterdir() if item.is_dir()]:

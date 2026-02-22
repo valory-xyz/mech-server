@@ -50,7 +50,10 @@ def test_generate_metadata_creates_file(tmp_path: Path) -> None:
     assert "echo" in metadata["tools"]
 
 
-@patch("mtd.services.metadata.publish.multicodec.remove_prefix", return_value=bytes.fromhex("1220" + "ab" * 32))
+@patch(
+    "mtd.services.metadata.publish.multicodec.remove_prefix",
+    return_value=bytes.fromhex("1220" + "ab" * 32),
+)
 @patch("mtd.services.metadata.publish.multibase.decode", return_value=b"dummy")
 @patch("mtd.services.metadata.publish.to_v1", return_value="cidv1")
 @patch("mtd.services.metadata.publish.IPFSTool")
@@ -90,7 +93,9 @@ def test_publish_metadata_returns_hash(
 @patch("mtd.services.metadata.update_onchain.Safe")
 @patch("mtd.services.metadata.update_onchain.EthereumClient")
 @patch("mtd.services.metadata.update_onchain.Web3")
-@patch("mtd.services.metadata.update_onchain._fetch_metadata_hash", return_value=b"hash")
+@patch(
+    "mtd.services.metadata.update_onchain._fetch_metadata_hash", return_value=b"hash"
+)
 @patch(
     "mtd.services.metadata.update_onchain._load_env",
     return_value={
@@ -119,7 +124,9 @@ def test_update_metadata_onchain_returns_tx(
     key_path.write_text("0xabc", encoding="utf-8")
 
     mock_web3 = MagicMock()
-    mock_web3.to_checksum_address.return_value = "0x0000000000000000000000000000000000000002"
+    mock_web3.to_checksum_address.return_value = (
+        "0x0000000000000000000000000000000000000002"
+    )
     mock_web3.to_wei.return_value = 1
     mock_web3_cls.return_value = mock_web3
 
@@ -138,7 +145,9 @@ def test_update_metadata_onchain_returns_tx(
     tx_receipt.transactionHash.hex.return_value = "0xtx"
     mock_send_safe_tx.return_value = tx_receipt
 
-    success, tx_hash = update_metadata_onchain(env_path=env_path, private_key_path=key_path)
+    success, tx_hash = update_metadata_onchain(
+        env_path=env_path, private_key_path=key_path
+    )
 
     assert success is True
     assert tx_hash == "0xtx"

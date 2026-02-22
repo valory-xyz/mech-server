@@ -20,6 +20,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from mtd.context import build_context, get_default_workspace, resolve_workspace_path
 
 
@@ -33,7 +35,9 @@ def test_resolve_workspace_path_uses_default() -> None:
     assert resolve_workspace_path() == get_default_workspace()
 
 
-def test_context_is_initialized_false_then_true(tmp_path, monkeypatch) -> None:
+def test_context_is_initialized_false_then_true(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Context init flag should reflect marker/config/env presence."""
     monkeypatch.setenv("HOME", str(tmp_path))
     context = build_context()

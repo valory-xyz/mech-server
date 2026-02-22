@@ -47,7 +47,9 @@ def push_metadata(ctx: click.Context, ipfs_node: str) -> None:
     require_initialized(context)
 
     click.echo("Generating metadata...")
-    generate_metadata(packages_dir=context.packages_dir, metadata_path=context.metadata_path)
+    generate_metadata(
+        packages_dir=context.packages_dir, metadata_path=context.metadata_path
+    )
 
     click.echo("Publishing metadata to IPFS...")
     metadata_hash = publish_metadata_to_ipfs(
