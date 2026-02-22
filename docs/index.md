@@ -308,28 +308,17 @@ After this, the tool can be deployed and used by a Mech, as shown in the next st
 In order to test a tool you developed, let's update the Mech you created in the previous sections.
 
 
-1. Create the `metadata.json` for your mech:
+1. Generate `metadata.json` and publish to IPFS:
     ```bash
-    poetry run python utils/generate_metadata.py
+    poetry run mech push-metadata
     ```
 
-2. Publish the tool metadata hash to IPFS:
+2. Update the tool metadata hash onchain:
     ```bash
-    poetry run python utils/publish_metadata.py
+    poetry run mech update-metadata
     ```
 
-3. Update the `METADATA_HASH` variable in your `.env` file with the hash you got in the previous step.
-
-4. Update the tool metadata hash onchain:
-    ```bash
-    poetry run python utils/update_metadata.py
-    ```
-
-5. Copy your tool hash from `packages/packages.json` and add it to the `TOOLS_TO_PACKAGE_HASH` variable in your `.env`.
-   This variable is a dictionary, so you need to add a new entry with your tool name as key and the tool hash as value.
-
-
-6. Run your mech as seen in the previous sections:
+3. Run your mech as seen in the previous sections:
     ```bash
     poetry run mech run -c <gnosis|base|polygon|optimism>
     ```
