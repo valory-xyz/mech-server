@@ -1,22 +1,61 @@
-<h1 align="center" style="margin-bottom: 0;">
-    Mech Server
-    <br>
-    <a href="https://github.com/valory-xyz/mech-server/blob/main/LICENSE">
-        <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/valory-xyz/mech-server">
-    </a>
-    <a href="https://github.com/valory-xyz/mech/releases/tag/v0.10.0">
-        <img alt="Mech Core: Mech 0.10.0" src="https://img.shields.io/badge/Mech%20Core%20-0.10.0-blueviolet">
-    </a>
+<h1 align="center">
+    <b>Mech Server</b>
 </h1>
+
+<p align="center">
+  <a href="https://pypi.org/project/mech-server/">
+    <img alt="PyPI" src="https://img.shields.io/pypi/v/mech-server">
+  </a>
+  <a href="https://pypi.org/project/mech-server/">
+    <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/mech-server">
+  </a>
+  <a>
+    <img alt="PyPI - Wheel" src="https://img.shields.io/pypi/wheel/mech-server">
+  </a>
+  <a href="https://github.com/valory-xyz/mech-server/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/pypi/l/mech-server">
+  </a>
+  <a href="https://pypi.org/project/mech-server/">
+    <img alt="Downloads" src="https://img.shields.io/pypi/dm/mech-server">
+  </a>
+</p>
+<p align="center">
+  <a href="https://github.com/valory-xyz/mech-server/actions/workflows/common_checks.yaml">
+    <img alt="Sanity checks and tests" src="https://github.com/valory-xyz/mech-server/workflows/main_workflow/badge.svg?branch=main">
+  </a>
+  <a href="https://img.shields.io/badge/lint-flake8-blueviolet">
+    <img alt="flake8" src="https://img.shields.io/badge/lint-flake8-yellow">
+  </a>
+  <a href="https://github.com/python/mypy">
+    <img alt="mypy" src="https://img.shields.io/badge/static%20check-mypy-blue">
+  </a>
+  <a href="https://github.com/psf/black">
+    <img alt="Black" src="https://img.shields.io/badge/code%20style-black-black">
+  </a>
+  <a href="https://github.com/PyCQA/bandit">
+    <img alt="bandit" src="https://img.shields.io/badge/security-bandit-lightgrey">
+  </a>
+</p>
 
 Development toolkit for the Mech ecosystem.
 Provides the mech core logic, supporting easy tools integration, streamlining their development and testing.
 
+## Supported Chains
+
+**Supported chains:** `gnosis`, `base`, `polygon`, `optimism`
+
+| Chain | Native | OLAS Token | USDC Token | Nevermined |
+|-------|--------|------------|------------|------------|
+| Gnosis | ✅ | ✅ | ❌ | ✅ |
+| Base | ✅ | ✅ | ❌ | ✅ |
+| Polygon | ✅ | ✅ | ✅ | ✅ |
+| Optimism | ✅ | ✅ | ❌ | ✅ |
+
+The mech payment type is selected at deployment time via the `MECH_TYPE` env variable.
+
 ## Requirements
 
-You need the following requirements installed in your system:
-
-- [Python](https://www.python.org/) (recommended `3.10`)
+- [Python](https://www.python.org/) `>=3.10, <3.12` (Python 3.10 or 3.11)
 - [Poetry](https://python-poetry.org/docs/)
 - [Docker Engine](https://docs.docker.com/engine/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
@@ -126,14 +165,7 @@ Deploy a mech on the marketplace. This runs automatically during `mech setup`, b
 mech deploy-mech -c gnosis
 ```
 
-The mech type is determined by the `MECH_TYPE` env variable on the service. Supported types per chain:
-
-| Chain | Native | Token | TokenUSDC | Nevermined |
-|---|---|---|---|---|
-| Gnosis | Yes | Yes | - | Yes |
-| Base | Yes | Yes | - | Yes |
-| Polygon | Yes | Yes | Yes | Yes |
-| Optimism | Yes | Yes | - | Yes |
+The mech payment type is determined by the `MECH_TYPE` env variable. See the [Supported Chains](#supported-chains) table above for available types per chain.
 
 If the service already has `AGENT_ID` and `MECH_TO_CONFIG` set, deployment is skipped.
 
