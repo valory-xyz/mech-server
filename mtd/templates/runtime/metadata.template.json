@@ -1,5 +1,5 @@
 {
-  "name": "Autonolas Mech III",
+  "name": "Olas Mech",
   "description": "The mech executes AI tasks requested on-chain and delivers the results to the requester.",
   "inputFormat": "ipfs-v0.1",
   "outputFormat": "ipfs-v0.1",
