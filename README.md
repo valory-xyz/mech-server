@@ -47,11 +47,11 @@ A CLI to create, deploy and manage Mechs — AI agents that execute tasks on-cha
 ## Quick Start
 
 ```bash
-pip install mech-server
-mech setup -c <chain>      # first-time setup; prompts for RPC URL and wallet funding
+poetry install
+poetry run mech setup -c <chain>      # first-time setup; prompts for RPC URL and wallet funding
 # edit ~/.operate-mech/.env and set your API keys
-mech run -c <chain>        # run via Docker
-mech stop -c <chain>       # stop when done
+poetry run mech run -c <chain>        # run via Docker
+poetry run mech stop -c <chain>       # stop when done
 ```
 
 ## Supported Chains
@@ -100,14 +100,14 @@ The mech payment type is selected at deployment time via the `MECH_TYPE` env var
 ## Adding a tool
 
 ```bash
-mech add-tool <author> <tool_name> -d "My tool description"
+poetry run mech add-tool <author> <tool_name> -d "My tool description"
 ```
 
 Implement the tool in `~/.operate-mech/packages/<author>/customs/<tool_name>/<tool_name>.py`, then publish and register on-chain:
 
 ```bash
-mech push-metadata
-mech update-metadata
+poetry run mech push-metadata
+poetry run mech update-metadata
 ```
 
 See the [documentation](https://stack.olas.network) for the full tool creation, publishing, and on-chain registration workflow.
@@ -122,8 +122,8 @@ See the [documentation](https://stack.olas.network) for the full tool creation, 
     **Solution**: After any change to tools or configs, run:
     ```bash
     poetry run autonomy packages lock
-    mech push-metadata
-    mech update-metadata
+    poetry run mech push-metadata
+    poetry run mech update-metadata
     ```
 
 2. **Issue**: env formatting issues
