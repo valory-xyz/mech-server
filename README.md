@@ -1,7 +1,3 @@
-<p align="center">
-   <img src="./docs/imgs/mechs-logo.png" width=300>
-</p>
-
 <h1 align="center" style="margin-bottom: 0;">
     Mech Server
     <br>
