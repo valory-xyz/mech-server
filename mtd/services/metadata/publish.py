@@ -74,7 +74,9 @@ properties_data_schema = {
 }
 
 
-def _validate_metadata_file(file_path: Path) -> Tuple[bool, str]:  # pylint: disable=too-many-return-statements,too-many-statements
+def _validate_metadata_file(  # pylint: disable=too-many-return-statements,too-many-statements
+    file_path: Path,
+) -> Tuple[bool, str]:  # pylint: disable=too-many-return-statements,too-many-statements
     status = False
     try:
         metadata: Dict = json.loads(file_path.read_text(encoding="utf-8"))
@@ -155,7 +157,9 @@ def _validate_metadata_file(file_path: Path) -> Tuple[bool, str]:  # pylint: dis
                                     status,
                                     f"Missing key for {tool} -> output -> schema: {s_key!r}",
                                 )
-                            if not isinstance(output_schema_data[s_key], s_expected_type):
+                            if not isinstance(
+                                output_schema_data[s_key], s_expected_type
+                            ):
                                 s_expected = s_expected_type.__name__
                                 s_actual = type(output_schema_data[s_key]).__name__
                                 return (
@@ -179,7 +183,9 @@ def _validate_metadata_file(file_path: Path) -> Tuple[bool, str]:  # pylint: dis
                                         status,
                                         f"Missing key for {tool} -> output -> schema -> properties: {p_key!r}",
                                     )
-                                if not isinstance(properties_data[p_key], p_expected_type):
+                                if not isinstance(
+                                    properties_data[p_key], p_expected_type
+                                ):
                                     p_expected = p_expected_type.__name__
                                     p_actual = type(properties_data[p_key]).__name__
                                     return (
@@ -187,14 +193,19 @@ def _validate_metadata_file(file_path: Path) -> Tuple[bool, str]:  # pylint: dis
                                         f"Invalid type for {p_key!r} in {tool} -> output -> schema -> properties. Expected {p_expected!r}, but got {p_actual!r}.",
                                     )
 
-                                for pd_key, pd_expected_type in properties_data_schema.items():
+                                for (
+                                    pd_key,
+                                    pd_expected_type,
+                                ) in properties_data_schema.items():
                                     property_data = properties_data[p_key]
                                     if pd_key not in property_data:
                                         return (
                                             status,
                                             f"Missing key in properties -> {p_key}: {pd_key!r}",
                                         )
-                                    if not isinstance(property_data[pd_key], pd_expected_type):
+                                    if not isinstance(
+                                        property_data[pd_key], pd_expected_type
+                                    ):
                                         expected = pd_expected_type.__name__
                                         actual = type(property_data[pd_key]).__name__
                                         return (
@@ -205,7 +216,9 @@ def _validate_metadata_file(file_path: Path) -> Tuple[bool, str]:  # pylint: dis
     return (True, "")
 
 
-def publish_metadata_to_ipfs(metadata_path: Path, ipfs_node: str = DEFAULT_IPFS_NODE) -> str:
+def publish_metadata_to_ipfs(
+    metadata_path: Path, ipfs_node: str = DEFAULT_IPFS_NODE
+) -> str:
     """Publish metadata file to IPFS and return on-chain metadata hash."""
     status, error_msg = _validate_metadata_file(metadata_path)
     if not status:

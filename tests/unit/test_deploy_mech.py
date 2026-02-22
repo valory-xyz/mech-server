@@ -35,7 +35,9 @@ from mtd.deploy_mech import (
 MOD = "mtd.deploy_mech"
 
 
-def _make_mock_sftxb(mech_address: str = "0xMechAddress", agent_id: str = "42") -> MagicMock:
+def _make_mock_sftxb(
+    mech_address: str = "0xMechAddress", agent_id: str = "42"
+) -> MagicMock:
     """Create a mock EthSafeTxBuilder with standard return values."""
     mock_sftxb = MagicMock()
     mock_receipt = MagicMock()
@@ -96,9 +98,7 @@ class TestDeployMech:
         """Test that unsupported marketplace address falls back to first known for chain."""
         mock_requests.get.return_value.json.return_value = {"abi": []}
         mock_service = _make_mock_service(marketplace_address="0xUnsupportedAddress")
-        mock_sftxb = _make_mock_sftxb(
-            mech_address="0xFallbackMech", agent_id="99"
-        )
+        mock_sftxb = _make_mock_sftxb(mech_address="0xFallbackMech", agent_id="99")
 
         mech_address, agent_id = deploy_mech(sftxb=mock_sftxb, service=mock_service)
 
@@ -130,9 +130,7 @@ class TestDeployMech:
             marketplace_address="0x343F2B005cF6D70bA610CD9F1F1927049414B582",
             mech_type="TokenUSDC",
         )
-        mock_sftxb = _make_mock_sftxb(
-            mech_address="0xUSDCMech", agent_id="77"
-        )
+        mock_sftxb = _make_mock_sftxb(mech_address="0xUSDCMech", agent_id="77")
 
         mech_address, agent_id = deploy_mech(sftxb=mock_sftxb, service=mock_service)
 
@@ -180,9 +178,7 @@ class TestDeployMech:
             marketplace_address="0xUnknownPolygonMarketplace",
             mech_type="Native",
         )
-        mock_sftxb = _make_mock_sftxb(
-            mech_address="0xPolygonFallback", agent_id="55"
-        )
+        mock_sftxb = _make_mock_sftxb(mech_address="0xPolygonFallback", agent_id="55")
 
         mech_address, agent_id = deploy_mech(sftxb=mock_sftxb, service=mock_service)
 
@@ -213,12 +209,12 @@ class TestMechFactoryAddress:
             assert "TokenUSDC" in factories
 
     def test_token_usdc_not_on_other_chains(self) -> None:
-        """TokenUSDC is only on Polygon, not other chains."""
+        """Test that TokenUSDC is only on Polygon, not other chains."""
         for chain in (Chain.GNOSIS, Chain.BASE, Chain.OPTIMISM):
             for factories in MECH_FACTORY_ADDRESS[chain].values():
-                assert "TokenUSDC" not in factories, (
-                    f"TokenUSDC should not be on {chain}"
-                )
+                assert (
+                    "TokenUSDC" not in factories
+                ), f"TokenUSDC should not be on {chain}"
 
 
 class TestNeedsMechDeployment:

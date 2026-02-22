@@ -21,6 +21,8 @@
 from click.testing import CliRunner
 
 from mtd.cli import cli
+
+
 class TestCli:
     """Tests for the CLI group."""
 

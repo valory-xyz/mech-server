@@ -22,9 +22,7 @@
 import json
 import logging
 import os
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 
 import click
 from dotenv import dotenv_values, set_key
@@ -32,14 +30,14 @@ from operate.cli import OperateApp
 from operate.keys import KeysManager
 from operate.quickstart.run_service import ask_password_if_needed, run_service
 
-from mtd.context import MtdContext
+from mtd.context import MtdContext, SUPPORTED_CHAINS
+from mtd.context import workspace_cwd as _workspace_cwd
 from mtd.resources import read_text_resource
 from mtd.services.metadata.generate import generate_metadata
 from mtd.services.metadata.publish import publish_metadata_to_ipfs
 from mtd.services.metadata.update_onchain import update_metadata_onchain
 
 
-SUPPORTED_CHAINS = ("gnosis", "base", "polygon", "optimism")
 OPERATE_CONFIG_PATH = "services/sc-*/config.json"
 AGENT_KEY = "ethereum_private_key.txt"
 SERVICE_KEY = "keys.json"
@@ -48,24 +46,6 @@ NULLABLE_DICT_ENV_DEFAULTS = {
     "MECH_TO_CONFIG": "{}",
     "MECH_TO_MAX_DELIVERY_RATE": "{}",
 }
-
-
-@contextmanager
-def _workspace_cwd(context: MtdContext) -> Iterator[None]:
-    """Run operations from workspace root."""
-    previous = Path.cwd()
-    previous_operate_home = os.environ.get("OPERATE_HOME")
-    context.operate_dir.mkdir(parents=True, exist_ok=True)
-    os.environ["OPERATE_HOME"] = str(context.operate_dir)
-    os.chdir(context.workspace_path)
-    try:
-        yield
-    finally:
-        os.chdir(previous)
-        if previous_operate_home is None:
-            os.environ.pop("OPERATE_HOME", None)
-        else:
-            os.environ["OPERATE_HOME"] = previous_operate_home
 
 
 def _deploy_mech(operate: OperateApp) -> None:
@@ -119,14 +99,18 @@ def _configure_quickstart_env(operate: OperateApp, context: MtdContext) -> None:
     click.echo("Using interactive setup flow (ATTENDED=true)")
 
 
-def _sanitize_local_quickstart_user_args(context: MtdContext, config_path: Path) -> None:
+def _sanitize_local_quickstart_user_args(
+    context: MtdContext, config_path: Path
+) -> None:
     """Replace empty local quickstart user args with template defaults."""
     template = json.loads(config_path.read_text(encoding="utf-8"))
     service_name = template.get("name")
     if not isinstance(service_name, str) or not service_name:
         return
 
-    quickstart_config_path = context.operate_dir / f"{service_name}-quickstart-config.json"
+    quickstart_config_path = (
+        context.operate_dir / f"{service_name}-quickstart-config.json"
+    )
     if not quickstart_config_path.exists():
         return
 
@@ -153,7 +137,9 @@ def _sanitize_local_quickstart_user_args(context: MtdContext, config_path: Path)
             changed = True
 
     if changed:
-        quickstart_config_path.write_text(json.dumps(local_config, indent=2), encoding="utf-8")
+        quickstart_config_path.write_text(
+            json.dumps(local_config, indent=2), encoding="utf-8"
+        )
         click.echo(f"Sanitized empty quickstart args in {quickstart_config_path}")
 
 
@@ -198,7 +184,10 @@ def _normalize_service_nullable_env_vars(context: MtdContext) -> None:
 def _read_and_update_env(data: dict, context: MtdContext) -> None:
     """Read generated env from operate and create required workspace .env file."""
     template_text = read_text_resource("mtd.templates.runtime", ".example.env")
-    lines = [line if line.endswith("\n") else f"{line}\n" for line in template_text.splitlines()]
+    lines = [
+        line if line.endswith("\n") else f"{line}\n"
+        for line in template_text.splitlines()
+    ]
 
     existing_env = dotenv_values(context.env_path)
     existing_operate_password = existing_env.get("OPERATE_PASSWORD") or os.environ.get(
@@ -224,7 +213,9 @@ def _read_and_update_env(data: dict, context: MtdContext) -> None:
 
     all_participants = json.dumps(data["agent_addresses"])
 
-    var_data = data["env_variables"].get("MECH_TO_MAX_DELIVERY_RATE", {}).get("value", "")
+    var_data = (
+        data["env_variables"].get("MECH_TO_MAX_DELIVERY_RATE", {}).get("value", "")
+    )
     parsed = json.loads(var_data or "{}")
     parsed_dict = {k: int(v) for k, v in parsed.items()}
     mech_to_max_delivery_rate = json.dumps(parsed_dict, separators=(",", ":"))
@@ -274,8 +265,13 @@ def _read_and_update_env(data: dict, context: MtdContext) -> None:
         if value not in ("", None, {}, []):
             filled_lines.append(f"{key}={_format_env_value(value)}\n")
 
-    if existing_operate_password not in ("", None) and "OPERATE_PASSWORD" not in written_keys:
-        filled_lines.append(f"OPERATE_PASSWORD={_format_env_value(existing_operate_password)}\n")
+    if (
+        existing_operate_password not in ("", None)
+        and "OPERATE_PASSWORD" not in written_keys
+    ):
+        filled_lines.append(
+            f"OPERATE_PASSWORD={_format_env_value(existing_operate_password)}\n"
+        )
 
     context.env_path.write_text("".join(filled_lines), encoding="utf-8")
 
@@ -349,13 +345,17 @@ def run_setup(chain_config: str, context: MtdContext) -> None:
         services, _ = operate.service_manager().get_all_services()
         needs_setup = (
             not services
-            or services[0].chain_configs.get(services[0].home_chain, {}).chain_data.multisig
+            or services[0]
+            .chain_configs.get(services[0].home_chain, {})
+            .chain_data.multisig
             is None
         )
 
         if needs_setup:
             click.echo("Setting up operate...")
-            _sanitize_local_quickstart_user_args(context=context, config_path=config_path)
+            _sanitize_local_quickstart_user_args(
+                context=context, config_path=config_path
+            )
             _normalize_template_nullable_env_vars(config_path=config_path)
             _configure_quickstart_env(operate=operate, context=context)
             run_service(
@@ -375,7 +375,9 @@ def run_setup(chain_config: str, context: MtdContext) -> None:
         _setup_private_keys(context=context)
 
         click.echo("Generating metadata...")
-        generate_metadata(packages_dir=context.packages_dir, metadata_path=context.metadata_path)
+        generate_metadata(
+            packages_dir=context.packages_dir, metadata_path=context.metadata_path
+        )
 
         click.echo("Publishing metadata to IPFS...")
         metadata_hash = publish_metadata_to_ipfs(metadata_path=context.metadata_path)

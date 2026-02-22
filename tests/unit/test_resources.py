@@ -18,6 +18,10 @@
 # ------------------------------------------------------------------------------
 """Tests for packaged runtime resources."""
 
+from pathlib import Path
+
+import pytest
+
 from mtd.context import build_context
 from mtd.resources import (
     copy_runtime_templates_to_workspace,
@@ -39,7 +43,9 @@ def test_iter_runtime_templates_contains_chain_configs() -> None:
     assert "config_mech_base.json" in template_names
 
 
-def test_copy_runtime_templates_to_workspace(tmp_path, monkeypatch) -> None:
+def test_copy_runtime_templates_to_workspace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Copying runtime templates should materialize expected files."""
     monkeypatch.setenv("HOME", str(tmp_path))
     context = build_context()

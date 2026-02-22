@@ -104,7 +104,13 @@ class TestAddToolCommand:
         runner = CliRunner()
         result = runner.invoke(
             add_tool,
-            ["myauthor", "mytool", "--skip-lock", "--packages-dir", str(custom_packages)],
+            [
+                "myauthor",
+                "mytool",
+                "--skip-lock",
+                "--packages-dir",
+                str(custom_packages),
+            ],
         )
 
         assert result.exit_code == 0

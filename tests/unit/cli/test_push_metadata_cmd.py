@@ -63,4 +63,6 @@ class TestPushMetadataCommand:
             metadata_path=context.metadata_path,
         )
         mock_publish.assert_called_once()
-        mock_set_key.assert_called_once_with(str(context.env_path), "METADATA_HASH", "f0170abc")
+        mock_set_key.assert_called_once_with(
+            str(context.env_path), "METADATA_HASH", "f0170abc"
+        )
