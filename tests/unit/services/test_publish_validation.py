@@ -81,6 +81,19 @@ def test_validate_valid_metadata(tmp_path: Path) -> None:
     assert msg == ""
 
 
+def test_validate_valid_metadata_schema_without_required(tmp_path: Path) -> None:
+    """Valid metadata with an output schema that omits 'required' should return (True, '')."""
+    schema_no_required = {
+        k: v for k, v in VALID_OUTPUT_SCHEMA.items() if k != "required"
+    }
+    output_no_required = {**VALID_TOOL["output"], "schema": schema_no_required}  # type: ignore[dict-item]
+    tool_no_required = {**VALID_TOOL, "output": output_no_required}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": tool_no_required}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is True
+    assert msg == ""
+
+
 def test_validate_file_not_found(tmp_path: Path) -> None:
     """Non-existent file returns (False, error)."""
     ok, msg = _validate_metadata_file(tmp_path / "missing.json")
@@ -265,6 +278,17 @@ def test_validate_wrong_output_schema_key_type(tmp_path: Path) -> None:
     ok, msg = _validate_metadata_file(_write(tmp_path, data))
     assert ok is False
     assert "str" in msg
+
+
+def test_validate_wrong_output_schema_properties_type(tmp_path: Path) -> None:
+    """Return (False, error) when output schema 'properties' has the wrong type."""
+    broken_schema = {**VALID_OUTPUT_SCHEMA, "properties": "notadict"}  # type: ignore[dict-item]
+    broken_output = {**VALID_TOOL["output"], "schema": broken_schema}  # type: ignore[dict-item]
+    broken_tool = {**VALID_TOOL, "output": broken_output}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": broken_tool}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert "Dict" in msg
 
 
 def test_validate_wrong_properties_value_type(tmp_path: Path) -> None:

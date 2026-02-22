@@ -170,7 +170,7 @@ def update_service_after_deploy(
     chain_config = service.chain_configs[home_chain]
     chain_rpc = chain_config.ledger_config.rpc
     chain_rpc_env_var = f"{home_chain.upper()}_LEDGER_RPC_0"
-    service.update_env_variables_values(
+    result = service.update_env_variables_values(
         {
             "AGENT_ID": agent_id,
             "MECH_TO_CONFIG": json.dumps(
@@ -191,3 +191,5 @@ def update_service_after_deploy(
             chain_rpc_env_var: chain_rpc,
         }
     )
+    if result is False:
+        raise RuntimeError("Service env variable update failed after mech deployment.")

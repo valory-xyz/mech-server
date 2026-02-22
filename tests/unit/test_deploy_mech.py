@@ -345,3 +345,17 @@ class TestUpdateServiceAfterDeploy:
         assert call_args["ON_CHAIN_SERVICE_ID"] == 7
         assert call_args["ETHEREUM_LEDGER_RPC_0"] == "https://rpc.base.test"
         assert call_args["BASE_LEDGER_RPC_0"] == "https://rpc.base.test"
+
+    def test_update_service_after_deploy_raises_on_false_return(self) -> None:
+        """Raise RuntimeError when update_env_variables_values returns False."""
+        mock_service = MagicMock()
+        mock_service.home_chain = "gnosis"
+        mock_chain_config = MagicMock()
+        mock_chain_config.chain_data.token = 1
+        mock_chain_config.ledger_config.rpc = "https://rpc.gnosis.test"
+        mock_service.chain_configs = {"gnosis": mock_chain_config}
+        mock_service.env_variables = {}
+        mock_service.update_env_variables_values.return_value = False
+
+        with pytest.raises(RuntimeError, match="env variable update failed"):
+            update_service_after_deploy(mock_service, "0xMech", "42")

@@ -21,7 +21,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from aea.helpers.cid import to_v1
 from aea_cli_ipfs.ipfs_utils import IPFSTool
@@ -58,7 +58,6 @@ tool_output_schema = {"type": str, "description": str, "schema": Dict}
 
 output_schema_schema = {
     "properties": Dict,
-    "required": List,
     "type": str,
 }
 
@@ -74,144 +73,150 @@ properties_data_schema = {
 }
 
 
-def _validate_metadata_file(  # pylint: disable=too-many-return-statements,too-many-statements
-    file_path: Path,
-) -> Tuple[bool, str]:  # pylint: disable=too-many-return-statements,too-many-statements
-    status = False
-    try:
-        metadata: Dict = json.loads(file_path.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        return (status, f"Error: Metadata file not found at {file_path}")
-    except json.JSONDecodeError:
-        return (status, "Error: Metadata file contains invalid JSON.")
-
+def _validate_metadata_structure(metadata: Dict) -> Optional[str]:
+    """Validate top-level metadata keys and types; return an error string or None."""
     for key, expected_type in metadata_schema.items():
         if key not in metadata:
-            return (status, f"Missing key in metadata json: {key!r}")
-
+            return f"Missing key in metadata json: {key!r}"
         if not isinstance(metadata[key], expected_type):
             expected = expected_type.__name__
             actual = type(metadata[key]).__name__
-            return (
-                status,
-                f"Invalid type for key in metadata json. Expected {expected!r}, but got {actual!r}",
-            )
-
+            return f"Invalid type for key in metadata json. Expected {expected!r}, but got {actual!r}"
     tools = metadata["tools"]
     tools_metadata = metadata["toolMetadata"]
     if len(tools) != len(tools_metadata):
         return (
-            status,
             "Number of tools does not match number of keys in 'toolMetadata'. "
-            f"Expected {len(tools)} but got {len(tools_metadata)}.",
+            f"Expected {len(tools)} but got {len(tools_metadata)}."
         )
+    return None
 
-    for tool in tools:
+
+def _validate_tool_input(tool: str, input_data: Dict) -> Optional[str]:
+    """Validate a tool's input field; return an error string or None."""
+    for i_key, i_expected_type in tool_input_schema.items():
+        if i_key not in input_data:
+            return f"Missing key for {tool} -> input: {i_key!r}"
+        if not isinstance(input_data[i_key], i_expected_type):
+            i_expected = i_expected_type.__name__
+            i_actual = type(input_data[i_key]).__name__
+            return f"Invalid type for {i_key!r} in {tool} -> input. Expected {i_expected!r}, but got {i_actual!r}."
+    return None
+
+
+def _validate_schema_properties(
+    tool: str, properties_data: Dict, required_count: int
+) -> Optional[str]:
+    """Validate output schema properties; return an error string or None."""
+    if len(properties_data) != required_count:
+        return (
+            "Number of properties data does not match number of keys in 'required'. "
+            f"Expected {required_count} but got {len(properties_data)}."
+        )
+    for p_key, p_expected_type in properties_schema.items():
+        if p_key not in properties_data:
+            return (
+                f"Missing key for {tool} -> output -> schema -> properties: {p_key!r}"
+            )
+        if not isinstance(properties_data[p_key], p_expected_type):
+            p_expected = p_expected_type.__name__
+            p_actual = type(properties_data[p_key]).__name__
+            return (
+                f"Invalid type for {p_key!r} in {tool} -> output -> schema -> properties."
+                f" Expected {p_expected!r}, but got {p_actual!r}."
+            )
+        property_data = properties_data[p_key]
+        for pd_key, pd_expected_type in properties_data_schema.items():
+            if pd_key not in property_data:
+                return f"Missing key in properties -> {p_key}: {pd_key!r}"
+            if not isinstance(property_data[pd_key], pd_expected_type):
+                expected = pd_expected_type.__name__
+                actual = type(property_data[pd_key]).__name__
+                return f"Invalid type for key in properties. Expected {expected!r}, but got {actual!r}"
+    return None
+
+
+def _validate_output_schema(tool: str, schema_data: Dict) -> Optional[str]:
+    """Validate a tool's output.schema field; return an error string or None."""
+    for s_key, s_expected_type in output_schema_schema.items():
+        if s_key not in schema_data:
+            return f"Missing key for {tool} -> output -> schema: {s_key!r}"
+        if not isinstance(schema_data[s_key], s_expected_type):
+            s_expected = s_expected_type.__name__
+            s_actual = type(schema_data[s_key]).__name__
+            return (
+                f"Invalid type for {s_key!r} in {tool} -> output -> schema."
+                f" Expected {s_expected!r}, but got {s_actual!r}."
+            )
+    if "required" in schema_data:
+        if not isinstance(schema_data["required"], List):
+            actual = type(schema_data["required"]).__name__
+            return (
+                f"Invalid type for 'required' in {tool} -> output -> schema."
+                f" Expected 'list', but got {actual!r}."
+            )
+        properties_data = schema_data.get("properties", {})
+        required_count = len(schema_data["required"])
+        return _validate_schema_properties(tool, properties_data, required_count)
+    return None
+
+
+def _validate_tool_output(tool: str, output_data: Dict) -> Optional[str]:
+    """Validate a tool's output field; return an error string or None."""
+    for o_key, o_expected_type in tool_output_schema.items():
+        if o_key not in output_data:
+            return f"Missing key for {tool} -> output: {o_key!r}"
+        if not isinstance(output_data[o_key], o_expected_type):
+            o_expected = o_expected_type.__name__
+            o_actual = type(output_data[o_key]).__name__
+            return f"Invalid type for {o_key!r} in {tool} -> output. Expected {o_expected!r}, but got {o_actual!r}."
+        if o_key == "schema":
+            error = _validate_output_schema(tool, output_data[o_key])
+            if error:
+                return error
+    return None
+
+
+def _validate_tool_entry(tool: str, data: Dict) -> Optional[str]:
+    """Validate a single toolMetadata entry; return an error string or None."""
+    for key, expected_type in tool_schema.items():
+        if key not in data:
+            return f"Missing key in toolsMetadata: {key!r}"
+        if not isinstance(data[key], expected_type):
+            expected = expected_type.__name__
+            actual = type(data[key]).__name__
+            return f"Invalid type for key in toolsMetadata. Expected {expected!r}, but got {actual!r}."
+        if key == "input":
+            error = _validate_tool_input(tool, data[key])
+            if error:
+                return error
+        elif key == "output":
+            error = _validate_tool_output(tool, data[key])
+            if error:
+                return error
+    return None
+
+
+def _validate_metadata_file(file_path: Path) -> Tuple[bool, str]:
+    """Validate a metadata JSON file; return (True, '') or (False, error_message)."""
+    try:
+        metadata: Dict = json.loads(file_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return (False, f"Error: Metadata file not found at {file_path}")
+    except json.JSONDecodeError:
+        return (False, "Error: Metadata file contains invalid JSON.")
+
+    error = _validate_metadata_structure(metadata)
+    if error:
+        return (False, error)
+
+    tools_metadata = metadata["toolMetadata"]
+    for tool in metadata["tools"]:
         if tool not in tools_metadata:
-            return (status, f"Missing toolsMetadata for tool: {tool!r}")
-
-        for key, expected_type in tool_schema.items():
-            data = tools_metadata[tool]
-            if key not in data:
-                return (status, f"Missing key in toolsMetadata: {key!r}")
-
-            if not isinstance(data[key], expected_type):
-                expected = expected_type.__name__
-                actual = type(data[key]).__name__
-                return (
-                    status,
-                    f"Invalid type for key in toolsMetadata. Expected {expected!r}, but got {actual!r}.",
-                )
-
-            if key == "input":
-                for i_key, i_expected_type in tool_input_schema.items():
-                    input_data = data[key]
-                    if i_key not in input_data:
-                        return (status, f"Missing key for {tool} -> input: {i_key!r}")
-                    if not isinstance(input_data[i_key], i_expected_type):
-                        i_expected = i_expected_type.__name__
-                        i_actual = type(input_data[i_key]).__name__
-                        return (
-                            status,
-                            f"Invalid type for {i_key!r} in {tool} -> input. Expected {i_expected!r}, but got {i_actual!r}.",
-                        )
-
-            elif key == "output":
-                for o_key, o_expected_type in tool_output_schema.items():
-                    output_data = data[key]
-                    if o_key not in output_data:
-                        return (status, f"Missing key for {tool} -> output: {o_key!r}")
-                    if not isinstance(output_data[o_key], o_expected_type):
-                        o_expected = o_expected_type.__name__
-                        o_actual = type(output_data[o_key]).__name__
-                        return (
-                            status,
-                            f"Invalid type for {o_key!r} in {tool} -> output. Expected {o_expected!r}, but got {o_actual!r}.",
-                        )
-
-                    if o_key == "schema":
-                        output_schema_data = output_data[o_key]
-                        for s_key, s_expected_type in output_schema_schema.items():
-                            if s_key not in output_schema_data:
-                                return (
-                                    status,
-                                    f"Missing key for {tool} -> output -> schema: {s_key!r}",
-                                )
-                            if not isinstance(
-                                output_schema_data[s_key], s_expected_type
-                            ):
-                                s_expected = s_expected_type.__name__
-                                s_actual = type(output_schema_data[s_key]).__name__
-                                return (
-                                    status,
-                                    f"Invalid type for {s_key!r} in {tool} -> output -> schema. Expected {s_expected!r}, but got {s_actual!r}.",
-                                )
-
-                        if "required" in output_schema_data:
-                            properties_data = output_schema_data.get("properties", {})
-                            required = output_schema_data.get("required", [])
-                            if len(properties_data) != len(required):
-                                return (
-                                    status,
-                                    "Number of properties data does not match number of keys in 'required'. "
-                                    f"Expected {len(required)} but got {len(properties_data)}.",
-                                )
-
-                            for p_key, p_expected_type in properties_schema.items():
-                                if p_key not in properties_data:
-                                    return (
-                                        status,
-                                        f"Missing key for {tool} -> output -> schema -> properties: {p_key!r}",
-                                    )
-                                if not isinstance(
-                                    properties_data[p_key], p_expected_type
-                                ):
-                                    p_expected = p_expected_type.__name__
-                                    p_actual = type(properties_data[p_key]).__name__
-                                    return (
-                                        status,
-                                        f"Invalid type for {p_key!r} in {tool} -> output -> schema -> properties. Expected {p_expected!r}, but got {p_actual!r}.",
-                                    )
-
-                                for (
-                                    pd_key,
-                                    pd_expected_type,
-                                ) in properties_data_schema.items():
-                                    property_data = properties_data[p_key]
-                                    if pd_key not in property_data:
-                                        return (
-                                            status,
-                                            f"Missing key in properties -> {p_key}: {pd_key!r}",
-                                        )
-                                    if not isinstance(
-                                        property_data[pd_key], pd_expected_type
-                                    ):
-                                        expected = pd_expected_type.__name__
-                                        actual = type(property_data[pd_key]).__name__
-                                        return (
-                                            status,
-                                            f"Invalid type for key in properties. Expected {expected!r}, but got {actual!r}",
-                                        )
+            return (False, f"Missing toolsMetadata for tool: {tool!r}")
+        error = _validate_tool_entry(tool, tools_metadata[tool])
+        if error:
+            return (False, error)
 
     return (True, "")
 

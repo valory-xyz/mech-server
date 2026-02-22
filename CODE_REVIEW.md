@@ -14,10 +14,10 @@ Generated from a full codebase review. Items are grouped by severity and tracked
 
 ## High
 
-- [ ] **Inconsistent error handling in `update_onchain.py`** — `_load_env()` raises, `_fetch_metadata_hash()` returns silently, `_send_safe_tx()` wraps as `RuntimeError`. Establish a consistent strategy.
-- [ ] **128-line `_validate_metadata_file()` in `publish.py`** — 5+ levels of nesting, untestable in parts. Break into focused helper functions (`_validate_metadata_structure`, `_validate_tool_metadata`, `_validate_output_schema`, etc.).
-- [ ] **`add_tool_cmd.py` uses raw `Path(__file__).parent` for templates** — should use `importlib.resources` as already done in `resources.py`.
-- [ ] **`update_service_after_deploy()` ignores return value** — `service.update_env_variables_values()` result is never checked; silent failures possible.
+- [x] **Inconsistent error handling in `update_onchain.py`** — strategy unified: input errors raise `ValueError`, execution failures raise `RuntimeError`. `_fetch_metadata_hash()` now raises `ValueError` for an empty/invalid CID instead of silently returning `b""`.
+- [x] **128-line `_validate_metadata_file()` in `publish.py`** — refactored into six focused helpers: `_validate_metadata_structure`, `_validate_tool_entry`, `_validate_tool_input`, `_validate_tool_output`, `_validate_output_schema`, `_validate_schema_properties`. Also removed `"required"` from `output_schema_schema` (making it an optional JSON schema field) and added an explicit type-check in `_validate_output_schema`. All existing tests continue to pass; 2 new tests added.
+- [x] **`add_tool_cmd.py` uses raw `Path(__file__).parent` for templates** — replaced `CURRENT_DIR`/`TEMPLATES_PATH` with `importlib.resources` via a `_read_template()` helper; `TEMPLATES_PACKAGE = "mtd.templates"` constant mirrors pattern in `resources.py`.
+- [x] **`update_service_after_deploy()` ignores return value** — result of `update_env_variables_values()` now captured; raises `RuntimeError` if it returns `False`. Test added for the failure path.
 
 ---
 
