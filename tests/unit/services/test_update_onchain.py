@@ -116,11 +116,11 @@ def test_load_env_returns_dict_when_all_vars_present(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_fetch_metadata_hash_returns_empty_bytes_for_empty_cid() -> None:
-    """Return b'' when multibase decode yields empty bytes."""
+def test_fetch_metadata_hash_raises_for_empty_cid() -> None:
+    """Raise ValueError when multibase decode yields empty bytes."""
     with patch(f"{MOD}.multibase.decode", return_value=b""):
-        result = _fetch_metadata_hash("f0invalid")
-    assert result == b""
+        with pytest.raises(ValueError, match="Invalid or empty metadata hash CID"):
+            _fetch_metadata_hash("f0invalid")
 
 
 def test_fetch_metadata_hash_returns_bytes_for_valid_cid() -> None:

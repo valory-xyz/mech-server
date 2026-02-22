@@ -85,7 +85,7 @@ def _fetch_metadata_hash(metadata_hash: str) -> bytes:
     """Convert metadata CID to bytes for contract call."""
     cid_bytes = multibase.decode(metadata_hash)
     if not cid_bytes:
-        return b""
+        raise ValueError(f"Invalid or empty metadata hash CID: {metadata_hash!r}")
     multihash_bytes = multicodec.remove_prefix(cid_bytes)
     hex_multihash = multihash_bytes.hex()
     metadata_str = hex_multihash[6:]

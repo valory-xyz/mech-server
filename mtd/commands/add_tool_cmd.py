@@ -19,6 +19,7 @@
 
 """Add-tool command for scaffolding new mech tools."""
 
+from importlib import resources
 from pathlib import Path
 from string import Template
 from time import localtime
@@ -31,18 +32,25 @@ from autonomy.cli.packages import get_package_manager
 from mtd.commands.context_utils import get_mtd_context, require_initialized
 
 
-CURRENT_DIR = Path(__file__).parent.parent
 CUSTOMS_DIR = "customs"
 PY_SUFFIX = ".py"
 INIT_FILENAME = f"__init__{PY_SUFFIX}"
 CONFIG_FILENAME = "component.yaml"
 TEMPLATE_SUFFIX = ".template"
-TEMPLATES_PATH = CURRENT_DIR / "templates"
+TEMPLATES_PACKAGE = "mtd.templates"
 INIT_TEMPLATE = f"init{TEMPLATE_SUFFIX}"
 CONFIG_TEMPLATE = f"config{TEMPLATE_SUFFIX}"
 TOOL_TEMPLATE = f"tool{TEMPLATE_SUFFIX}"
 WRITE_MODE = "w"
-READ_MODE = "r"
+
+
+def _read_template(template_name: str) -> str:
+    """Read a scaffolding template from the mtd.templates package."""
+    return (
+        resources.files(TEMPLATES_PACKAGE)
+        .joinpath(template_name)
+        .read_text(encoding="utf-8")
+    )
 
 
 def generate_tool_file(
@@ -53,8 +61,7 @@ def generate_tool_file(
     packages_dir: Path,
 ) -> None:
     """Generate a file from a template."""
-    with open(TEMPLATES_PATH / template_name, READ_MODE, encoding="utf-8") as file:
-        template = Template(file.read())
+    template = Template(_read_template(template_name))
     content = template.substitute(**template_params)
 
     if filename != INIT_FILENAME:

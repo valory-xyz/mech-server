@@ -25,6 +25,7 @@ from click.testing import CliRunner
 
 from mtd.commands.add_tool_cmd import (
     INIT_FILENAME,
+    _read_template,
     add_tool,
     generate_tool,
     generate_tool_file,
@@ -39,18 +40,12 @@ class TestGenerateToolFile:
 
     def test_non_init_file_written_only_to_tool_path(self, tmp_path: Path) -> None:
         """Non-__init__ file is written once at tool_path/filename."""
-        template_dir = tmp_path / "templates"
-        template_dir.mkdir()
-        (template_dir / "tool.template").write_text(
-            "tool: $tool_name", encoding="utf-8"
-        )
-
         packages_dir = tmp_path / "packages"
         packages_dir.mkdir()
         tool_path = packages_dir / "author" / "customs" / "my_tool"
         tool_path.mkdir(parents=True)
 
-        with patch(f"{MOCK_PATH}.TEMPLATES_PATH", template_dir):
+        with patch(f"{MOCK_PATH}._read_template", return_value="tool: $tool_name"):
             generate_tool_file(
                 "tool.template",
                 {"tool_name": "my_tool"},
@@ -65,17 +60,13 @@ class TestGenerateToolFile:
 
     def test_init_file_cascades_up_to_packages_dir(self, tmp_path: Path) -> None:
         """__init__.py is written at tool_path and every ancestor up to packages_dir."""
-        template_dir = tmp_path / "templates"
-        template_dir.mkdir()
-        (template_dir / "init.template").write_text("# init", encoding="utf-8")
-
         packages_dir = tmp_path / "packages"
         author_dir = packages_dir / "author"
         customs_dir = author_dir / "customs"
         tool_path = customs_dir / "my_tool"
         tool_path.mkdir(parents=True)
 
-        with patch(f"{MOCK_PATH}.TEMPLATES_PATH", template_dir):
+        with patch(f"{MOCK_PATH}._read_template", return_value="# init"):
             generate_tool_file(
                 "init.template",
                 {},
@@ -92,17 +83,15 @@ class TestGenerateToolFile:
 
     def test_template_substitution_applied(self, tmp_path: Path) -> None:
         """Template variables are substituted in the output."""
-        template_dir = tmp_path / "templates"
-        template_dir.mkdir()
-        (template_dir / "config.template").write_text(
-            "author: $authorname\nyear: $year", encoding="utf-8"
-        )
         packages_dir = tmp_path / "packages"
         packages_dir.mkdir()
         tool_path = packages_dir / "author" / "customs" / "tool"
         tool_path.mkdir(parents=True)
 
-        with patch(f"{MOCK_PATH}.TEMPLATES_PATH", template_dir):
+        with patch(
+            f"{MOCK_PATH}._read_template",
+            return_value="author: $authorname\nyear: $year",
+        ):
             generate_tool_file(
                 "config.template",
                 {"authorname": "valory", "year": "2026"},
@@ -129,6 +118,20 @@ class TestGenerateToolFile:
         # Tool directory should have been created
         tool_path = packages_dir / "alice" / "customs" / "mytool"
         assert tool_path.is_dir()
+
+    def test_read_template_uses_importlib_resources(self) -> None:
+        """_read_template reads content via importlib.resources."""
+        with patch(f"{MOCK_PATH}.resources") as mock_resources:
+            mock_resources.files.return_value.joinpath.return_value.read_text.return_value = (
+                "template content"
+            )
+            result = _read_template("tool.template")
+
+        assert result == "template content"
+        mock_resources.files.assert_called_once_with("mtd.templates")
+        mock_resources.files.return_value.joinpath.assert_called_once_with(
+            "tool.template"
+        )
 
 
 class TestAddToolCommand:
