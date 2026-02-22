@@ -24,6 +24,7 @@ from unittest.mock import MagicMock, patch
 
 from mtd.context import build_context
 from mtd.setup_flow import (
+    _normalize_nullable_env_vars,
     _normalize_service_nullable_env_vars,
     _normalize_template_nullable_env_vars,
     run_setup,
@@ -106,6 +107,54 @@ def test_run_setup_passes_explicit_operate_home(
         env_path=context.env_path,
         private_key_path=context.keys_dir / "ethereum_private_key.txt",
     )
+
+
+def test_normalize_nullable_env_vars_empty_string_converted() -> None:
+    """Empty string values for nullable vars are replaced with defaults."""
+    env_variables = {
+        "ON_CHAIN_SERVICE_ID": {"value": ""},
+        "MECH_TO_CONFIG": {"value": ""},
+        "MECH_TO_MAX_DELIVERY_RATE": {"value": ""},
+    }
+    changed = _normalize_nullable_env_vars(env_variables)
+    assert changed is True
+    assert env_variables["ON_CHAIN_SERVICE_ID"]["value"] == "null"
+    assert env_variables["MECH_TO_CONFIG"]["value"] == "{}"
+    assert env_variables["MECH_TO_MAX_DELIVERY_RATE"]["value"] == "{}"
+
+
+def test_normalize_nullable_env_vars_none_value_converted() -> None:
+    """None values for nullable vars are replaced with defaults."""
+    env_variables = {"ON_CHAIN_SERVICE_ID": {"value": None}}
+    changed = _normalize_nullable_env_vars(env_variables)
+    assert changed is True
+    assert env_variables["ON_CHAIN_SERVICE_ID"]["value"] == "null"
+
+
+def test_normalize_nullable_env_vars_already_set_unchanged() -> None:
+    """Non-empty values are not modified; returns False."""
+    env_variables = {
+        "ON_CHAIN_SERVICE_ID": {"value": "42"},
+        "MECH_TO_CONFIG": {"value": '{"key": "val"}'},
+    }
+    changed = _normalize_nullable_env_vars(env_variables)
+    assert changed is False
+    assert env_variables["ON_CHAIN_SERVICE_ID"]["value"] == "42"
+
+
+def test_normalize_nullable_env_vars_skips_non_dict_entry() -> None:
+    """env_data that is not a dict is silently skipped."""
+    env_variables = {"ON_CHAIN_SERVICE_ID": "not-a-dict"}
+    changed = _normalize_nullable_env_vars(env_variables)
+    assert changed is False
+    assert env_variables["ON_CHAIN_SERVICE_ID"] == "not-a-dict"
+
+
+def test_normalize_nullable_env_vars_missing_key_is_skipped() -> None:
+    """Nullable var absent from env_variables causes no change."""
+    env_variables: dict = {}
+    changed = _normalize_nullable_env_vars(env_variables)
+    assert changed is False
 
 
 def test_normalize_template_nullable_env_vars(tmp_path: Path) -> None:

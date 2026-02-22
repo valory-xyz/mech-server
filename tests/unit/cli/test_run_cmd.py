@@ -18,15 +18,77 @@
 # ------------------------------------------------------------------------------
 """Tests for run command."""
 
+import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import click
+import pytest
 from click.testing import CliRunner
 
-from mtd.commands.run_cmd import run
+from mtd.commands.run_cmd import _get_latest_service_hash, run
 
 
 MOCK_PATH = "mtd.commands.run_cmd"
+
+
+class TestGetLatestServiceHash:
+    """Tests for _get_latest_service_hash."""
+
+    @patch(f"{MOCK_PATH}.subprocess.run")
+    def test_raises_when_packages_json_missing(
+        self, mock_subproc: MagicMock, tmp_path: Path
+    ) -> None:
+        """Raise ClickException when packages.json does not exist."""
+        context = MagicMock()
+        context.workspace_path = tmp_path
+        context.packages_dir = tmp_path / "packages"
+        # packages.json is deliberately not created
+
+        with pytest.raises(click.ClickException, match="Could not determine"):
+            _get_latest_service_hash(context)
+
+    @patch(f"{MOCK_PATH}.subprocess.run")
+    def test_raises_when_no_matching_hash(
+        self, mock_subproc: MagicMock, tmp_path: Path
+    ) -> None:
+        """Raise ClickException when packages.json has no service/mech entry."""
+        context = MagicMock()
+        context.workspace_path = tmp_path
+        context.packages_dir = tmp_path / "packages"
+        context.packages_dir.mkdir()
+        (context.packages_dir / "packages.json").write_text(
+            json.dumps({"dev": {"author/connection/name/0.1.0": "abc123"}}),
+            encoding="utf-8",
+        )
+
+        with pytest.raises(click.ClickException, match="Could not determine"):
+            _get_latest_service_hash(context)
+
+    @patch(f"{MOCK_PATH}.subprocess.run")
+    def test_returns_matching_service_hash(
+        self, mock_subproc: MagicMock, tmp_path: Path
+    ) -> None:
+        """Returns the first hash matching 'service' and 'mech' in the key."""
+        context = MagicMock()
+        context.workspace_path = tmp_path
+        context.packages_dir = tmp_path / "packages"
+        context.packages_dir.mkdir()
+        (context.packages_dir / "packages.json").write_text(
+            json.dumps(
+                {
+                    "dev": {
+                        "valory/service/mech/0.1.0": "bafymechhash",
+                        "valory/skill/other/0.1.0": "otherhash",
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = _get_latest_service_hash(context)
+
+        assert result == "bafymechhash"
 
 
 class TestRunCommand:
