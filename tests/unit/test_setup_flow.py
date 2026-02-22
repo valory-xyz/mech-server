@@ -19,6 +19,7 @@
 """Tests for setup flow behavior."""
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -27,6 +28,7 @@ import pytest
 
 from mtd.context import build_context
 from mtd.setup_flow import (
+    _configure_quickstart_env,
     _create_private_key_files,
     _deploy_mech,
     _get_password,
@@ -636,3 +638,131 @@ def test_setup_env_raises_when_no_config(
 
     with pytest.raises(FileNotFoundError, match="No operate config found"):
         _setup_env(context=context)
+
+
+# ---------------------------------------------------------------------------
+# _configure_quickstart_env
+# ---------------------------------------------------------------------------
+
+
+def test_configure_quickstart_env_sets_password_and_attended(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Set OPERATE_PASSWORD and ATTENDED env vars after getting password."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    operate = MagicMock()
+
+    with patch(f"{MOD}._get_password", return_value="mypassword") as mock_pwd:
+        _configure_quickstart_env(operate=operate, context=context)
+
+    mock_pwd.assert_called_once_with(operate=operate, context=context)
+    assert os.environ["OPERATE_PASSWORD"] == "mypassword"
+    assert os.environ["ATTENDED"] == "true"
+
+
+# ---------------------------------------------------------------------------
+# _sanitize_local_quickstart_user_args — additional branches
+# ---------------------------------------------------------------------------
+
+
+def test_sanitize_quickstart_user_args_not_dict_returns_early(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Return early when user_provided_args is not a dict."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({"name": "Mech"}), encoding="utf-8")
+    quickstart_path = context.operate_dir / "Mech-quickstart-config.json"
+    quickstart_path.parent.mkdir(parents=True, exist_ok=True)
+    quickstart_path.write_text(
+        json.dumps({"user_provided_args": "notadict"}), encoding="utf-8"
+    )
+
+    _sanitize_local_quickstart_user_args(context=context, config_path=config_path)
+
+    # File should be unchanged (no replacement occurred)
+    result = json.loads(quickstart_path.read_text(encoding="utf-8"))
+    assert result["user_provided_args"] == "notadict"
+
+
+def test_sanitize_quickstart_skips_non_user_provision_type(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Skip env vars whose provision_type is not 'user'."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "name": "Mech",
+                "env_variables": {
+                    "MY_VAR": {"provision_type": "system", "value": "default"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    quickstart_path = context.operate_dir / "Mech-quickstart-config.json"
+    quickstart_path.parent.mkdir(parents=True, exist_ok=True)
+    quickstart_path.write_text(
+        json.dumps({"user_provided_args": {"MY_VAR": ""}}), encoding="utf-8"
+    )
+
+    _sanitize_local_quickstart_user_args(context=context, config_path=config_path)
+
+    result = json.loads(quickstart_path.read_text(encoding="utf-8"))
+    assert result["user_provided_args"]["MY_VAR"] == ""
+
+
+def test_sanitize_quickstart_skips_env_var_absent_from_user_args(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Skip env vars that are not present in user_provided_args."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "name": "Mech",
+                "env_variables": {
+                    "MISSING_VAR": {"provision_type": "user", "value": "default"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    quickstart_path = context.operate_dir / "Mech-quickstart-config.json"
+    quickstart_path.parent.mkdir(parents=True, exist_ok=True)
+    quickstart_path.write_text(json.dumps({"user_provided_args": {}}), encoding="utf-8")
+
+    _sanitize_local_quickstart_user_args(context=context, config_path=config_path)
+
+    result = json.loads(quickstart_path.read_text(encoding="utf-8"))
+    assert result["user_provided_args"] == {}
+
+
+# ---------------------------------------------------------------------------
+# run_setup — missing config path
+# ---------------------------------------------------------------------------
+
+
+@patch(f"{MOD}._workspace_cwd")
+@patch(f"{MOD}.OperateApp")
+def test_run_setup_raises_when_config_missing(
+    mock_operate_app: MagicMock,
+    mock_cwd: MagicMock,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Raise ClickException when the chain config template file is absent."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.config_dir.mkdir(parents=True, exist_ok=True)
+    # config_mech_polygon.json deliberately not created
+
+    with pytest.raises(click.ClickException, match="Missing template config"):
+        run_setup(chain_config="polygon", context=context)

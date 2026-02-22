@@ -23,7 +23,12 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from mtd.commands.add_tool_cmd import INIT_FILENAME, add_tool, generate_tool_file
+from mtd.commands.add_tool_cmd import (
+    INIT_FILENAME,
+    add_tool,
+    generate_tool,
+    generate_tool_file,
+)
 
 
 MOCK_PATH = "mtd.commands.add_tool_cmd"
@@ -109,6 +114,21 @@ class TestGenerateToolFile:
         content = (tool_path / "component.yaml").read_text(encoding="utf-8")
         assert "author: valory" in content
         assert "year: 2026" in content
+
+    def test_generate_tool_calls_file_generator_for_each_template(
+        self, tmp_path: Path
+    ) -> None:
+        """generate_tool delegates to generate_tool_file for every template."""
+        packages_dir = tmp_path / "packages"
+
+        with patch(f"{MOCK_PATH}.generate_tool_file") as mock_gen:
+            generate_tool("alice", "mytool", "My tool description.", packages_dir)
+
+        # init, config, and tool templates → 3 calls
+        assert mock_gen.call_count == 3
+        # Tool directory should have been created
+        tool_path = packages_dir / "alice" / "customs" / "mytool"
+        assert tool_path.is_dir()
 
 
 class TestAddToolCommand:

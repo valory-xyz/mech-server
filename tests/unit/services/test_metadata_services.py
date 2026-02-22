@@ -18,11 +18,14 @@
 # ------------------------------------------------------------------------------
 """Tests for metadata service modules."""
 
+import importlib.util
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from mtd.services.metadata.generate import generate_metadata
+import pytest
+
+from mtd.services.metadata.generate import _import_module_from_path, generate_metadata
 from mtd.services.metadata.publish import publish_metadata_to_ipfs
 from mtd.services.metadata.update_onchain import update_metadata_onchain
 
@@ -48,6 +51,47 @@ def test_generate_metadata_creates_file(tmp_path: Path) -> None:
     assert output == metadata_path
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     assert "echo" in metadata["tools"]
+
+
+def test_generate_metadata_raises_when_packages_dir_missing(tmp_path: Path) -> None:
+    """Raise FileNotFoundError when packages_dir does not exist."""
+    with pytest.raises(FileNotFoundError, match="Packages directory not found"):
+        generate_metadata(
+            packages_dir=tmp_path / "nonexistent",
+            metadata_path=tmp_path / "metadata.json",
+        )
+
+
+def test_generate_metadata_skips_non_py_init_and_non_file(tmp_path: Path) -> None:
+    """Skip __init__.py, non-py files, and subdirectories inside a tool folder."""
+    packages_dir = tmp_path / "packages"
+    tool_dir = packages_dir / "alice" / "customs" / "echo"
+    tool_dir.mkdir(parents=True)
+
+    (tool_dir / "component.yaml").write_text(
+        "author: alice\nname: echo\ndescription: Echo tool\n", encoding="utf-8"
+    )
+    (tool_dir / "echo.py").write_text("ALLOWED_TOOLS = ['echo']\n", encoding="utf-8")
+    # These should all be skipped without error:
+    (tool_dir / "__init__.py").write_text("", encoding="utf-8")
+    (tool_dir / "notes.txt").write_text("some notes", encoding="utf-8")
+    (tool_dir / "subdir").mkdir()
+
+    metadata_path = tmp_path / "metadata.json"
+    generate_metadata(packages_dir=packages_dir, metadata_path=metadata_path)
+
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    assert "echo" in metadata["tools"]
+
+
+def test_import_module_from_path_raises_when_spec_is_none(tmp_path: Path) -> None:
+    """Raise RuntimeError when importlib cannot build a spec for the file."""
+    dummy = tmp_path / "dummy.py"
+    dummy.write_text("x = 1", encoding="utf-8")
+
+    with patch.object(importlib.util, "spec_from_file_location", return_value=None):
+        with pytest.raises(RuntimeError, match="Cannot load module"):
+            _import_module_from_path("dummy", dummy)
 
 
 @patch(

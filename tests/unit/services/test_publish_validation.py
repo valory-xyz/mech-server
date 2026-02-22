@@ -20,10 +20,17 @@
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
-from mtd.services.metadata.publish import _validate_metadata_file
+from mtd.services.metadata.publish import (
+    _validate_metadata_file,
+    publish_metadata_to_ipfs,
+)
+
+
+PUB_MOD = "mtd.services.metadata.publish"
 
 
 VALID_PROPERTIES = {
@@ -226,3 +233,92 @@ def test_validate_wrong_properties_data_type(tmp_path: Path) -> None:
     ok, msg = _validate_metadata_file(_write(tmp_path, data))
     assert ok is False
     assert "str" in msg
+
+
+def test_validate_tool_key_in_tools_but_absent_from_toolmetadata(
+    tmp_path: Path,
+) -> None:
+    """Return (False, error) when tool name is in tools but not a key in toolMetadata."""
+    # counts match (1 == 1) but "toolA" is not a key in toolMetadata
+    data = {**VALID_METADATA, "tools": ["toolA"], "toolMetadata": {"toolB": VALID_TOOL}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert "toolA" in msg
+
+
+def test_validate_wrong_output_field_type(tmp_path: Path) -> None:
+    """Return (False, error) when an output field has the wrong type."""
+    broken_output = {**VALID_TOOL["output"], "type": 42}  # type: ignore[dict-item]
+    broken_tool = {**VALID_TOOL, "output": broken_output}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": broken_tool}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert "str" in msg
+
+
+def test_validate_wrong_output_schema_key_type(tmp_path: Path) -> None:
+    """Return (False, error) when an output schema key has the wrong type."""
+    broken_schema = {**VALID_OUTPUT_SCHEMA, "required": "notalist"}  # type: ignore[dict-item]
+    broken_output = {**VALID_TOOL["output"], "schema": broken_schema}  # type: ignore[dict-item]
+    broken_tool = {**VALID_TOOL, "output": broken_output}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": broken_tool}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert "str" in msg
+
+
+def test_validate_wrong_properties_value_type(tmp_path: Path) -> None:
+    """Return (False, error) when a property entry is not a dict."""
+    broken_props = {**VALID_PROPERTIES, "requestId": "notadict"}  # type: ignore[dict-item]
+    broken_schema = {**VALID_OUTPUT_SCHEMA, "properties": broken_props}
+    broken_output = {**VALID_TOOL["output"], "schema": broken_schema}  # type: ignore[dict-item]
+    broken_tool = {**VALID_TOOL, "output": broken_output}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": broken_tool}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert "Dict" in msg
+
+
+def test_validate_missing_property_sub_key(tmp_path: Path) -> None:
+    """Return (False, error) when a property entry is missing type or description."""
+    broken_props = {
+        **VALID_PROPERTIES,
+        "requestId": {"type": "str"},
+    }  # missing description
+    broken_schema = {**VALID_OUTPUT_SCHEMA, "properties": broken_props}
+    broken_output = {**VALID_TOOL["output"], "schema": broken_schema}  # type: ignore[dict-item]
+    broken_tool = {**VALID_TOOL, "output": broken_output}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": broken_tool}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert "description" in msg
+
+
+# ---------------------------------------------------------------------------
+# publish_metadata_to_ipfs error paths
+# ---------------------------------------------------------------------------
+
+
+def test_publish_metadata_raises_when_validation_fails(tmp_path: Path) -> None:
+    """Raise ValueError when metadata file fails validation."""
+    invalid = _write(tmp_path, {"name": "only-name"})
+    with pytest.raises(ValueError):
+        publish_metadata_to_ipfs(metadata_path=invalid)
+
+
+def test_publish_metadata_raises_on_ipfs_exception(tmp_path: Path) -> None:
+    """Raise RuntimeError when the IPFS client raises an exception."""
+    valid = _write(tmp_path, {**VALID_METADATA})
+    with patch(f"{PUB_MOD}.IPFSTool") as mock_ipfs:
+        mock_ipfs.return_value.client.add.side_effect = OSError("IPFS unavailable")
+        with pytest.raises(RuntimeError, match="Error pushing metadata to ipfs"):
+            publish_metadata_to_ipfs(metadata_path=valid)
+
+
+def test_publish_metadata_raises_when_hash_key_missing(tmp_path: Path) -> None:
+    """Raise RuntimeError when the IPFS response has no 'Hash' key."""
+    valid = _write(tmp_path, {**VALID_METADATA})
+    with patch(f"{PUB_MOD}.IPFSTool") as mock_ipfs:
+        mock_ipfs.return_value.client.add.return_value = {"NotHash": "somecid"}
+        with pytest.raises(RuntimeError, match="not found in ipfs response"):
+            publish_metadata_to_ipfs(metadata_path=valid)
