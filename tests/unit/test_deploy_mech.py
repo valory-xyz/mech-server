@@ -171,6 +171,34 @@ class TestDeployMech:
         assert mech_address == "0xMechAddress"
         assert agent_id == "42"
 
+    @patch(f"{MOD}.requests")
+    def test_deploy_mech_raises_on_network_error(
+        self, mock_requests: MagicMock
+    ) -> None:
+        """Raise ClickException when the ABI request fails with a network error."""
+        mock_requests.RequestException = Exception
+        mock_requests.get.side_effect = Exception("connection refused")
+        mock_service = _make_mock_service()
+        mock_sftxb = _make_mock_sftxb()
+
+        with pytest.raises(
+            click.ClickException, match="Failed to fetch MechMarketplace ABI"
+        ):
+            deploy_mech(sftxb=mock_sftxb, service=mock_service)
+
+    @patch(f"{MOD}.requests")
+    def test_deploy_mech_raises_on_missing_abi_key(
+        self, mock_requests: MagicMock
+    ) -> None:
+        """Raise ClickException when the ABI response is missing the 'abi' key."""
+        mock_requests.RequestException = type("RequestException", (Exception,), {})
+        mock_requests.get.return_value.json.return_value = {"notabi": []}
+        mock_service = _make_mock_service()
+        mock_sftxb = _make_mock_sftxb()
+
+        with pytest.raises(click.ClickException, match="Unexpected response format"):
+            deploy_mech(sftxb=mock_sftxb, service=mock_service)
+
     def test_deploy_mech_raises_for_unrecognised_chain(self) -> None:
         """Raise ClickException when Chain.from_string rejects the chain string."""
         mock_service = _make_mock_service(home_chain="badchain")

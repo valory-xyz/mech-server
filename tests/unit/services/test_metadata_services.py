@@ -94,6 +94,24 @@ def test_import_module_from_path_raises_when_spec_is_none(tmp_path: Path) -> Non
             _import_module_from_path("dummy", dummy)
 
 
+def test_import_module_from_path_raises_on_syntax_error(tmp_path: Path) -> None:
+    """Raise RuntimeError wrapping SyntaxError when the module has invalid syntax."""
+    bad = tmp_path / "bad.py"
+    bad.write_text("def broken(: pass", encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="Syntax error in module"):
+        _import_module_from_path("bad", bad)
+
+
+def test_import_module_from_path_raises_on_import_error(tmp_path: Path) -> None:
+    """Raise RuntimeError wrapping ImportError when the module has a bad import."""
+    bad = tmp_path / "bad_import.py"
+    bad.write_text("import nonexistent_package_xyz\n", encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="Failed to load module"):
+        _import_module_from_path("bad_import", bad)
+
+
 @patch(
     "mtd.services.metadata.publish.multicodec.remove_prefix",
     return_value=bytes.fromhex("1220" + "ab" * 32),

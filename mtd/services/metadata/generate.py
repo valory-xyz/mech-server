@@ -77,7 +77,16 @@ def _import_module_from_path(module_name: str, file_path: Path) -> ModuleType:
         raise RuntimeError(f"Cannot load module {module_name!r} from {file_path!s}")
 
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    try:
+        spec.loader.exec_module(module)
+    except SyntaxError as exc:
+        raise RuntimeError(
+            f"Syntax error in module {module_name!r} at {file_path}: {exc}"
+        ) from exc
+    except Exception as exc:  # pylint: disable=broad-except
+        raise RuntimeError(
+            f"Failed to load module {module_name!r} from {file_path}: {exc}"
+        ) from exc
     return module
 
 
