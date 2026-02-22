@@ -22,11 +22,21 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import click
+import pytest
+
 from mtd.context import build_context
 from mtd.setup_flow import (
+    _create_private_key_files,
+    _deploy_mech,
+    _get_password,
     _normalize_nullable_env_vars,
     _normalize_service_nullable_env_vars,
     _normalize_template_nullable_env_vars,
+    _read_and_update_env,
+    _sanitize_local_quickstart_user_args,
+    _setup_env,
+    _setup_private_keys,
     run_setup,
 )
 
@@ -209,3 +219,420 @@ def test_normalize_service_nullable_env_vars(
     assert data["env_variables"]["ON_CHAIN_SERVICE_ID"]["value"] == "null"
     assert data["env_variables"]["MECH_TO_CONFIG"]["value"] == "{}"
     assert data["env_variables"]["MECH_TO_MAX_DELIVERY_RATE"]["value"] == "{}"
+
+
+# ---------------------------------------------------------------------------
+# _create_private_key_files
+# ---------------------------------------------------------------------------
+
+
+def test_create_private_key_files_creates_both(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Create both key files when neither exists."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    data = {"private_key": "0xdeadbeef", "address": "0xabc"}
+
+    _create_private_key_files(data=data, context=context)
+
+    agent_key = context.keys_dir / "ethereum_private_key.txt"
+    service_key = context.keys_dir / "keys.json"
+    assert agent_key.read_text(encoding="utf-8") == "0xdeadbeef"
+    assert json.loads(service_key.read_text(encoding="utf-8")) == [data]
+
+
+def test_create_private_key_files_skips_existing_agent_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Skip writing agent key when file already exists."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.keys_dir.mkdir(parents=True, exist_ok=True)
+    agent_key = context.keys_dir / "ethereum_private_key.txt"
+    agent_key.write_text("ORIGINAL", encoding="utf-8")
+
+    _create_private_key_files(
+        data={"private_key": "NEW", "address": "0xabc"}, context=context
+    )
+
+    assert agent_key.read_text(encoding="utf-8") == "ORIGINAL"
+
+
+def test_create_private_key_files_skips_existing_service_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Skip writing service key when file already exists."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.keys_dir.mkdir(parents=True, exist_ok=True)
+    service_key = context.keys_dir / "keys.json"
+    service_key.write_text('[{"original": true}]', encoding="utf-8")
+
+    _create_private_key_files(
+        data={"private_key": "NEW", "address": "0xabc"}, context=context
+    )
+
+    assert json.loads(service_key.read_text(encoding="utf-8")) == [{"original": True}]
+
+
+# ---------------------------------------------------------------------------
+# _deploy_mech
+# ---------------------------------------------------------------------------
+
+
+def test_deploy_mech_returns_early_when_no_services() -> None:
+    """Return immediately when no services are registered."""
+    operate = MagicMock()
+    manager = MagicMock()
+    manager.get_all_services.return_value = ([], None)
+    operate.service_manager.return_value = manager
+
+    # needs_mech_deployment is imported lazily inside _deploy_mech, so no
+    # patch needed here — the early-return guard fires before it is called.
+    with patch("mtd.deploy_mech.deploy_mech") as mock_deploy:
+        _deploy_mech(operate)
+
+    mock_deploy.assert_not_called()
+
+
+def test_deploy_mech_skips_when_already_deployed() -> None:
+    """Print skip message when mech is already deployed."""
+    operate = MagicMock()
+    service = MagicMock()
+    manager = MagicMock()
+    manager.get_all_services.return_value = ([service], None)
+    operate.service_manager.return_value = manager
+
+    with patch("mtd.deploy_mech.needs_mech_deployment", return_value=False), patch(
+        "mtd.deploy_mech.deploy_mech"
+    ) as mock_deploy:
+        _deploy_mech(operate)
+
+    mock_deploy.assert_not_called()
+
+
+def test_deploy_mech_deploys_when_needed() -> None:
+    """Deploy mech and print address when deployment is required."""
+    operate = MagicMock()
+    service = MagicMock()
+    manager = MagicMock()
+    manager.get_all_services.return_value = ([service], None)
+    operate.service_manager.return_value = manager
+
+    with patch("mtd.deploy_mech.needs_mech_deployment", return_value=True), patch(
+        "mtd.deploy_mech.deploy_mech", return_value=("0xmech", 42)
+    ) as mock_deploy, patch("mtd.deploy_mech.update_service_after_deploy"):
+        _deploy_mech(operate)
+
+    mock_deploy.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# _get_password
+# ---------------------------------------------------------------------------
+
+
+def test_get_password_reads_from_env_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Return password stored in workspace .env file."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.workspace_path.mkdir(parents=True, exist_ok=True)
+    context.env_path.write_text("OPERATE_PASSWORD=mypassword\n", encoding="utf-8")
+    operate = MagicMock()
+
+    result = _get_password(operate=operate, context=context)
+
+    assert result == "mypassword"
+    assert operate.password == "mypassword"
+
+
+def test_get_password_prompts_when_env_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Call ask_password_if_needed and return operate.password when no env file."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    operate = MagicMock()
+    operate.password = "prompted_password"
+
+    with patch(f"{MOD}.ask_password_if_needed"), patch(f"{MOD}.set_key"):
+        result = _get_password(operate=operate, context=context)
+
+    assert result == "prompted_password"
+
+
+def test_get_password_raises_when_operate_password_empty(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Raise ClickException when operate.password is empty after prompt."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    operate = MagicMock()
+    operate.password = ""
+
+    with patch(f"{MOD}.ask_password_if_needed"):
+        with pytest.raises(click.ClickException, match="Password could not be set"):
+            _get_password(operate=operate, context=context)
+
+
+# ---------------------------------------------------------------------------
+# _setup_private_keys
+# ---------------------------------------------------------------------------
+
+
+def test_setup_private_keys_no_keys_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Do nothing when the operate keys directory does not exist."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+
+    _setup_private_keys(context=context)  # should not raise
+
+
+def test_setup_private_keys_empty_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Do nothing when the keys directory is empty."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    (context.operate_dir / "keys").mkdir(parents=True, exist_ok=True)
+
+    _setup_private_keys(context=context)  # should not raise
+
+
+def test_setup_private_keys_raises_without_password(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Raise ValueError when OPERATE_PASSWORD is unset."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("OPERATE_PASSWORD", raising=False)
+    context = build_context()
+    keys_dir = context.operate_dir / "keys"
+    keys_dir.mkdir(parents=True, exist_ok=True)
+    (keys_dir / "key_file.json").write_text("{}", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="OPERATE_PASSWORD is required"):
+        _setup_private_keys(context=context)
+
+
+def test_setup_private_keys_decrypts_and_creates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Decrypt the key file and delegate to _create_private_key_files."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("OPERATE_PASSWORD", "secret")
+    context = build_context()
+    keys_dir = context.operate_dir / "keys"
+    keys_dir.mkdir(parents=True, exist_ok=True)
+    (keys_dir / "key_file.json").write_text("{}", encoding="utf-8")
+
+    mock_key_data = {"private_key": "0xkey", "address": "0xaddr"}
+    with patch(f"{MOD}.KeysManager") as mock_km, patch(
+        f"{MOD}._create_private_key_files"
+    ) as mock_create:
+        mock_km.return_value.get_decrypted.return_value = mock_key_data
+        _setup_private_keys(context=context)
+
+    mock_create.assert_called_once_with(data=mock_key_data, context=context)
+
+
+# ---------------------------------------------------------------------------
+# _sanitize_local_quickstart_user_args
+# ---------------------------------------------------------------------------
+
+
+def test_sanitize_quickstart_no_name_returns_early(tmp_path: Path) -> None:
+    """Return early when template config has no name key."""
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({}), encoding="utf-8")
+    context = MagicMock()
+
+    _sanitize_local_quickstart_user_args(context=context, config_path=config_path)
+
+    context.operate_dir.glob.assert_not_called()
+
+
+def test_sanitize_quickstart_no_quickstart_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Return early when the quickstart config file does not exist."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({"name": "Mech"}), encoding="utf-8")
+
+    _sanitize_local_quickstart_user_args(context=context, config_path=config_path)
+
+
+def test_sanitize_quickstart_replaces_empty_user_arg(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Replace empty user arg with the non-empty template default."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "name": "Mech",
+                "env_variables": {
+                    "MY_VAR": {"provision_type": "user", "value": "default_val"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    quickstart_path = context.operate_dir / "Mech-quickstart-config.json"
+    quickstart_path.parent.mkdir(parents=True, exist_ok=True)
+    quickstart_path.write_text(
+        json.dumps({"user_provided_args": {"MY_VAR": ""}}), encoding="utf-8"
+    )
+
+    _sanitize_local_quickstart_user_args(context=context, config_path=config_path)
+
+    result = json.loads(quickstart_path.read_text(encoding="utf-8"))
+    assert result["user_provided_args"]["MY_VAR"] == "default_val"
+
+
+def test_sanitize_quickstart_preserves_set_user_arg(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Leave user arg unchanged when it is already set."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "name": "Mech",
+                "env_variables": {
+                    "MY_VAR": {"provision_type": "user", "value": "default_val"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    quickstart_path = context.operate_dir / "Mech-quickstart-config.json"
+    quickstart_path.parent.mkdir(parents=True, exist_ok=True)
+    quickstart_path.write_text(
+        json.dumps({"user_provided_args": {"MY_VAR": "user_value"}}), encoding="utf-8"
+    )
+
+    _sanitize_local_quickstart_user_args(context=context, config_path=config_path)
+
+    result = json.loads(quickstart_path.read_text(encoding="utf-8"))
+    assert result["user_provided_args"]["MY_VAR"] == "user_value"
+
+
+# ---------------------------------------------------------------------------
+# _read_and_update_env
+# ---------------------------------------------------------------------------
+
+
+def test_read_and_update_env_missing_home_chain(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Raise ValueError when home_chain is absent from data."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+
+    with patch(f"{MOD}.read_text_resource", return_value=""):
+        with pytest.raises(ValueError, match="home_chain"):
+            _read_and_update_env(data={}, context=context)
+
+
+def test_read_and_update_env_unsupported_chain(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Raise ValueError for an unrecognised home_chain value."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+
+    with patch(f"{MOD}.read_text_resource", return_value=""):
+        with pytest.raises(ValueError, match="Unsupported"):
+            _read_and_update_env(data={"home_chain": "badchain"}, context=context)
+
+
+def test_read_and_update_env_missing_safe_address(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Raise ValueError when the safe address is absent or empty."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    data: dict = {
+        "home_chain": "gnosis",
+        "chain_configs": {"gnosis": {"chain_data": {"multisig": ""}}},
+    }
+
+    with patch(f"{MOD}.read_text_resource", return_value=""):
+        with pytest.raises(ValueError, match="safe address"):
+            _read_and_update_env(data=data, context=context)
+
+
+def test_read_and_update_env_missing_chain_rpc(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Raise ValueError when the chain RPC env var is missing."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.workspace_path.mkdir(parents=True, exist_ok=True)
+    context.env_path.touch()
+    data: dict = {
+        "home_chain": "gnosis",
+        "chain_configs": {"gnosis": {"chain_data": {"multisig": "0xsafe"}}},
+        "agent_addresses": ["0xagent"],
+        "env_variables": {
+            "MECH_TO_MAX_DELIVERY_RATE": {"value": "{}"},
+            "GNOSIS_LEDGER_RPC_0": {"value": ""},
+        },
+    }
+
+    with patch(f"{MOD}.read_text_resource", return_value="KEY=\n"):
+        with pytest.raises(ValueError, match="GNOSIS_LEDGER_RPC_0"):
+            _read_and_update_env(data=data, context=context)
+
+
+def test_read_and_update_env_writes_env_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Write the env file with computed values on the happy path."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.workspace_path.mkdir(parents=True, exist_ok=True)
+    context.env_path.touch()
+    data: dict = {
+        "home_chain": "gnosis",
+        "chain_configs": {"gnosis": {"chain_data": {"multisig": "0xsafe"}}},
+        "agent_addresses": ["0xagent"],
+        "env_variables": {
+            "MECH_TO_MAX_DELIVERY_RATE": {"value": "{}"},
+            "GNOSIS_LEDGER_RPC_0": {"value": "https://rpc.gnosis.io"},
+        },
+    }
+
+    with patch(f"{MOD}.read_text_resource", return_value="SAFE_CONTRACT_ADDRESS=\n"):
+        _read_and_update_env(data=data, context=context)
+
+    content = context.env_path.read_text(encoding="utf-8")
+    assert "SAFE_CONTRACT_ADDRESS=0xsafe" in content
+
+
+# ---------------------------------------------------------------------------
+# _setup_env
+# ---------------------------------------------------------------------------
+
+
+def test_setup_env_raises_when_no_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Raise FileNotFoundError when no operate service config files exist."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.operate_dir.mkdir(parents=True, exist_ok=True)
+
+    with pytest.raises(FileNotFoundError, match="No operate config found"):
+        _setup_env(context=context)
