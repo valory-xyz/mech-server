@@ -1,63 +1,51 @@
-# Code Review Action Plan
+# Code Review — Outstanding Items
 
-Generated from a full codebase review. Items are grouped by severity and tracked below.
-
----
-
-## Critical
-
-- [x] **Duplicate `_workspace_cwd()` context manager** — extracted to `mtd/context.py` as `workspace_cwd()`; re-exported via `context_utils.py`; circular import resolved by having `setup_flow.py` import directly from `mtd.context`.
-- [x] **Duplicate `SUPPORTED_CHAINS` constant** — extracted to `mtd/context.py`; re-exported via `context_utils.py`.
-- [x] **`deploy_mech_cmd` missing `require_initialized()` guard** — added; test fixtures updated to patch it.
+All critical, high, minor, and CI/linting issues from the previous review cycle have been resolved
+(166→170 tests, 100% line coverage, pylint 10.00/10). The items below are what remains.
 
 ---
 
-## High
+## Medium
 
-- [x] **Inconsistent error handling in `update_onchain.py`** — strategy unified: input errors raise `ValueError`, execution failures raise `RuntimeError`. `_fetch_metadata_hash()` now raises `ValueError` for an empty/invalid CID instead of silently returning `b""`.
-- [x] **128-line `_validate_metadata_file()` in `publish.py`** — refactored into six focused helpers: `_validate_metadata_structure`, `_validate_tool_entry`, `_validate_tool_input`, `_validate_tool_output`, `_validate_output_schema`, `_validate_schema_properties`. Also removed `"required"` from `output_schema_schema` (making it an optional JSON schema field) and added an explicit type-check in `_validate_output_schema`. All existing tests continue to pass; 2 new tests added.
-- [x] **`add_tool_cmd.py` uses raw `Path(__file__).parent` for templates** — replaced `CURRENT_DIR`/`TEMPLATES_PATH` with `importlib.resources` via a `_read_template()` helper; `TEMPLATES_PACKAGE = "mtd.templates"` constant mirrors pattern in `resources.py`.
-- [x] **`update_service_after_deploy()` ignores return value** — result of `update_env_variables_values()` now captured; raises `RuntimeError` if it returns `False`. Test added for the failure path.
+- [ ] **Hardcoded gas values in `update_onchain.py`** — `update_metadata_onchain()` passes
+  `gas=100000` and `gasPrice=web3_client.to_wei("3", "gwei")` inline at lines 165–166 and 178.
+  These are appropriate defaults for Gnosis but may be too low or mis-priced on other chains
+  (Polygon, Optimism). Extract to named module-level constants (`DEFAULT_GAS`,
+  `DEFAULT_GAS_PRICE_GWEI`) as a minimum; consider making them overridable via env vars.
 
----
-
-## Missing Tests
-
-All missing tests resolved. **166 tests, 100% line coverage (868/868 statements).**
-
-- [x] **`workspace.py`** — Added 6 direct tests covering happy path, force flag, skip-existing-env, force-recopies-packages, skips-copytree-when-exists, and missing-packaged-root.
-- [x] **`setup_flow.py` private functions** — Added 23 direct tests covering `_create_private_key_files` (creates/skips), `_deploy_mech` (early return/already deployed/deploys), `_get_password` (from env/prompts/raises), `_setup_private_keys` (no dir/empty/missing password/decrypts), `_sanitize_local_quickstart_user_args` (no name/no file/replaces/preserves), `_read_and_update_env` (missing chain/unsupported/no safe/no RPC/happy path/comment lines/dict values), and `_setup_env` (no config raises/happy path).
-- [x] **`publish.py` `_validate_metadata_file()`** — Added 15 tests covering invalid JSON, missing keys, type mismatches, count mismatches, and malformed nested structures; 2 further tests added when refactoring into helpers (schema without `required`, wrong `properties` type).
-- [x] **`run_cmd.py` `_get_latest_service_hash()`** — Added 3 tests: `packages.json` not found, no matching hash, correct hash returned.
-- [x] **`add_tool_cmd.py` `generate_tool_file()`** — Added 3 direct tests: non-init file written only to tool_path, init cascades to packages_dir, template substitution applied; 1 further test for `_read_template()` added during `importlib.resources` migration.
-- [x] **`setup_flow.py` `_normalize_nullable_env_vars()`** — Added 5 tests: empty string, None, already-set unchanged, non-dict skipped, missing key skipped.
-- [x] **`update_onchain.py`** — Added tests for `_load_contract`, `_send_safe_tx` (success + exception), and `update_metadata_onchain` tx_receipt=None branch; `_fetch_metadata_hash` empty-CID test updated to expect `ValueError`.
-- [x] **`cli.py` / `context_utils.py`** — Added tests for group callback execution and `get_mtd_context` returning cached context.
-- [x] **`run_cmd.py` `_push_all_packages()` success path** — Added test with mocked `subprocess.run`.
-- [x] **`deploy_mech.py`** — Added tests for unrecognised chain, chain absent from factory map, and `update_service_after_deploy` returning `False`.
+- [ ] **`_setup_env()` loop silently uses only the last matching config file** —
+  `setup_flow.py:282–285`: the `for file_path in matching_paths` loop overwrites `data` on each
+  iteration, so if the glob matches more than one file only the last one's data is used with no
+  warning. In practice there is exactly one file today, but this is a latent bug. Either `break`
+  after the first match or raise if more than one is found.
 
 ---
 
 ## Minor
 
-- [x] **`context.py` `resolve_workspace_path()`** — removed; `build_context()` now calls `get_default_workspace()` directly. Removed from `__init__.py` public API and tests.
-- [x] **Logging inconsistency in `deploy_mech.py`** — replaced `logger.warning()` with `click.echo()`; removed `logging` import entirely.
-- [x] **Undocumented `MECH_FACTORY_ADDRESS` data structure in `deploy_mech.py`** — added comment block explaining the nesting (chain → marketplace_address → mech_type → factory_address) and linking to source contracts.
-- [x] **`deploy_mech.py` `Chain.from_string()` has no validation** — wrapped in try/except raising `ClickException` with supported chains listed; added a second guard for chains absent from `MECH_FACTORY_ADDRESS`. Both paths covered by tests.
+- [ ] **Comment lines containing `=` are silently dropped from the generated `.env`** —
+  `setup_flow.py:251`: `if "=" in line` matches comment lines such as `# KEY=example`. These
+  enter the key-lookup branch, get an empty value, and are discarded via `continue` rather than
+  being passed through unchanged. No current template triggers this, but it is a latent
+  correctness bug. Fix: add `if line.lstrip().startswith("#"):` before the `=` check and fall
+  through to `filled_lines.append(line)`.
 
----
+- [ ] **`Template.substitute()` raises `KeyError` on undefined variables** —
+  `add_tool_cmd.py:65`: if a template file references a `$variable` not present in
+  `template_params`, Python raises a bare `KeyError`. Wrap in `try/except KeyError` and re-raise
+  as a `RuntimeError` with a message indicating which variable is missing and which template is
+  at fault.
 
-## Completed
+- [ ] **`except Exception` too broad in `deploy_mech.py` chain validation** —
+  `deploy_mech.py:93`: `Chain.from_string()` is caught with `except Exception`. Narrow to the
+  actual exception type(s) the library raises (e.g. `ValueError`) so genuinely unexpected errors
+  still propagate.
 
-### Linting / CI
-- Added `MTD_PACKAGES = mtd tests` env var to `tox.ini` and dedicated tox environments (`black-check-mtd`, `isort-check-mtd`, `flake8-mtd`, `mypy-mtd`, `pylint-mtd`) — `mtd/` was previously never linted in CI.
-- Wired new environments into `common_checks.yaml` `linter_checks` job.
-- Applied `black` + `isort` formatting across all previously unformatted `mtd/` and `tests/` files.
-- Fixed 2 mypy `no-untyped-def` errors (pytest fixture annotations in `test_context.py`, `test_resources.py`).
-- Fixed 1 flake8 D403 docstring capitalisation in `test_deploy_mech.py`.
+- [ ] **Warning in `deploy_mech.py` lacks visual emphasis** — `deploy_mech.py:112`: the
+  unsupported-marketplace fallback message uses plain `click.echo()`. Use
+  `click.secho(..., fg="yellow")` so the warning stands out in terminal output.
 
-### Coverage / CI
-- Added `[testenv:coverage]` to `tox.ini` and a `coverage` job to `common_checks.yaml` that uploads to Codecov.
-- Added `pytest-cov` dev dependency; README now shows Codecov badge.
-
-### Architecture (Critical items above)
+- [ ] **No validation of `author`/`tool_name` as Python identifiers in `add_tool_cmd.py`** —
+  `add_tool_cmd.py:126–133`: both arguments are used as directory names and Python module names
+  but are never validated. Passing a value with spaces, hyphens, or leading digits creates a
+  broken package. Add a Click callback or early guard using `str.isidentifier()`.
