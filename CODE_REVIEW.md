@@ -23,12 +23,17 @@ Generated from a full codebase review. Items are grouped by severity and tracked
 
 ## Missing Tests
 
+All missing tests resolved. **161 tests, 100% line coverage (837/837 statements).**
+
 - [x] **`workspace.py`** — Added 6 direct tests covering happy path, force flag, skip-existing-env, force-recopies-packages, skips-copytree-when-exists, and missing-packaged-root.
-- [x] **`setup_flow.py` private functions** — Added 23 direct tests covering `_create_private_key_files` (creates/skips), `_deploy_mech` (early return/already deployed/deploys), `_get_password` (from env/prompts/raises), `_setup_private_keys` (no dir/empty/missing password/decrypts), `_sanitize_local_quickstart_user_args` (no name/no file/replaces/preserves), `_read_and_update_env` (missing chain/unsupported/no safe/no RPC/happy path), and `_setup_env` (no config raises).
+- [x] **`setup_flow.py` private functions** — Added 23 direct tests covering `_create_private_key_files` (creates/skips), `_deploy_mech` (early return/already deployed/deploys), `_get_password` (from env/prompts/raises), `_setup_private_keys` (no dir/empty/missing password/decrypts), `_sanitize_local_quickstart_user_args` (no name/no file/replaces/preserves), `_read_and_update_env` (missing chain/unsupported/no safe/no RPC/happy path/comment lines/dict values), and `_setup_env` (no config raises/happy path).
 - [x] **`publish.py` `_validate_metadata_file()`** — Added 15 tests covering invalid JSON, missing keys, type mismatches, count mismatches, and malformed nested structures.
 - [x] **`run_cmd.py` `_get_latest_service_hash()`** — Added 3 tests: `packages.json` not found, no matching hash, correct hash returned.
 - [x] **`add_tool_cmd.py` `generate_tool_file()`** — Added 3 direct tests: non-init file written only to tool_path, init cascades to packages_dir, template substitution applied.
 - [x] **`setup_flow.py` `_normalize_nullable_env_vars()`** — Added 5 tests: empty string, None, already-set unchanged, non-dict skipped, missing key skipped.
+- [x] **`update_onchain.py`** — Added tests for `_load_contract`, `_send_safe_tx` (success + exception), and `update_metadata_onchain` tx_receipt=None branch.
+- [x] **`cli.py` / `context_utils.py`** — Added tests for group callback execution and `get_mtd_context` returning cached context.
+- [x] **`run_cmd.py` `_push_all_packages()` success path** — Added test with mocked `subprocess.run`.
 
 ---
 

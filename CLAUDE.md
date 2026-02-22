@@ -136,11 +136,14 @@ make common-checks-2      # check-abci-docstrings, check-abciapp-specs, check-ha
 ## Testing
 
 ```bash
-pytest tests/                        # all unit tests
-pytest tests/unit/cli/               # CLI tests only
-pytest -vv tests/                    # verbose
-pytest -m "not integration and not e2e" tests/   # skip slow tests
+poetry run pytest tests/                                      # all unit tests (161 tests)
+poetry run pytest tests/unit/cli/                            # CLI tests only
+poetry run pytest -vv tests/                                 # verbose
+poetry run pytest -m "not integration and not e2e" tests/   # skip slow tests
+poetry run pytest tests/ --cov=mtd --cov-report=term-missing # coverage report
 ```
+
+Current state: **161 tests, 100% line coverage (837/837 statements).** Maintain 100% when adding new code — run the coverage command to verify before committing.
 
 Pytest config in `tox.ini`: log level DEBUG, asyncio mode strict. Markers: `integration`, `e2e`.
 
