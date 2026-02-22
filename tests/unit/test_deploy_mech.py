@@ -22,6 +22,8 @@
 import json
 from unittest.mock import MagicMock, patch
 
+import click
+import pytest
 from operate.operate_types import Chain
 
 from mtd.deploy_mech import (
@@ -168,6 +170,25 @@ class TestDeployMech:
 
         assert mech_address == "0xMechAddress"
         assert agent_id == "42"
+
+    def test_deploy_mech_raises_for_unrecognised_chain(self) -> None:
+        """Raise ClickException when Chain.from_string rejects the chain string."""
+        mock_service = _make_mock_service(home_chain="badchain")
+        mock_sftxb = _make_mock_sftxb()
+
+        with pytest.raises(click.ClickException, match="badchain"):
+            deploy_mech(sftxb=mock_sftxb, service=mock_service)
+
+    @patch(f"{MOD}.Chain.from_string", return_value="unconfigured_chain")
+    def test_deploy_mech_raises_when_chain_not_in_factory_map(
+        self, _mock_from_string: MagicMock
+    ) -> None:
+        """Raise ClickException when Chain.from_string returns a chain with no factory addresses."""
+        mock_service = _make_mock_service(home_chain="gnosis")
+        mock_sftxb = _make_mock_sftxb()
+
+        with pytest.raises(click.ClickException, match="gnosis"):
+            deploy_mech(sftxb=mock_sftxb, service=mock_service)
 
     @patch(f"{MOD}.requests")
     def test_deploy_mech_fallback_polygon(self, mock_requests: MagicMock) -> None:

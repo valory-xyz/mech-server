@@ -39,10 +39,10 @@ All missing tests resolved. **161 tests, 100% line coverage (837/837 statements)
 
 ## Minor
 
-- [ ] **`context.py` `resolve_workspace_path()`** — thin wrapper around `get_default_workspace()` with no added logic. Consider removing.
-- [ ] **Logging inconsistency in `deploy_mech.py`** — `logger` used only for warnings; everything else uses `click.echo()`. Pick one.
-- [ ] **Undocumented `MECH_FACTORY_ADDRESS` data structure in `deploy_mech.py`** — no docstring or comments explaining the structure or where addresses come from.
-- [ ] **`deploy_mech.py` `Chain.from_string()` has no validation** — invalid chain value bubbles up without a meaningful error message.
+- [x] **`context.py` `resolve_workspace_path()`** — removed; `build_context()` now calls `get_default_workspace()` directly. Removed from `__init__.py` public API and tests.
+- [x] **Logging inconsistency in `deploy_mech.py`** — replaced `logger.warning()` with `click.echo()`; removed `logging` import entirely.
+- [x] **Undocumented `MECH_FACTORY_ADDRESS` data structure in `deploy_mech.py`** — added comment block explaining the nesting (chain → marketplace_address → mech_type → factory_address) and linking to source contracts.
+- [x] **`deploy_mech.py` `Chain.from_string()` has no validation** — wrapped in try/except raising `ClickException` with supported chains listed; added a second guard for chains absent from `MECH_FACTORY_ADDRESS`. Both paths covered by tests.
 
 ---
 

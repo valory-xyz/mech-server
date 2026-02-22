@@ -20,9 +20,9 @@
 """Mech deployment on the mech marketplace."""
 
 import json
-from logging import getLogger
 from typing import Tuple
 
+import click
 import requests
 from aea_ledger_ethereum import Web3
 from operate.operate_types import Chain
@@ -37,6 +37,14 @@ MECH_MARKETPLACE_JSON_URL = (
 )
 DEFAULT_TIMEOUT = 30
 
+# Registry of MechFactory contract addresses, nested as:
+#   chain -> marketplace_address -> mech_type -> factory_address
+# where:
+#   chain             = Chain enum (from olas-operate-middleware)
+#   marketplace_address = value of the MECH_MARKETPLACE_ADDRESS env variable
+#   mech_type         = value of MECH_TYPE ("Native", "Token", "Nevermined", etc.)
+#   factory_address   = MechFactory contract used to create the mech
+# Source: https://github.com/valory-xyz/mech-quickstart/tree/main/contracts
 MECH_FACTORY_ADDRESS = {
     Chain.GNOSIS: {
         "0xad380C51cd5297FbAE43494dD5D407A2a3260b58": {
@@ -74,27 +82,36 @@ MECH_FACTORY_ADDRESS = {
     },
 }
 
-logger = getLogger(__name__)
-
 
 def deploy_mech(sftxb: EthSafeTxBuilder, service: Service) -> Tuple[str, str]:
     """Deploy a new Mech on-chain via the MechMarketplace contract.
 
     Returns (mech_address, agent_id).
     """
-    mech_type = service.env_variables.get("MECH_TYPE", {}).get("value", "Native")
+    try:
+        chain = Chain.from_string(service.home_chain)
+    except Exception as exc:
+        raise click.ClickException(
+            f"Unsupported chain '{service.home_chain}' for mech deployment. "
+            "Supported chains: gnosis, base, polygon, optimism."
+        ) from exc
+    if chain not in MECH_FACTORY_ADDRESS:
+        raise click.ClickException(
+            f"Chain '{service.home_chain}' has no mech factory addresses configured. "
+            "Supported chains: gnosis, base, polygon, optimism."
+        )
 
+    mech_type = service.env_variables.get("MECH_TYPE", {}).get("value", "Native")
     abi = requests.get(MECH_MARKETPLACE_JSON_URL, timeout=DEFAULT_TIMEOUT).json()["abi"]
-    chain = Chain.from_string(service.home_chain)
     mech_marketplace_address = service.env_variables["MECH_MARKETPLACE_ADDRESS"][
         "value"
     ]
     # Get factory address based on mech type
     if mech_marketplace_address not in MECH_FACTORY_ADDRESS[chain]:
         fallback_address = next(iter(MECH_FACTORY_ADDRESS[chain]))
-        logger.warning(
-            f"The given {mech_marketplace_address=} is not supported for {chain}. "
-            f"Defaulting back to {fallback_address}."
+        click.echo(
+            f"Warning: marketplace address '{mech_marketplace_address}' is not "
+            f"supported for {chain}. Defaulting to {fallback_address}."
         )
         mech_marketplace_address = fallback_address
 
