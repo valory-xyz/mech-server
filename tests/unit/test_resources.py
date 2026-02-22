@@ -53,3 +53,27 @@ def test_copy_runtime_templates_to_workspace(
 
     assert (context.config_dir / "config_mech_gnosis.json").exists()
     assert (context.workspace_path / ".example.env").exists()
+
+
+def test_copy_runtime_templates_skips_existing_without_force(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Skip writing a template when the target already exists and force=False."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    # First copy to create all files
+    copy_runtime_templates_to_workspace(context)
+    config = context.config_dir / "config_mech_gnosis.json"
+    original_content = config.read_text(encoding="utf-8")
+    # Overwrite with sentinel content
+    config.write_text("SENTINEL", encoding="utf-8")
+
+    # Second copy without force → should NOT overwrite
+    copy_runtime_templates_to_workspace(context, force=False)
+
+    assert config.read_text(encoding="utf-8") == "SENTINEL"
+
+    # Third copy with force=True → should overwrite
+    copy_runtime_templates_to_workspace(context, force=True)
+
+    assert config.read_text(encoding="utf-8") == original_content

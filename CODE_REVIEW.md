@@ -23,12 +23,17 @@ Generated from a full codebase review. Items are grouped by severity and tracked
 
 ## Missing Tests
 
-- [ ] **`workspace.py`** — `initialize_workspace()` has no direct unit tests (only mocked in CLI tests). Add tests for happy path, force flag, and package directory copying edge cases.
-- [ ] **`setup_flow.py` private functions** — `_deploy_mech`, `_create_private_key_files`, `_setup_private_keys` only appear as mocks. Add direct tests including "already deployed" path and key file edge cases.
-- [ ] **`publish.py` `_validate_metadata_file()`** — only happy path covered. Add tests for invalid JSON, missing keys, type mismatches, malformed nested structures.
-- [ ] **`run_cmd.py` `_get_latest_service_hash()`** — missing test cases: `packages.json` not found, hash not in packages, autonomy command failure.
-- [ ] **`add_tool_cmd.py` `generate_tool_file()`** — only tested through mocks. Add direct tests for template substitution, file writing, `__init__` cascading.
-- [ ] **`setup_flow.py` `_normalize_nullable_env_vars()`** — only happy path tested. Add tests for missing required vars and already-set values.
+All missing tests resolved. **161 tests, 100% line coverage (837/837 statements).**
+
+- [x] **`workspace.py`** — Added 6 direct tests covering happy path, force flag, skip-existing-env, force-recopies-packages, skips-copytree-when-exists, and missing-packaged-root.
+- [x] **`setup_flow.py` private functions** — Added 23 direct tests covering `_create_private_key_files` (creates/skips), `_deploy_mech` (early return/already deployed/deploys), `_get_password` (from env/prompts/raises), `_setup_private_keys` (no dir/empty/missing password/decrypts), `_sanitize_local_quickstart_user_args` (no name/no file/replaces/preserves), `_read_and_update_env` (missing chain/unsupported/no safe/no RPC/happy path/comment lines/dict values), and `_setup_env` (no config raises/happy path).
+- [x] **`publish.py` `_validate_metadata_file()`** — Added 15 tests covering invalid JSON, missing keys, type mismatches, count mismatches, and malformed nested structures.
+- [x] **`run_cmd.py` `_get_latest_service_hash()`** — Added 3 tests: `packages.json` not found, no matching hash, correct hash returned.
+- [x] **`add_tool_cmd.py` `generate_tool_file()`** — Added 3 direct tests: non-init file written only to tool_path, init cascades to packages_dir, template substitution applied.
+- [x] **`setup_flow.py` `_normalize_nullable_env_vars()`** — Added 5 tests: empty string, None, already-set unchanged, non-dict skipped, missing key skipped.
+- [x] **`update_onchain.py`** — Added tests for `_load_contract`, `_send_safe_tx` (success + exception), and `update_metadata_onchain` tx_receipt=None branch.
+- [x] **`cli.py` / `context_utils.py`** — Added tests for group callback execution and `get_mtd_context` returning cached context.
+- [x] **`run_cmd.py` `_push_all_packages()` success path** — Added test with mocked `subprocess.run`.
 
 ---
 

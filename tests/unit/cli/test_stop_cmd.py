@@ -69,3 +69,23 @@ class TestStopCommand:
         runner = CliRunner()
         result = runner.invoke(stop, [])
         assert result.exit_code != 0
+
+    @patch(f"{MOCK_PATH}.require_initialized")
+    @patch(f"{MOCK_PATH}.get_mtd_context")
+    def test_stop_raises_when_config_file_missing(
+        self,
+        mock_get_context: MagicMock,
+        mock_require_initialized: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """Raise ClickException when the chain config template file is absent."""
+        context = MagicMock()
+        context.config_dir = tmp_path / "config"
+        context.config_dir.mkdir(parents=True)
+        # config_mech_gnosis.json deliberately not created
+        mock_get_context.return_value = context
+
+        runner = CliRunner()
+        result = runner.invoke(stop, ["-c", "gnosis"])
+
+        assert result.exit_code != 0

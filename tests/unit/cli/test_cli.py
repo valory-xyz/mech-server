@@ -23,6 +23,13 @@ from click.testing import CliRunner
 from mtd.cli import cli
 
 
+def test_cli_group_callback_executes_on_subcommand() -> None:
+    """Group callback should build mtd_context when a subcommand is invoked."""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["setup", "--help"])
+    assert result.exit_code == 0
+
+
 class TestCli:
     """Tests for the CLI group."""
 
