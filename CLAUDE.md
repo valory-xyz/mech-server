@@ -66,7 +66,7 @@ mech stop -c <chain>           # Stop running service
 mech deploy-mech -c <chain>    # Deploy mech on marketplace for existing service
 mech push-metadata             # Generate metadata.json and publish to IPFS
 mech update-metadata           # Update on-chain metadata hash via Safe
-mech add-tool                  # Scaffold a new tool (interactive)
+mech add-tool <author> <name>   # Scaffold a new tool
 ```
 
 ---
