@@ -8,8 +8,8 @@ The following table shows which versions of `mech-server` are currently being su
 
 | Version   | Supported          |
 |-----------| ------------------ |
-| `0.5.0`   | :white_check_mark: |
-| `< 0.5.0` | :x:                |
+| `0.6.0`   | :white_check_mark: |
+| `< 0.6.0` | :x:                |
 
 ## Reporting a Vulnerability
 
