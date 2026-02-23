@@ -117,9 +117,26 @@ make abci-docstrings      # regenerate ABCI docstrings
 
 If you modified anything under `packages/`:
 ```bash
+# First, sync all third-party packages from IPFS (required before locking hashes)
+poetry run autonomy init --reset --author ci --remote --ipfs --ipfs-node "/dns/registry.autonolas.tech/tcp/443/https"
+poetry run autonomy packages sync
+
+# Then regenerate hashes and run generators
 make generators           # copyright headers + ABCI docstrings + package lock + doc hashes
 make common-checks-1      # copyright, doc links, hash/package/doc-hash/service checks
 ```
+
+> **Note:** `make generators` calls `autonomy packages lock` internally, which requires all
+> third-party packages to be present locally. Always run `autonomy packages sync` first or it
+> will fail with "Skill configuration not found" errors.
+>
+> **Important:** `pyproject.toml` dependency versions are driven by the AEA package configs
+> under `packages/` — specifically `packages/valory/agents/mech/aea-config.yaml`. The
+> `check_dependencies.py` script (`tox -e check-dependencies`) enforces consistency between
+> `aea-config.yaml`, all synced third-party packages, and `pyproject.toml`. Any version
+> constraint in `pyproject.toml` must agree with every package in the full IPFS dependency
+> tree; if there is a conflict the script fails and overwrites `pyproject.toml` with the
+> "winning" version from the packages.
 
 Otherwise (no `packages/` changes):
 ```bash
