@@ -21,7 +21,7 @@
 
 from mtd.commands.add_tool_cmd import add_tool
 from mtd.commands.context_utils import get_mtd_context
-from mtd.commands.push_metadata_cmd import push_metadata
+from mtd.commands.prepare_metadata_cmd import prepare_metadata
 from mtd.commands.run_cmd import run
 from mtd.commands.setup_cmd import setup
 from mtd.commands.stop_cmd import stop
@@ -31,7 +31,7 @@ from mtd.commands.update_metadata_cmd import update_metadata
 __all__ = [
     "add_tool",
     "get_mtd_context",
-    "push_metadata",
+    "prepare_metadata",
     "run",
     "setup",
     "stop",

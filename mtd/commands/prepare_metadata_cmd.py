@@ -17,7 +17,7 @@
 #
 # ------------------------------------------------------------------------------
 
-"""Push-metadata command for generating and publishing metadata to IPFS."""
+"""Prepare-metadata command for generating and publishing metadata to IPFS."""
 
 import json
 import subprocess
@@ -102,7 +102,7 @@ def _compute_tools_to_package_hash(packages_dir: Path) -> str:
     return json.dumps(tools_mapping, separators=(",", ":"))
 
 
-@click.command(name="push-metadata")
+@click.command(name="prepare-metadata")
 @click.option(
     "--ipfs-node",
     type=str,
@@ -110,14 +110,14 @@ def _compute_tools_to_package_hash(packages_dir: Path) -> str:
     help="IPFS node address.",
 )
 @click.pass_context
-def push_metadata(ctx: click.Context, ipfs_node: str) -> None:
+def prepare_metadata(ctx: click.Context, ipfs_node: str) -> None:
     """Generate metadata.json from packages and publish to IPFS.
 
     Locks package hashes, pushes all packages to IPFS, generates
     metadata, publishes it, and updates .env with METADATA_HASH
     and TOOLS_TO_PACKAGE_HASH.
 
-    Example: mech push-metadata
+    Example: mech prepare-metadata
     """
     context = get_mtd_context(ctx)
     require_initialized(context)

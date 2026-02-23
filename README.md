@@ -73,7 +73,7 @@ poetry run mech run -c <chain>
 |---|---|
 | `poetry run mech setup -c <chain>` | Full first-time setup: workspace, agent build, mech deployment, env config, key setup |
 | `poetry run mech add-tool <author> <name>` | Scaffold a new mech tool |
-| `poetry run mech push-metadata` | Recompute package fingerprints, push packages and metadata to IPFS, and write `METADATA_HASH` and `TOOLS_TO_PACKAGE_HASH` to `.env` |
+| `poetry run mech prepare-metadata` | Recompute package fingerprints, push packages and metadata to IPFS, and write `METADATA_HASH` and `TOOLS_TO_PACKAGE_HASH` to `.env` |
 | `poetry run mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
 | `poetry run mech run -c <chain>` | Run the mech AI agent via Docker |
 | `poetry run mech stop -c <chain>` | Stop a running mech AI agent |
@@ -111,7 +111,7 @@ poetry run mech run -c <chain>
 
 5. Generate and publish metadata (to IPFS), then update the on-chain registry:
     ```bash
-    poetry run mech push-metadata
+    poetry run mech prepare-metadata
     poetry run mech update-metadata
     ```
 
@@ -131,7 +131,7 @@ poetry run mech run -c <chain>
 
 3. Generate and publish metadata (to IPFS), then update:
     ```bash
-    poetry run mech push-metadata
+    poetry run mech prepare-metadata
     poetry run mech update-metadata
     ```
 

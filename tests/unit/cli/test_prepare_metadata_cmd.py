@@ -16,7 +16,7 @@
 #   limitations under the License.
 #
 # ------------------------------------------------------------------------------
-"""Tests for push-metadata command."""
+"""Tests for prepare-metadata command."""
 
 import json
 from pathlib import Path
@@ -24,19 +24,19 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from mtd.commands.push_metadata_cmd import (
+from mtd.commands.prepare_metadata_cmd import (
     _compute_tools_to_package_hash,
     _lock_packages,
     _push_all_packages,
-    push_metadata,
+    prepare_metadata,
 )
 
 
-MOCK_PATH = "mtd.commands.push_metadata_cmd"
+MOCK_PATH = "mtd.commands.prepare_metadata_cmd"
 
 
-class TestPushMetadataCommand:
-    """Tests for push-metadata command."""
+class TestPrepareMetadataCommand:
+    """Tests for prepare-metadata command."""
 
     @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
     @patch(f"{MOCK_PATH}.set_key")
@@ -46,7 +46,7 @@ class TestPushMetadataCommand:
     @patch(f"{MOCK_PATH}._lock_packages")
     @patch(f"{MOCK_PATH}.require_initialized")
     @patch(f"{MOCK_PATH}.get_mtd_context")
-    def test_push_metadata_success(
+    def test_prepare_metadata_success(
         self,
         mock_get_context: MagicMock,
         mock_require_initialized: MagicMock,
@@ -58,7 +58,7 @@ class TestPushMetadataCommand:
         mock_compute_tools: MagicMock,
         tmp_path: Path,
     ) -> None:
-        """Test successful push-metadata."""
+        """Test successful prepare-metadata."""
         context = MagicMock()
         context.packages_dir = tmp_path / "packages"
         context.workspace_path = tmp_path
@@ -67,7 +67,7 @@ class TestPushMetadataCommand:
         mock_get_context.return_value = context
 
         runner = CliRunner()
-        result = runner.invoke(push_metadata, [])
+        result = runner.invoke(prepare_metadata, [])
 
         assert result.exit_code == 0
         mock_require_initialized.assert_called_once_with(context)
@@ -96,7 +96,7 @@ class TestPushMetadataCommand:
     @patch(f"{MOCK_PATH}._lock_packages")
     @patch(f"{MOCK_PATH}.require_initialized")
     @patch(f"{MOCK_PATH}.get_mtd_context")
-    def test_push_metadata_writes_tools_to_package_hash(
+    def test_prepare_metadata_writes_tools_to_package_hash(
         self,
         mock_get_context: MagicMock,
         mock_require_initialized: MagicMock,
@@ -117,7 +117,7 @@ class TestPushMetadataCommand:
         mock_get_context.return_value = context
 
         runner = CliRunner()
-        result = runner.invoke(push_metadata, [])
+        result = runner.invoke(prepare_metadata, [])
 
         assert result.exit_code == 0
         mock_set_key.assert_any_call(str(context.env_path), "METADATA_HASH", "f0170abc")

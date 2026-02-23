@@ -45,7 +45,7 @@ class TestCli:
         assert "setup" in result.output
         assert "run" in result.output
         assert "stop" in result.output
-        assert "push-metadata" in result.output
+        assert "prepare-metadata" in result.output
         assert "update-metadata" in result.output
 
     def test_no_workspace_option(self) -> None:
