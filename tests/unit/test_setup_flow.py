@@ -48,9 +48,6 @@ from mtd.setup_flow import (
 MOD = "mtd.setup_flow"
 
 
-@patch(f"{MOD}.update_metadata_onchain", return_value=(True, "0xabc"))
-@patch(f"{MOD}.publish_metadata_to_ipfs", return_value="bafyhash")
-@patch(f"{MOD}.generate_metadata")
 @patch(f"{MOD}._setup_private_keys")
 @patch(f"{MOD}._setup_env")
 @patch(f"{MOD}._deploy_mech")
@@ -72,9 +69,6 @@ def test_run_setup_passes_explicit_operate_home(
     mock_deploy_mech: MagicMock,
     mock_setup_env: MagicMock,
     mock_setup_private_keys: MagicMock,
-    mock_generate_metadata: MagicMock,
-    mock_publish_metadata: MagicMock,
-    mock_update_metadata: MagicMock,
     tmp_path: Path,
     monkeypatch: MagicMock,
 ) -> None:
@@ -113,14 +107,6 @@ def test_run_setup_passes_explicit_operate_home(
     mock_deploy_mech.assert_called_once_with(mock_operate, "polygon")
     mock_setup_env.assert_called_once_with(context=context, chain_config="polygon")
     mock_setup_private_keys.assert_called_once_with(context=context)
-    mock_generate_metadata.assert_called_once_with(
-        packages_dir=context.packages_dir, metadata_path=context.metadata_path
-    )
-    mock_publish_metadata.assert_called_once_with(metadata_path=context.metadata_path)
-    mock_update_metadata.assert_called_once_with(
-        env_path=context.env_path,
-        private_key_path=context.keys_dir / "ethereum_private_key.txt",
-    )
 
 
 def test_normalize_nullable_env_vars_empty_string_converted() -> None:
@@ -884,9 +870,6 @@ def test_sanitize_quickstart_skips_env_var_absent_from_user_args(
 def _make_run_setup_patches() -> list:
     """Return patch targets used by run_setup integration tests."""
     return [
-        f"{MOD}.update_metadata_onchain",
-        f"{MOD}.publish_metadata_to_ipfs",
-        f"{MOD}.generate_metadata",
         f"{MOD}._setup_private_keys",
         f"{MOD}._setup_env",
         f"{MOD}._deploy_mech",
@@ -900,9 +883,6 @@ def _make_run_setup_patches() -> list:
     ]
 
 
-@patch(f"{MOD}.update_metadata_onchain", return_value=(True, "0xabc"))
-@patch(f"{MOD}.publish_metadata_to_ipfs", return_value="bafyhash")
-@patch(f"{MOD}.generate_metadata")
 @patch(f"{MOD}._setup_private_keys")
 @patch(f"{MOD}._setup_env")
 @patch(f"{MOD}._deploy_mech")
@@ -924,9 +904,6 @@ def test_run_setup_skips_run_service_when_target_chain_already_deployed(
     mock_deploy_mech: MagicMock,
     mock_setup_env: MagicMock,
     mock_setup_private_keys: MagicMock,
-    mock_generate_metadata: MagicMock,
-    mock_publish_metadata: MagicMock,
-    mock_update_metadata: MagicMock,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -962,9 +939,6 @@ def test_run_setup_skips_run_service_when_target_chain_already_deployed(
     mock_sanitize.assert_not_called()
 
 
-@patch(f"{MOD}.update_metadata_onchain", return_value=(True, "0xabc"))
-@patch(f"{MOD}.publish_metadata_to_ipfs", return_value="bafyhash")
-@patch(f"{MOD}.generate_metadata")
 @patch(f"{MOD}._setup_private_keys")
 @patch(f"{MOD}._setup_env")
 @patch(f"{MOD}._deploy_mech")
@@ -986,9 +960,6 @@ def test_run_setup_triggers_setup_when_target_chain_not_yet_deployed(
     mock_deploy_mech: MagicMock,
     mock_setup_env: MagicMock,
     mock_setup_private_keys: MagicMock,
-    mock_generate_metadata: MagicMock,
-    mock_publish_metadata: MagicMock,
-    mock_update_metadata: MagicMock,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

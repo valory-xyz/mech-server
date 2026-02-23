@@ -17,7 +17,7 @@
 #
 # ------------------------------------------------------------------------------
 
-"""Setup flow for mech agent service configuration and metadata deployment."""
+"""Setup flow for mech agent service configuration."""
 
 import json
 import logging
@@ -33,9 +33,6 @@ from operate.quickstart.run_service import ask_password_if_needed, run_service
 from mtd.context import MtdContext, SUPPORTED_CHAINS
 from mtd.context import workspace_cwd as _workspace_cwd
 from mtd.resources import read_text_resource
-from mtd.services.metadata.generate import generate_metadata
-from mtd.services.metadata.publish import publish_metadata_to_ipfs
-from mtd.services.metadata.update_onchain import update_metadata_onchain
 
 
 OPERATE_CONFIG_PATH = "services/sc-*/config.json"
@@ -381,21 +378,5 @@ def run_setup(chain_config: str, context: MtdContext) -> None:
 
         click.echo("Setting up private keys...")
         _setup_private_keys(context=context)
-
-        click.echo("Generating metadata...")
-        generate_metadata(
-            packages_dir=context.packages_dir, metadata_path=context.metadata_path
-        )
-
-        click.echo("Publishing metadata to IPFS...")
-        metadata_hash = publish_metadata_to_ipfs(metadata_path=context.metadata_path)
-        set_key(str(context.env_path), "METADATA_HASH", metadata_hash)
-
-        click.echo("Updating metadata hash on-chain...")
-        success, tx_hash = update_metadata_onchain(
-            env_path=context.env_path,
-            private_key_path=context.keys_dir / AGENT_KEY,
-        )
-        click.echo(f"Metadata update status: success={success}, tx_hash={tx_hash}")
 
         click.echo("Setup complete.")
