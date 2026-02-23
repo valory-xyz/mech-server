@@ -174,8 +174,10 @@ def update_service_after_deploy(
     service: Service, mech_address: str, agent_id: str
 ) -> None:
     """Update service env variables after mech deployment."""
-    mech_request_price = service.env_variables.get("MECH_REQUEST_PRICE", {}).get(
-        "value", 10000000000000000
+    mech_request_price = int(
+        service.env_variables.get("MECH_REQUEST_PRICE", {}).get(
+            "value", 10000000000000000
+        )
     )
     home_chain = service.home_chain
     chain_config = service.chain_configs[home_chain]
