@@ -29,6 +29,10 @@ format = [ "sdist", "wheel",]
 path = "mtd/templates/*.template"
 format = [ "sdist", "wheel",]
 
+[[tool.poetry.include]]
+path = "mtd/abis/*.json"
+format = [ "sdist", "wheel",]
+
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 open-autonomy = "==0.21.11"
