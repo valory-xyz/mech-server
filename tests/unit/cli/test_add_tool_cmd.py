@@ -199,18 +199,22 @@ class TestAddToolCommand:
     """Tests for add-tool command."""
 
     @patch(f"{MOCK_PATH}.get_package_manager")
+    @patch(f"{MOCK_PATH}.require_initialized")
     @patch(f"{MOCK_PATH}.generate_tool")
     @patch(f"{MOCK_PATH}.get_mtd_context")
     def test_add_tool_success(
         self,
         mock_get_context: MagicMock,
         mock_generate: MagicMock,
+        mock_require_initialized: MagicMock,
         mock_pkg_manager: MagicMock,
         tmp_path: Path,
     ) -> None:
-        """Test successful tool addition."""
+        """Test successful tool addition with lock."""
         context = MagicMock()
         context.packages_dir = tmp_path / "packages"
+        context.packages_dir.mkdir(parents=True)
+        (context.packages_dir / "packages.json").write_text("{}", encoding="utf-8")
         mock_get_context.return_value = context
 
         mock_manager_instance = MagicMock()
@@ -221,16 +225,20 @@ class TestAddToolCommand:
         result = runner.invoke(add_tool, ["myauthor", "mytool"])
 
         assert result.exit_code == 0
+        mock_require_initialized.assert_called_once_with(context)
         mock_generate.assert_called_once_with(
             "myauthor", "mytool", "A mech tool.", context.packages_dir
         )
+        mock_pkg_manager.assert_called_once()
 
+    @patch(f"{MOCK_PATH}.require_initialized")
     @patch(f"{MOCK_PATH}.generate_tool")
     @patch(f"{MOCK_PATH}.get_mtd_context")
     def test_add_tool_with_skip_lock(
         self,
         mock_get_context: MagicMock,
         mock_generate: MagicMock,
+        mock_require_initialized: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Test tool addition with --skip-lock."""
@@ -242,14 +250,17 @@ class TestAddToolCommand:
         result = runner.invoke(add_tool, ["myauthor", "mytool", "--skip-lock"])
 
         assert result.exit_code == 0
+        mock_require_initialized.assert_called_once_with(context)
         mock_generate.assert_called_once()
 
+    @patch(f"{MOCK_PATH}.require_initialized")
     @patch(f"{MOCK_PATH}.generate_tool")
     @patch(f"{MOCK_PATH}.get_mtd_context")
     def test_add_tool_with_custom_packages_dir(
         self,
         mock_get_context: MagicMock,
         mock_generate: MagicMock,
+        mock_require_initialized: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Test add-tool with explicit --packages-dir override."""
@@ -272,31 +283,7 @@ class TestAddToolCommand:
         )
 
         assert result.exit_code == 0
+        mock_require_initialized.assert_called_once_with(context)
         mock_generate.assert_called_once_with(
             "myauthor", "mytool", "A mech tool.", custom_packages
-        )
-
-    @patch(f"{MOCK_PATH}.generate_tool")
-    @patch(f"{MOCK_PATH}.get_mtd_context")
-    def test_add_tool_works_without_initialized_workspace(
-        self,
-        mock_get_context: MagicMock,
-        mock_generate: MagicMock,
-        tmp_path: Path,
-    ) -> None:
-        """add-tool must succeed even when workspace is not initialized.
-
-        No .mech_initialized, no config/, no .env present.
-        """
-        context = MagicMock()
-        context.packages_dir = tmp_path / "packages"
-        context.is_initialized.return_value = False
-        mock_get_context.return_value = context
-
-        runner = CliRunner()
-        result = runner.invoke(add_tool, ["myauthor", "mytool", "--skip-lock"])
-
-        assert result.exit_code == 0
-        mock_generate.assert_called_once_with(
-            "myauthor", "mytool", "A mech tool.", context.packages_dir
         )
