@@ -143,11 +143,6 @@ mech stop -c <gnosis|base|polygon|optimism>
     poetry run mech run -c <gnosis|base|polygon|optimism>
     ```
 
-    For local development and debugging, use dev mode (no Docker):
-    ```bash
-    poetry run mech run -c <gnosis|base|polygon|optimism> --dev
-    ```
-
 6. Once your agent instance is running, get your mech address from the workspace `.env`:
     ```bash
     grep MECH_TO_CONFIG ~/.operate-mech/.env
@@ -199,15 +194,13 @@ mech stop -c <gnosis|base|polygon|optimism>
   - [Python](https://www.python.org/) `>=3.10`
   - [Poetry](https://python-poetry.org/docs/) `>=1.4.0`
 
-1. Ensure `mech setup` has been run for your chosen chain.
-
-2. Scaffold the tool, replacing `AUTHOR_NAME` and `TOOL_NAME` with your values:
+1. Scaffold the tool, replacing `AUTHOR_NAME` and `TOOL_NAME` with your values:
 
     ```bash
     poetry run mech add-tool AUTHOR_NAME TOOL_NAME -d "My tool description"
     ```
 
-    After the command finishes, it generates the following structure:
+    This works before or after running `mech setup`. After the command finishes, it generates the following structure:
 
     ```
     ~/.operate-mech/packages/
@@ -219,7 +212,7 @@ mech stop -c <gnosis|base|polygon|optimism>
                  └── __init__.py
     ```
 
-3. Configure the tool in `component.yaml`:
+2. Configure the tool in `component.yaml`:
 
     - `name`: the name of the tool.
     - `author`: the author's name.
@@ -241,14 +234,18 @@ mech stop -c <gnosis|base|polygon|optimism>
             version: '>=2.20.0'
     ```
 
-4. Implement the tool logic in `tool_name.py`. The callable must follow this signature:
+3. Implement the tool logic in `tool_name.py`. The scaffold generates a working stub — update the `run()` body with your logic:
 
     ```python
+    ALLOWED_TOOLS = ["tool_name"]
+
     MechResponse = Tuple[str, Optional[str], Optional[Dict[str, Any]], Any, Any]
 
     def run(**kwargs) -> MechResponse:
         """Run the tool."""
         prompt = kwargs.get("prompt")
+        if prompt is None:
+            return "No prompt has been given.", None, None, None, None
         # ... tool logic ...
         return response, prompt, None, None, None
     ```
@@ -282,19 +279,42 @@ mech stop -c <gnosis|base|polygon|optimism>
     poetry run mechx push-to-ipfs ./<file_name>
     ```
 
-### 3. Deploying a Mech with custom tools
+### 3. Running your Mech with custom tools
 
-1. Generate `metadata.json` and publish to IPFS:
-    ```bash
-    poetry run mech push-metadata
-    ```
+#### Path 1: Define your tools first, then set up the service (recommended for new users)
 
-2. Update the tool metadata hash onchain:
+Use this path when you have not yet run `mech setup`.
+
+1. Scaffold and implement your tool(s) as described in steps 1–3 above.
+
+2. Run setup — this registers all your tools on-chain automatically:
     ```bash
-    poetry run mech update-metadata
+    poetry run mech setup -c <gnosis|base|polygon|optimism>
     ```
 
 3. Run your mech:
+    ```bash
+    poetry run mech run -c <gnosis|base|polygon|optimism>
+    ```
+
+#### Path 2: Add tools to an existing mech
+
+Use this path when you already have a running mech and want to add or update tools.
+
+1. Stop the running service:
+    ```bash
+    poetry run mech stop -c <gnosis|base|polygon|optimism>
+    ```
+
+2. Scaffold and implement your new tool(s) as described in steps 1–3 above.
+
+3. Publish the updated metadata and update the on-chain registry:
+    ```bash
+    poetry run mech push-metadata
+    poetry run mech update-metadata
+    ```
+
+4. Restart your mech:
     ```bash
     poetry run mech run -c <gnosis|base|polygon|optimism>
     ```
