@@ -28,6 +28,8 @@ import pytest
 
 from mtd.context import build_context
 from mtd.setup_flow import (
+    AGENT_KEY,
+    SERVICE_KEY,
     _configure_quickstart_env,
     _create_private_key_files,
     _deploy_mech,
@@ -108,8 +110,8 @@ def test_run_setup_passes_explicit_operate_home(
         operate=mock_operate, context=context
     )
     mock_run_service.assert_called_once()
-    mock_deploy_mech.assert_called_once_with(mock_operate)
-    mock_setup_env.assert_called_once_with(context=context)
+    mock_deploy_mech.assert_called_once_with(mock_operate, "polygon")
+    mock_setup_env.assert_called_once_with(context=context, chain_config="polygon")
     mock_setup_private_keys.assert_called_once_with(context=context)
     mock_generate_metadata.assert_called_once_with(
         packages_dir=context.packages_dir, metadata_path=context.metadata_path
@@ -319,10 +321,23 @@ def test_deploy_mech_returns_early_when_no_services() -> None:
     manager.get_all_services.return_value = ([], None)
     operate.service_manager.return_value = manager
 
-    # needs_mech_deployment is imported lazily inside _deploy_mech, so no
-    # patch needed here — the early-return guard fires before it is called.
     with patch("mtd.deploy_mech.deploy_mech") as mock_deploy:
-        _deploy_mech(operate)
+        _deploy_mech(operate, "gnosis")
+
+    mock_deploy.assert_not_called()
+
+
+def test_deploy_mech_returns_early_when_no_matching_service() -> None:
+    """Return immediately when no service matches the target chain."""
+    operate = MagicMock()
+    service = MagicMock()
+    service.home_chain = "polygon"
+    manager = MagicMock()
+    manager.get_all_services.return_value = ([service], None)
+    operate.service_manager.return_value = manager
+
+    with patch("mtd.deploy_mech.deploy_mech") as mock_deploy:
+        _deploy_mech(operate, "gnosis")
 
     mock_deploy.assert_not_called()
 
@@ -331,6 +346,7 @@ def test_deploy_mech_skips_when_already_deployed() -> None:
     """Print skip message when mech is already deployed."""
     operate = MagicMock()
     service = MagicMock()
+    service.home_chain = "gnosis"
     manager = MagicMock()
     manager.get_all_services.return_value = ([service], None)
     operate.service_manager.return_value = manager
@@ -338,7 +354,7 @@ def test_deploy_mech_skips_when_already_deployed() -> None:
     with patch("mtd.deploy_mech.needs_mech_deployment", return_value=False), patch(
         "mtd.deploy_mech.deploy_mech"
     ) as mock_deploy:
-        _deploy_mech(operate)
+        _deploy_mech(operate, "gnosis")
 
     mock_deploy.assert_not_called()
 
@@ -347,6 +363,7 @@ def test_deploy_mech_deploys_when_needed() -> None:
     """Deploy mech and print address when deployment is required."""
     operate = MagicMock()
     service = MagicMock()
+    service.home_chain = "gnosis"
     manager = MagicMock()
     manager.get_all_services.return_value = ([service], None)
     operate.service_manager.return_value = manager
@@ -354,7 +371,7 @@ def test_deploy_mech_deploys_when_needed() -> None:
     with patch("mtd.deploy_mech.needs_mech_deployment", return_value=True), patch(
         "mtd.deploy_mech.deploy_mech", return_value=("0xmech", 42)
     ) as mock_deploy, patch("mtd.deploy_mech.update_service_after_deploy"):
-        _deploy_mech(operate)
+        _deploy_mech(operate, "gnosis")
 
     mock_deploy.assert_called_once()
 
@@ -469,6 +486,22 @@ def test_setup_private_keys_decrypts_and_creates(
         _setup_private_keys(context=context)
 
     mock_create.assert_called_once_with(data=mock_key_data, context=context)
+
+
+def test_setup_private_keys_skips_decryption_when_files_exist(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Skip decryption when both key output files already exist."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.keys_dir.mkdir(parents=True, exist_ok=True)
+    (context.keys_dir / AGENT_KEY).write_text("0xprivkey", encoding="utf-8")
+    (context.keys_dir / SERVICE_KEY).write_text("[]", encoding="utf-8")
+
+    with patch(f"{MOD}.KeysManager") as mock_km:
+        _setup_private_keys(context=context)
+
+    mock_km.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -690,7 +723,7 @@ def test_read_and_update_env_covers_comment_lines_and_dict_values(
 def test_setup_env_reads_config_and_delegates(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Read operate config file and delegate to _read_and_update_env."""
+    """Read the service config matching chain_config and delegate to _read_and_update_env."""
     monkeypatch.setenv("HOME", str(tmp_path))
     context = build_context()
     service_dir = context.operate_dir / "services" / "sc-test"
@@ -699,21 +732,43 @@ def test_setup_env_reads_config_and_delegates(
     (service_dir / "config.json").write_text(json.dumps(config_data), encoding="utf-8")
 
     with patch(f"{MOD}._read_and_update_env") as mock_read_update:
-        _setup_env(context=context)
+        _setup_env(context=context, chain_config="gnosis")
 
     mock_read_update.assert_called_once_with(data=config_data, context=context)
+
+
+def test_setup_env_ignores_configs_for_other_chains(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Skip service configs whose home_chain does not match the target chain."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+
+    for chain, sc_id in [("polygon", "sc-poly"), ("gnosis", "sc-gnosis")]:
+        d = context.operate_dir / "services" / sc_id
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "config.json").write_text(
+            json.dumps({"home_chain": chain}), encoding="utf-8"
+        )
+
+    with patch(f"{MOD}._read_and_update_env") as mock_read_update:
+        _setup_env(context=context, chain_config="gnosis")
+
+    called_data = mock_read_update.call_args[1]["data"]
+    assert called_data["home_chain"] == "gnosis"
+    mock_read_update.assert_called_once()
 
 
 def test_setup_env_raises_when_no_config(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Raise FileNotFoundError when no operate service config files exist."""
+    """Raise FileNotFoundError when no operate service config matches the target chain."""
     monkeypatch.setenv("HOME", str(tmp_path))
     context = build_context()
     context.operate_dir.mkdir(parents=True, exist_ok=True)
 
-    with pytest.raises(FileNotFoundError, match="No operate config found"):
-        _setup_env(context=context)
+    with pytest.raises(FileNotFoundError, match="No operate config"):
+        _setup_env(context=context, chain_config="gnosis")
 
 
 # ---------------------------------------------------------------------------
@@ -819,6 +874,149 @@ def test_sanitize_quickstart_skips_env_var_absent_from_user_args(
 
     result = json.loads(quickstart_path.read_text(encoding="utf-8"))
     assert result["user_provided_args"] == {}
+
+
+# ---------------------------------------------------------------------------
+# run_setup — needs_setup is target-chain-aware
+# ---------------------------------------------------------------------------
+
+
+def _make_run_setup_patches() -> list:
+    """Return patch targets used by run_setup integration tests."""
+    return [
+        f"{MOD}.update_metadata_onchain",
+        f"{MOD}.publish_metadata_to_ipfs",
+        f"{MOD}.generate_metadata",
+        f"{MOD}._setup_private_keys",
+        f"{MOD}._setup_env",
+        f"{MOD}._deploy_mech",
+        f"{MOD}.run_service",
+        f"{MOD}._configure_quickstart_env",
+        f"{MOD}._normalize_template_nullable_env_vars",
+        f"{MOD}._sanitize_local_quickstart_user_args",
+        f"{MOD}._normalize_service_nullable_env_vars",
+        f"{MOD}._get_password",
+        f"{MOD}.OperateApp",
+    ]
+
+
+@patch(f"{MOD}.update_metadata_onchain", return_value=(True, "0xabc"))
+@patch(f"{MOD}.publish_metadata_to_ipfs", return_value="bafyhash")
+@patch(f"{MOD}.generate_metadata")
+@patch(f"{MOD}._setup_private_keys")
+@patch(f"{MOD}._setup_env")
+@patch(f"{MOD}._deploy_mech")
+@patch(f"{MOD}.run_service")
+@patch(f"{MOD}._configure_quickstart_env")
+@patch(f"{MOD}._normalize_template_nullable_env_vars")
+@patch(f"{MOD}._sanitize_local_quickstart_user_args")
+@patch(f"{MOD}._normalize_service_nullable_env_vars")
+@patch(f"{MOD}._get_password", return_value="password")
+@patch(f"{MOD}.OperateApp")
+def test_run_setup_skips_run_service_when_target_chain_already_deployed(
+    mock_operate_app: MagicMock,
+    mock_get_password: MagicMock,
+    mock_normalize_service: MagicMock,
+    mock_sanitize: MagicMock,
+    mock_normalize_template: MagicMock,
+    mock_configure: MagicMock,
+    mock_run_service: MagicMock,
+    mock_deploy_mech: MagicMock,
+    mock_setup_env: MagicMock,
+    mock_setup_private_keys: MagicMock,
+    mock_generate_metadata: MagicMock,
+    mock_publish_metadata: MagicMock,
+    mock_update_metadata: MagicMock,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Skip run_service when the target chain already has a deployed multisig."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.config_dir.mkdir(parents=True, exist_ok=True)
+    context.keys_dir.mkdir(parents=True, exist_ok=True)
+    context.packages_dir.mkdir(parents=True, exist_ok=True)
+    (context.config_dir / "config_mech_gnosis.json").write_text(
+        json.dumps({"name": "Mech on Gnosis", "home_chain": "gnosis"}),
+        encoding="utf-8",
+    )
+
+    mock_chain_data = MagicMock()
+    mock_chain_data.multisig = "0xsafe"
+    mock_chain_cfg = MagicMock()
+    mock_chain_cfg.chain_data = mock_chain_data
+    mock_service = MagicMock()
+    mock_service.home_chain = "gnosis"
+    mock_service.chain_configs = {"gnosis": mock_chain_cfg}
+
+    mock_operate = MagicMock()
+    mock_operate.service_manager().get_all_services.return_value = (
+        [mock_service],
+        None,
+    )
+    mock_operate_app.return_value = mock_operate
+
+    run_setup(chain_config="gnosis", context=context)
+
+    mock_run_service.assert_not_called()
+    mock_sanitize.assert_not_called()
+
+
+@patch(f"{MOD}.update_metadata_onchain", return_value=(True, "0xabc"))
+@patch(f"{MOD}.publish_metadata_to_ipfs", return_value="bafyhash")
+@patch(f"{MOD}.generate_metadata")
+@patch(f"{MOD}._setup_private_keys")
+@patch(f"{MOD}._setup_env")
+@patch(f"{MOD}._deploy_mech")
+@patch(f"{MOD}.run_service")
+@patch(f"{MOD}._configure_quickstart_env")
+@patch(f"{MOD}._normalize_template_nullable_env_vars")
+@patch(f"{MOD}._sanitize_local_quickstart_user_args")
+@patch(f"{MOD}._normalize_service_nullable_env_vars")
+@patch(f"{MOD}._get_password", return_value="password")
+@patch(f"{MOD}.OperateApp")
+def test_run_setup_triggers_setup_when_target_chain_not_yet_deployed(
+    mock_operate_app: MagicMock,
+    mock_get_password: MagicMock,
+    mock_normalize_service: MagicMock,
+    mock_sanitize: MagicMock,
+    mock_normalize_template: MagicMock,
+    mock_configure: MagicMock,
+    mock_run_service: MagicMock,
+    mock_deploy_mech: MagicMock,
+    mock_setup_env: MagicMock,
+    mock_setup_private_keys: MagicMock,
+    mock_generate_metadata: MagicMock,
+    mock_publish_metadata: MagicMock,
+    mock_update_metadata: MagicMock,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Trigger full setup when no existing service has the target chain as home_chain."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.config_dir.mkdir(parents=True, exist_ok=True)
+    context.keys_dir.mkdir(parents=True, exist_ok=True)
+    context.packages_dir.mkdir(parents=True, exist_ok=True)
+    (context.config_dir / "config_mech_gnosis.json").write_text(
+        json.dumps({"name": "Mech on Gnosis", "home_chain": "gnosis"}),
+        encoding="utf-8",
+    )
+
+    # Only a polygon service exists — gnosis has never been set up.
+    mock_service = MagicMock()
+    mock_service.home_chain = "polygon"
+
+    mock_operate = MagicMock()
+    mock_operate.service_manager().get_all_services.return_value = (
+        [mock_service],
+        None,
+    )
+    mock_operate_app.return_value = mock_operate
+
+    run_setup(chain_config="gnosis", context=context)
+
+    mock_run_service.assert_called_once()
 
 
 # ---------------------------------------------------------------------------

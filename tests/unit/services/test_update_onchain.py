@@ -157,12 +157,28 @@ def test_load_contract_reads_abi_and_returns_contract(tmp_path: Path) -> None:
     mock_web3 = MagicMock()
     mock_web3.eth.contract.return_value = "contract_instance"
 
-    result = _load_contract(mock_web3, abi_dir, "0xaddr", "TestContract")
+    result = _load_contract(mock_web3, "0xaddr", "TestContract", abi_dir=abi_dir)
 
     assert result == "contract_instance"
     mock_web3.eth.contract.assert_called_once_with(
         address="0xaddr", abi=[{"name": "changeHash"}]
     )
+
+
+def test_load_contract_loads_bundled_abi_when_no_abi_dir() -> None:
+    """Load the ABI from the bundled mtd.abis package resource when abi_dir is None."""
+    mock_web3 = MagicMock()
+    mock_web3.eth.contract.return_value = "contract_instance"
+
+    result = _load_contract(
+        mock_web3, "0xaddr", "ComplementaryServiceMetadata", abi_dir=None
+    )
+
+    assert result == "contract_instance"
+    call_kwargs = mock_web3.eth.contract.call_args.kwargs
+    assert call_kwargs["address"] == "0xaddr"
+    assert isinstance(call_kwargs["abi"], list)
+    assert len(call_kwargs["abi"]) > 0
 
 
 # ---------------------------------------------------------------------------
