@@ -3,6 +3,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
 jobs:
   publish-pip-packages:
     name: Publish to PyPI
