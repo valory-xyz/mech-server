@@ -47,19 +47,19 @@ A CLI to create, deploy and manage Mechs — AI agents that execute tasks on-cha
 ## Quick Start
 
 ```bash
-pip install mech-server
-mech setup -c <chain>
-mech run -c <chain>
+poetry add mech-server
+poetry run mech setup -c <chain>
+poetry run mech run -c <chain>
 ```
 
 ## Supported Chains
 
 | Chain | Native | OLAS Token | USDC Token | Nevermined |
 |-------|--------|------------|------------|------------|
-| Gnosis | yes | yes | - | yes |
-| Base | yes | yes | - | yes |
-| Polygon | yes | yes | yes | yes |
-| Optimism | yes | yes | - | yes |
+| Gnosis | ✅ | ✅ | ❌ | ✅ |
+| Base | ✅ | ✅ | ❌ | ✅ |
+| Polygon | ✅ | ✅ | ✅ | ✅ |
+| Optimism | ✅ | ✅ | ❌ | ✅ |
 
 ## Requirements
 
@@ -71,12 +71,12 @@ mech run -c <chain>
 
 | Command | Description |
 |---|---|
-| `mech setup -c <chain>` | Full first-time setup: workspace, agent build, mech deployment, env config, key setup |
-| `mech add-tool <author> <name>` | Scaffold a new mech tool |
-| `mech push-metadata` | Lock packages, push to IPFS, generate and publish metadata |
-| `mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
-| `mech run -c <chain>` | Run the mech AI agent via Docker |
-| `mech stop -c <chain>` | Stop a running mech AI agent |
+| `poetry run mech setup -c <chain>` | Full first-time setup: workspace, agent build, mech deployment, env config, key setup |
+| `poetry run mech add-tool <author> <name>` | Scaffold a new mech tool |
+| `poetry run mech push-metadata` | Recompute package fingerprints, push packages and metadata to IPFS, and write `METADATA_HASH` and `TOOLS_TO_PACKAGE_HASH` to `.env` |
+| `poetry run mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
+| `poetry run mech run -c <chain>` | Run the mech AI agent via Docker |
+| `poetry run mech stop -c <chain>` | Stop a running mech AI agent |
 
 ## Developing a new tool
 
@@ -84,12 +84,12 @@ mech run -c <chain>
 
 1. Set up the workspace and deploy the mech on-chain:
     ```bash
-    mech setup -c <chain>
+    poetry run mech setup -c <chain>
     ```
 
 2. Scaffold a tool:
     ```bash
-    mech add-tool <author> <tool_name> -d "Tool description"
+    poetry run mech add-tool <author> <tool_name> -d "Tool description"
     ```
 
 3. Implement the tool logic in `~/.operate-mech/packages/<author>/customs/<tool_name>/<tool_name>.py`. The scaffold generates a working stub with the correct structure:
@@ -101,40 +101,43 @@ mech run -c <chain>
         if prompt is None:
             return error_response("No prompt has been given.")
         result = do_work(prompt)
-        return result, prompt, None, None, None
+        context = None
+        artifact = None
+        callback = None
+        return result, prompt, context, artifact, callback
     ```
 
 4. If your tool requires API keys or other secrets, add them to `~/.operate-mech/.env`.
 
-5. Publish metadata and update the on-chain registry:
+5. Generate and publish metadata (to IPFS), then update the on-chain registry:
     ```bash
-    mech push-metadata
-    mech update-metadata
+    poetry run mech push-metadata
+    poetry run mech update-metadata
     ```
 
 6. Run:
     ```bash
-    mech run -c <chain>
+    poetry run mech run -c <chain>
     ```
 
 ### Existing service (mech already running)
 
 1. Stop the service:
     ```bash
-    mech stop -c <chain>
+    poetry run mech stop -c <chain>
     ```
 
 2. Scaffold, implement, and set any required API keys (same as steps 2–4 above).
 
-3. Publish and update:
+3. Generate and publish metadata (to IPFS), then update:
     ```bash
-    mech push-metadata
-    mech update-metadata
+    poetry run mech push-metadata
+    poetry run mech update-metadata
     ```
 
 4. Restart:
     ```bash
-    mech run -c <chain>
+    poetry run mech run -c <chain>
     ```
 
 ## Documentation
