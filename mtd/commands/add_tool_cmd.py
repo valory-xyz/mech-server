@@ -141,7 +141,6 @@ def add_tool(
     """Scaffold a new mech tool."""
     context = get_mtd_context(ctx)
     require_initialized(context)
-
     target_packages_dir = packages_dir or context.packages_dir
     target_packages_dir.mkdir(parents=True, exist_ok=True)
 

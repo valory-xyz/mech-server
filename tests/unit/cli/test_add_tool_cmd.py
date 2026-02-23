@@ -18,6 +18,7 @@
 # ------------------------------------------------------------------------------
 """Tests for add-tool command."""
 
+import importlib.util
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -134,24 +135,86 @@ class TestGenerateToolFile:
         )
 
 
+class TestScaffoldOutput:
+    """Tests that verify the real scaffold generates correct, runnable tool code."""
+
+    def test_scaffold_contains_allowed_tools(self, tmp_path: Path) -> None:
+        """Generated tool file must define ALLOWED_TOOLS."""
+        packages_dir = tmp_path / "packages"
+        generate_tool("myauthor", "my_tool", "A test tool.", packages_dir)
+
+        tool_py = packages_dir / "myauthor" / "customs" / "my_tool" / "my_tool.py"
+        content = tool_py.read_text(encoding="utf-8")
+        assert "ALLOWED_TOOLS" in content
+
+    def test_scaffold_allowed_tools_matches_tool_name(self, tmp_path: Path) -> None:
+        """ALLOWED_TOOLS in the generated file must contain the tool name."""
+        packages_dir = tmp_path / "packages"
+        generate_tool("myauthor", "my_tool", "A test tool.", packages_dir)
+
+        tool_py = packages_dir / "myauthor" / "customs" / "my_tool" / "my_tool.py"
+        spec = importlib.util.spec_from_file_location("my_tool", tool_py)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)  # type: ignore[union-attr]
+
+        assert hasattr(module, "ALLOWED_TOOLS")
+        assert isinstance(module.ALLOWED_TOOLS, list)
+        assert "my_tool" in module.ALLOWED_TOOLS
+
+    def test_scaffold_run_returns_mech_response(self, tmp_path: Path) -> None:
+        """Generated run() must return a 5-tuple with result and prompt."""
+        packages_dir = tmp_path / "packages"
+        generate_tool("myauthor", "my_tool", "A test tool.", packages_dir)
+
+        tool_py = packages_dir / "myauthor" / "customs" / "my_tool" / "my_tool.py"
+        spec = importlib.util.spec_from_file_location("my_tool", tool_py)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)  # type: ignore[union-attr]
+
+        result = module.run(prompt="test prompt")
+        assert isinstance(result, tuple)
+        assert len(result) == 5
+        assert result[1] == "test prompt"
+
+    def test_scaffold_run_handles_missing_prompt(self, tmp_path: Path) -> None:
+        """Generated run() must return a 5-tuple error when prompt is missing."""
+        packages_dir = tmp_path / "packages"
+        generate_tool("myauthor", "my_tool", "A test tool.", packages_dir)
+
+        tool_py = packages_dir / "myauthor" / "customs" / "my_tool" / "my_tool.py"
+        spec = importlib.util.spec_from_file_location("my_tool", tool_py)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)  # type: ignore[union-attr]
+
+        result = module.run()
+        assert isinstance(result, tuple)
+        assert len(result) == 5
+        assert isinstance(result[0], str)
+
+
 class TestAddToolCommand:
     """Tests for add-tool command."""
 
     @patch(f"{MOCK_PATH}.get_package_manager")
-    @patch(f"{MOCK_PATH}.generate_tool")
     @patch(f"{MOCK_PATH}.require_initialized")
+    @patch(f"{MOCK_PATH}.generate_tool")
     @patch(f"{MOCK_PATH}.get_mtd_context")
     def test_add_tool_success(
         self,
         mock_get_context: MagicMock,
-        mock_require_initialized: MagicMock,
         mock_generate: MagicMock,
+        mock_require_initialized: MagicMock,
         mock_pkg_manager: MagicMock,
         tmp_path: Path,
     ) -> None:
-        """Test successful tool addition."""
+        """Test successful tool addition with lock."""
         context = MagicMock()
         context.packages_dir = tmp_path / "packages"
+        context.packages_dir.mkdir(parents=True)
+        (context.packages_dir / "packages.json").write_text("{}", encoding="utf-8")
         mock_get_context.return_value = context
 
         mock_manager_instance = MagicMock()
@@ -166,15 +229,16 @@ class TestAddToolCommand:
         mock_generate.assert_called_once_with(
             "myauthor", "mytool", "A mech tool.", context.packages_dir
         )
+        mock_pkg_manager.assert_called_once()
 
-    @patch(f"{MOCK_PATH}.generate_tool")
     @patch(f"{MOCK_PATH}.require_initialized")
+    @patch(f"{MOCK_PATH}.generate_tool")
     @patch(f"{MOCK_PATH}.get_mtd_context")
     def test_add_tool_with_skip_lock(
         self,
         mock_get_context: MagicMock,
-        mock_require_initialized: MagicMock,
         mock_generate: MagicMock,
+        mock_require_initialized: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Test tool addition with --skip-lock."""
@@ -189,14 +253,14 @@ class TestAddToolCommand:
         mock_require_initialized.assert_called_once_with(context)
         mock_generate.assert_called_once()
 
-    @patch(f"{MOCK_PATH}.generate_tool")
     @patch(f"{MOCK_PATH}.require_initialized")
+    @patch(f"{MOCK_PATH}.generate_tool")
     @patch(f"{MOCK_PATH}.get_mtd_context")
     def test_add_tool_with_custom_packages_dir(
         self,
         mock_get_context: MagicMock,
-        mock_require_initialized: MagicMock,
         mock_generate: MagicMock,
+        mock_require_initialized: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Test add-tool with explicit --packages-dir override."""

@@ -93,6 +93,9 @@ def test_initialize_workspace_force_removes_and_recopies_packages(
 
     assert not context.packages_dir.exists()
     mock_cp.assert_called_once()
+    # Verify echo directory is excluded from the copy
+    _, kwargs = mock_cp.call_args
+    assert "ignore" in kwargs
 
 
 def test_initialize_workspace_skips_copytree_when_packages_exist(

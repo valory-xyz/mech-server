@@ -18,6 +18,7 @@
 # ------------------------------------------------------------------------------
 """Tests for context_utils helpers."""
 
+import os
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -25,7 +26,7 @@ import click
 import pytest
 
 from mtd.commands.context_utils import get_mtd_context, require_initialized
-from mtd.context import MtdContext, build_context
+from mtd.context import MtdContext, build_context, workspace_cwd
 
 
 def test_get_mtd_context_returns_existing_context(
@@ -43,6 +44,21 @@ def test_get_mtd_context_returns_existing_context(
     assert isinstance(result, MtdContext)
 
 
+def test_get_mtd_context_builds_fallback_when_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Build and store a fallback MtdContext when none is present in ctx.obj."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    ctx_obj: dict = {}
+    mock_ctx = MagicMock(spec=click.Context)
+    mock_ctx.ensure_object.return_value = ctx_obj
+
+    result = get_mtd_context(mock_ctx)
+
+    assert isinstance(result, MtdContext)
+    assert ctx_obj["mtd_context"] is result
+
+
 def test_require_initialized_raises_when_workspace_not_initialized(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -53,3 +69,18 @@ def test_require_initialized_raises_when_workspace_not_initialized(
 
     with pytest.raises(click.ClickException, match="not initialized"):
         require_initialized(context)
+
+
+def test_workspace_cwd_restores_existing_operate_home(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """workspace_cwd restores a pre-existing OPERATE_HOME after exit."""
+    monkeypatch.setenv("OPERATE_HOME", "/previous/operate/home")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.workspace_path.mkdir(parents=True, exist_ok=True)
+
+    with workspace_cwd(context):
+        assert os.environ["OPERATE_HOME"] == str(context.operate_dir)
+
+    assert os.environ["OPERATE_HOME"] == "/previous/operate/home"

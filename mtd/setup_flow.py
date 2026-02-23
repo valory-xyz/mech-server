@@ -17,7 +17,7 @@
 #
 # ------------------------------------------------------------------------------
 
-"""Setup flow for mech agent service configuration and metadata deployment."""
+"""Setup flow for mech agent service configuration."""
 
 import json
 import logging
@@ -33,9 +33,6 @@ from operate.quickstart.run_service import ask_password_if_needed, run_service
 from mtd.context import MtdContext, SUPPORTED_CHAINS
 from mtd.context import workspace_cwd as _workspace_cwd
 from mtd.resources import read_text_resource
-from mtd.services.metadata.generate import generate_metadata
-from mtd.services.metadata.publish import publish_metadata_to_ipfs
-from mtd.services.metadata.update_onchain import update_metadata_onchain
 
 
 OPERATE_CONFIG_PATH = "services/sc-*/config.json"
@@ -48,8 +45,8 @@ NULLABLE_DICT_ENV_DEFAULTS = {
 }
 
 
-def _deploy_mech(operate: OperateApp) -> None:
-    """Deploy mech on the marketplace if needed."""
+def _deploy_mech(operate: OperateApp, chain_config: str) -> None:
+    """Deploy mech on the marketplace for the given chain if needed."""
     from mtd.deploy_mech import (  # pylint: disable=import-outside-toplevel
         deploy_mech,
         needs_mech_deployment,
@@ -60,11 +57,13 @@ def _deploy_mech(operate: OperateApp) -> None:
     services, _ = manager.get_all_services()
     if not services:
         return
-    service = services[0]
+    service = next((s for s in services if s.home_chain == chain_config), None)
+    if service is None:
+        return
     if not needs_mech_deployment(service):
         click.echo("Mech already deployed, skipping.")
         return
-    ledger_config = service.chain_configs[service.home_chain].ledger_config
+    ledger_config = service.chain_configs[chain_config].ledger_config
     sftxb = manager.get_eth_safe_tx_builder(ledger_config)
     mech_address, agent_id = deploy_mech(sftxb=sftxb, service=service)
     update_service_after_deploy(service, mech_address, agent_id)
@@ -276,20 +275,19 @@ def _read_and_update_env(data: dict, context: MtdContext) -> None:
     context.env_path.write_text("".join(filled_lines), encoding="utf-8")
 
 
-def _setup_env(context: MtdContext) -> None:
-    """Set up env from generated operate config."""
-    matching_paths = context.operate_dir.glob(OPERATE_CONFIG_PATH)
-    data = {}
-    for file_path in matching_paths:
-        click.echo(f"Reading from: {file_path}")
+def _setup_env(context: MtdContext, chain_config: str) -> None:
+    """Set up env from the operate service config matching chain_config."""
+    for file_path in context.operate_dir.glob(OPERATE_CONFIG_PATH):
         data = json.loads(file_path.read_text(encoding="utf-8"))
+        if data.get("home_chain") == chain_config:
+            click.echo(f"Reading from: {file_path}")
+            _read_and_update_env(data=data, context=context)
+            return
 
-    if not data:
-        raise FileNotFoundError(
-            f"No operate config found under {context.operate_dir / 'services'} matching {OPERATE_CONFIG_PATH}."
-        )
-
-    _read_and_update_env(data=data, context=context)
+    raise FileNotFoundError(
+        f"No operate config for chain '{chain_config}' found under "
+        f"{context.operate_dir / 'services'} matching {OPERATE_CONFIG_PATH}."
+    )
 
 
 def _create_private_key_files(data: dict, context: MtdContext) -> None:
@@ -311,6 +309,12 @@ def _create_private_key_files(data: dict, context: MtdContext) -> None:
 
 def _setup_private_keys(context: MtdContext) -> None:
     """Set up private key files from operate key store."""
+    agent_key_path = context.keys_dir / AGENT_KEY
+    service_key_path = context.keys_dir / SERVICE_KEY
+    if agent_key_path.exists() and service_key_path.exists():
+        click.echo("Private key files already exist, skipping decryption.")
+        return
+
     keys_dir = context.operate_dir / "keys"
     if keys_dir.is_dir():
         key_file = next(keys_dir.glob("*"), None)
@@ -343,11 +347,12 @@ def run_setup(chain_config: str, context: MtdContext) -> None:
         _get_password(operate=operate, context=context)
 
         services, _ = operate.service_manager().get_all_services()
+        target_service = next(
+            (s for s in services if s.home_chain == chain_config), None
+        )
         needs_setup = (
-            not services
-            or services[0]
-            .chain_configs.get(services[0].home_chain, {})
-            .chain_data.multisig
+            target_service is None
+            or target_service.chain_configs.get(chain_config, {}).chain_data.multisig
             is None
         )
 
@@ -366,28 +371,12 @@ def run_setup(chain_config: str, context: MtdContext) -> None:
             )
 
         click.echo("Deploying mech on marketplace...")
-        _deploy_mech(operate)
+        _deploy_mech(operate, chain_config)
 
         click.echo("Setting up env...")
-        _setup_env(context=context)
+        _setup_env(context=context, chain_config=chain_config)
 
         click.echo("Setting up private keys...")
         _setup_private_keys(context=context)
-
-        click.echo("Generating metadata...")
-        generate_metadata(
-            packages_dir=context.packages_dir, metadata_path=context.metadata_path
-        )
-
-        click.echo("Publishing metadata to IPFS...")
-        metadata_hash = publish_metadata_to_ipfs(metadata_path=context.metadata_path)
-        set_key(str(context.env_path), "METADATA_HASH", metadata_hash)
-
-        click.echo("Updating metadata hash on-chain...")
-        success, tx_hash = update_metadata_onchain(
-            env_path=context.env_path,
-            private_key_path=context.keys_dir / AGENT_KEY,
-        )
-        click.echo(f"Metadata update status: success={success}, tx_hash={tx_hash}")
 
         click.echo("Setup complete.")

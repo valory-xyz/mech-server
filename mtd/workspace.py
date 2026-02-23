@@ -47,6 +47,10 @@ def initialize_workspace(context: MtdContext, force: bool = False) -> None:
     if force and context.packages_dir.exists():
         shutil.rmtree(context.packages_dir)
     if not context.packages_dir.exists():
-        shutil.copytree(packaged_root, context.packages_dir)
+        shutil.copytree(
+            packaged_root,
+            context.packages_dir,
+            ignore=shutil.ignore_patterns("echo"),
+        )
 
     context.initialized_marker_path.write_text("initialized\n", encoding="utf-8")

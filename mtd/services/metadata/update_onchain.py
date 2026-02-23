@@ -21,6 +21,7 @@
 
 import json
 import os
+from importlib import resources as importlib_resources
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -73,11 +74,21 @@ def _load_env(env_path: Path) -> Dict[str, str]:
 
 
 def _load_contract(
-    web3_client: Web3, abi_dir: Path, contract_address: str, abi_file: str
+    web3_client: Web3,
+    contract_address: str,
+    abi_file: str,
+    abi_dir: Optional[Path] = None,
 ) -> Contract:
-    """Load a contract from an abi file."""
-    abi_path = abi_dir / f"{abi_file}.json"
-    contract_abi = json.loads(abi_path.read_text(encoding="utf-8"))["abi"]
+    """Load a contract from an ABI file bundled in mtd.abis or a custom directory."""
+    if abi_dir is not None:
+        abi_text = (abi_dir / f"{abi_file}.json").read_text(encoding="utf-8")
+    else:
+        abi_text = (
+            importlib_resources.files("mtd.abis")
+            .joinpath(f"{abi_file}.json")
+            .read_text(encoding="utf-8")
+        )
+    contract_abi = json.loads(abi_text)["abi"]
     return web3_client.eth.contract(address=contract_address, abi=contract_abi)
 
 
@@ -140,12 +151,11 @@ def update_metadata_onchain(
     web3_client = Web3(Web3.HTTPProvider(runtime["CHAIN_RPC"]))
     ethereum_client = EthereumClient(runtime["CHAIN_RPC"])
 
-    abi_root = abi_dir or (Path(__file__).resolve().parents[3] / "utils" / "abis")
     contract = _load_contract(
         web3_client=web3_client,
-        abi_dir=abi_root,
         contract_address=runtime["COMPLEMENTARY_SERVICE_METADATA_ADDRESS"],
         abi_file="ComplementaryServiceMetadata",
+        abi_dir=abi_dir,
     )
 
     metadata_bytes = _fetch_metadata_hash(runtime["METADATA_HASH"])

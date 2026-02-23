@@ -19,10 +19,25 @@
 
 """The implementation of the ${tool_name} tool."""
 
-from typing import Any
+from typing import Any, Dict, Optional, Tuple
 
 
-def run(*args: Any, **kwargs: Any) -> None:
+ALLOWED_TOOLS = ["${tool_name}"]
+
+MechResponse = Tuple[str, Optional[str], Optional[Dict[str, Any]], Any, Any]
+
+
+def error_response(msg: str) -> MechResponse:
+    """Return an error mech response."""
+    return msg, None, None, None, None
+
+
+def run(**kwargs: Any) -> MechResponse:
     """The callable for the ${tool_name} tool."""
+    prompt = kwargs.get("prompt", None)
+    if prompt is None:
+        return error_response("No prompt has been given.")
+
     # TODO: Implement the tool's logic
-    print(f"Running ${tool_name} with {args=} and {kwargs=}.")
+    result = "${tool_name}: " + prompt
+    return result, prompt, None, None, None
