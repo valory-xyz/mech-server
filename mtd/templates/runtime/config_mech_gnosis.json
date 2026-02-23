@@ -1,164 +1,164 @@
 {
-    "name": "Mech",
-    "hash": "bafybeigzprddzesgdt7o5bbcvpgzoiz6owffb3qi7fv6pz5qkgj3bd5hta",
-    "description": "The mech executes AI tasks requested on-chain and delivers the results to the requester.",
-    "image": "https://gateway.autonolas.tech/ipfs/bafybeidzpenez565d7vp7jexfrwisa2wijzx6vwcffli57buznyyqkrceq",
-    "service_version": "v0.9.0",
-    "home_chain": "gnosis",
-    "configurations": {
-        "gnosis": {
-            "agent_id": 37,
-            "nft": "bafybeifgj3kackzfoq4fxjiuousm6epgwx7jbc3n2gjwzjgvtbbz7fc3su",
-            "threshold": 1,
-            "use_mech_marketplace": false,
-            "fund_requirements": {
-                "0x0000000000000000000000000000000000000000": {
-                    "agent": 1500000000000000000,
-                    "safe": 0
-                }
-            }
+  "name": "Mech on Gnosis",
+  "hash": "bafybeigzprddzesgdt7o5bbcvpgzoiz6owffb3qi7fv6pz5qkgj3bd5hta",
+  "description": "The mech executes AI tasks requested on-chain and delivers the results to the requester.",
+  "image": "https://gateway.autonolas.tech/ipfs/bafybeidzpenez565d7vp7jexfrwisa2wijzx6vwcffli57buznyyqkrceq",
+  "service_version": "v0.9.0",
+  "home_chain": "gnosis",
+  "configurations": {
+    "gnosis": {
+      "agent_id": 37,
+      "nft": "bafybeifgj3kackzfoq4fxjiuousm6epgwx7jbc3n2gjwzjgvtbbz7fc3su",
+      "threshold": 1,
+      "use_mech_marketplace": false,
+      "fund_requirements": {
+        "0x0000000000000000000000000000000000000000": {
+          "agent": 1500000000000000000,
+          "safe": 0
         }
-    },
-    "env_variables": {
-        "GNOSIS_LEDGER_RPC": {
-            "name": "Gnosis ledger RPC",
-            "description": "",
-            "value": "",
-            "provision_type": "computed"
-        },
-        "SERVICE_REGISTRY_ADDRESS": {
-            "name": "Service registry address",
-            "description": "",
-            "value": "0x9338b5153AE39BB89f50468E608eD9d764B755fD",
-            "provision_type": "fixed"
-        },
-        "STAKING_TOKEN_CONTRACT_ADDRESS": {
-            "name": "Staking contract address",
-            "description": "",
-            "value": "",
-            "provision_type": "computed"
-        },
-        "MECH_MARKETPLACE_ADDRESS": {
-            "name": "Mech Marketplace address",
-            "description": "The contract address of the mech marketplace, where your mech should be created. Supported addresses: 0x735FAAb1c4Ec41128c367AFb5c3baC73509f70bB or 0xad380C51cd5297FbAE43494dD5D407A2a3260b58",
-            "value": "0x735FAAb1c4Ec41128c367AFb5c3baC73509f70bB",
-            "provision_type": "fixed"
-        },
-        "API_KEYS": {
-            "name": "API keys",
-            "description": "API keys are the key value pairs for every AI tool your mech uses. The name of the tool will be the key used in the file. The value will be an array of valid API keys the tool can use.",
-            "value": "{\"openai\":[\"dummy_api_key\"], \"google_api_key\":[\"dummy_api_key\"]}",
-            "provision_type": "fixed"
-        },
-        "AGENT_ID": {
-            "name": "Agent ID",
-            "description": "",
-            "value": "",
-            "provision_type": "computed"
-        },
-        "METADATA_HASH": {
-            "name": "Metadata hash",
-            "description": "The IPFS hash of the Mech metadata JSON",
-            "value": "",
-            "provision_type": "fixed"
-        },
-        "MECH_TO_CONFIG": {
-            "name": "Mech to config",
-            "description": "",
-            "value": "{}",
-            "provision_type": "computed"
-        },
-        "MECH_TO_MAX_DELIVERY_RATE": {
-            "name": "Mech to Max delivery rate",
-            "description": "",
-            "value": "{}",
-            "provision_type": "computed"
-        },
-        "ON_CHAIN_SERVICE_ID": {
-            "name": "On-chain service ID",
-            "description": "",
-            "value": "null",
-            "provision_type": "computed"
-        },
-        "TOOLS_TO_PACKAGE_HASH": {
-            "name": "Tools to package mapping",
-            "description": "Tools to package hash tracks services for each tool packages.",
-            "value": "{\"echo\":\"bafybeiflezhxxy3jkzgh7ncm25io46n3xttncdb267ovkzf4nkpltgotti\"}",
-            "provision_type": "fixed"
-        },
-        "ETHEREUM_LEDGER_RPC_0": {
-            "name": "Gnosis ledger RPC 0",
-            "description": "",
-            "value": "",
-            "provision_type": "computed"
-        },
-        "GNOSIS_LEDGER_RPC_0": {
-            "name": "Gnosis ledger RPC 0",
-            "description": "",
-            "value": "",
-            "provision_type": "computed"
-        },
-        "MECH_TYPE": {
-            "name": "Mech type",
-            "description": "Type of mech to deploy (Native, Token, or Nevermined)",
-            "value": "Native",
-            "provision_type": "user"
-        },
-        "MECH_REQUEST_PRICE": {
-            "name": "Mech request price",
-            "description": "The price for requesting the mech's services in wei.",
-            "value": "10000000000000000",
-            "provision_type": "user"
-        },
-        "NUM_AGENTS": {
-            "name": "",
-            "description": "",
-            "value": 1,
-            "provision_type": "fixed"
-        },
-        "GNOSIS_LEDGER_CHAIN_ID": {
-            "name": "",
-            "description": "",
-            "value": 100,
-            "provision_type": "fixed"
-        },
-        "DEFAULT_CHAIN_ID": {
-            "name": "",
-            "description": "",
-            "value": "gnosis",
-            "provision_type": "fixed"
-        },
-        "CHECKPOINT_ADDRESS": {
-            "name": "",
-            "description": "",
-            "value": "0x694e62BDF7Ff510A4EE66662cf4866A961a31653",
-            "provision_type": "fixed"
-        },
-        "COMPLEMENTARY_SERVICE_METADATA_ADDRESS": {
-            "name": "",
-            "description": "",
-            "value": "0x0598081D48FB80B0A7E52FAD2905AE9beCd6fC69",
-            "provision_type": "fixed"
-        },
-        "RESET_PAUSE_DURATION": {
-            "name": "",
-            "description": "",
-            "value": 10,
-            "provision_type": "fixed"
-        },
-        "FROM_BLOCK_RANGE": {
-            "name": "",
-            "description": "",
-            "value": 2160,
-            "provision_type": "fixed"
-        }
-    },
-    "agent_release": {
-        "is_aea": true,
-        "repository": {
-            "owner": "valory-xyz",
-            "name": "mech",
-            "version": "v0.29.5"
-        }
+      }
     }
+  },
+  "env_variables": {
+    "GNOSIS_LEDGER_RPC": {
+      "name": "Gnosis ledger RPC",
+      "description": "",
+      "value": "",
+      "provision_type": "computed"
+    },
+    "SERVICE_REGISTRY_ADDRESS": {
+      "name": "Service registry address",
+      "description": "",
+      "value": "0x9338b5153AE39BB89f50468E608eD9d764B755fD",
+      "provision_type": "fixed"
+    },
+    "STAKING_TOKEN_CONTRACT_ADDRESS": {
+      "name": "Staking contract address",
+      "description": "",
+      "value": "",
+      "provision_type": "computed"
+    },
+    "MECH_MARKETPLACE_ADDRESS": {
+      "name": "Mech Marketplace address",
+      "description": "The contract address of the mech marketplace, where your mech should be created. Supported addresses: 0x735FAAb1c4Ec41128c367AFb5c3baC73509f70bB or 0xad380C51cd5297FbAE43494dD5D407A2a3260b58",
+      "value": "0x735FAAb1c4Ec41128c367AFb5c3baC73509f70bB",
+      "provision_type": "fixed"
+    },
+    "API_KEYS": {
+      "name": "API keys",
+      "description": "API keys are the key value pairs for every AI tool your mech uses. The name of the tool will be the key used in the file. The value will be an array of valid API keys the tool can use.",
+      "value": "{\"openai\":[\"dummy_api_key\"], \"google_api_key\":[\"dummy_api_key\"]}",
+      "provision_type": "fixed"
+    },
+    "AGENT_ID": {
+      "name": "Agent ID",
+      "description": "",
+      "value": "",
+      "provision_type": "computed"
+    },
+    "METADATA_HASH": {
+      "name": "Metadata hash",
+      "description": "The IPFS hash of the Mech metadata JSON",
+      "value": "",
+      "provision_type": "fixed"
+    },
+    "MECH_TO_CONFIG": {
+      "name": "Mech to config",
+      "description": "",
+      "value": "{}",
+      "provision_type": "computed"
+    },
+    "MECH_TO_MAX_DELIVERY_RATE": {
+      "name": "Mech to Max delivery rate",
+      "description": "",
+      "value": "{}",
+      "provision_type": "computed"
+    },
+    "ON_CHAIN_SERVICE_ID": {
+      "name": "On-chain service ID",
+      "description": "",
+      "value": "null",
+      "provision_type": "computed"
+    },
+    "TOOLS_TO_PACKAGE_HASH": {
+      "name": "Tools to package mapping",
+      "description": "Tools to package hash tracks services for each tool packages.",
+      "value": "{\"echo\":\"bafybeiflezhxxy3jkzgh7ncm25io46n3xttncdb267ovkzf4nkpltgotti\"}",
+      "provision_type": "fixed"
+    },
+    "ETHEREUM_LEDGER_RPC_0": {
+      "name": "Gnosis ledger RPC 0",
+      "description": "",
+      "value": "",
+      "provision_type": "computed"
+    },
+    "GNOSIS_LEDGER_RPC_0": {
+      "name": "Gnosis ledger RPC 0",
+      "description": "",
+      "value": "",
+      "provision_type": "computed"
+    },
+    "MECH_TYPE": {
+      "name": "Mech type",
+      "description": "Type of mech to deploy (Native, Token, or Nevermined)",
+      "value": "Native",
+      "provision_type": "user"
+    },
+    "MECH_REQUEST_PRICE": {
+      "name": "Mech request price",
+      "description": "The price for requesting the mech's services in wei.",
+      "value": "10000000000000000",
+      "provision_type": "user"
+    },
+    "NUM_AGENTS": {
+      "name": "",
+      "description": "",
+      "value": 1,
+      "provision_type": "fixed"
+    },
+    "GNOSIS_LEDGER_CHAIN_ID": {
+      "name": "",
+      "description": "",
+      "value": 100,
+      "provision_type": "fixed"
+    },
+    "DEFAULT_CHAIN_ID": {
+      "name": "",
+      "description": "",
+      "value": "gnosis",
+      "provision_type": "fixed"
+    },
+    "CHECKPOINT_ADDRESS": {
+      "name": "",
+      "description": "",
+      "value": "0x694e62BDF7Ff510A4EE66662cf4866A961a31653",
+      "provision_type": "fixed"
+    },
+    "COMPLEMENTARY_SERVICE_METADATA_ADDRESS": {
+      "name": "",
+      "description": "",
+      "value": "0x0598081D48FB80B0A7E52FAD2905AE9beCd6fC69",
+      "provision_type": "fixed"
+    },
+    "RESET_PAUSE_DURATION": {
+      "name": "",
+      "description": "",
+      "value": 10,
+      "provision_type": "fixed"
+    },
+    "FROM_BLOCK_RANGE": {
+      "name": "",
+      "description": "",
+      "value": 2160,
+      "provision_type": "fixed"
+    }
+  },
+  "agent_release": {
+    "is_aea": true,
+    "repository": {
+      "owner": "valory-xyz",
+      "name": "mech",
+      "version": "v0.29.5"
+    }
+  }
 }
