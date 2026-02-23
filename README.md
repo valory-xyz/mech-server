@@ -47,71 +47,96 @@ A CLI to create, deploy and manage Mechs — AI agents that execute tasks on-cha
 ## Quick Start
 
 ```bash
-poetry install
-poetry run mech setup -c <chain>      # first-time setup; prompts for RPC URL and wallet funding
-# edit ~/.operate-mech/.env and set your API keys
-poetry run mech run -c <chain>        # run via Docker
-poetry run mech stop -c <chain>       # stop when done
+pip install mech-server
+mech setup -c <chain>
+mech run -c <chain>
 ```
 
 ## Supported Chains
 
 | Chain | Native | OLAS Token | USDC Token | Nevermined |
 |-------|--------|------------|------------|------------|
-| Gnosis | ✅ | ✅ | ❌ | ✅ |
-| Base | ✅ | ✅ | ❌ | ✅ |
-| Polygon | ✅ | ✅ | ✅ | ✅ |
-| Optimism | ✅ | ✅ | ❌ | ✅ |
-
-The mech payment type is selected at deployment time via the `MECH_TYPE` env variable.
+| Gnosis | yes | yes | - | yes |
+| Base | yes | yes | - | yes |
+| Polygon | yes | yes | yes | yes |
+| Optimism | yes | yes | - | yes |
 
 ## Requirements
 
 - [Python](https://www.python.org/) `>=3.10, <3.12`
 - [Poetry](https://python-poetry.org/docs/)
 - [Docker Engine](https://docs.docker.com/engine/install/) + [Docker Compose](https://docs.docker.com/compose/install/)
-- [Tendermint](https://docs.tendermint.com/v0.34/introduction/install.html) `==0.34.19` (only for `--dev` mode)
 
 ## Commands
 
 | Command | Description |
 |---|---|
-| `mech setup -c <chain>` | Full first-time setup: agent build, mech deployment, env config, key setup, metadata generation, IPFS publish, and on-chain update |
-| `mech run -c <chain>` | Run the mech AI agent via Docker |
-| `mech run -c <chain> --dev` | Dev mode: push local packages to IPFS, then run on host (no Docker) |
-| `mech stop -c <chain>` | Stop a running mech AI agent |
-| `mech deploy-mech -c <chain>` | Deploy a mech on the marketplace (runs automatically during setup) |
-| `mech push-metadata` | Generate `metadata.json` from packages and publish to IPFS |
-| `mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
+| `mech setup -c <chain>` | Full first-time setup: workspace, agent build, mech deployment, env config, key setup |
 | `mech add-tool <author> <name>` | Scaffold a new mech tool |
+| `mech push-metadata` | Lock packages, push to IPFS, generate and publish metadata |
+| `mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
+| `mech run -c <chain>` | Run the mech AI agent via Docker |
+| `mech stop -c <chain>` | Stop a running mech AI agent |
 
-## What `mech setup` does
+## Developing a new tool
 
-`mech setup` runs the following steps in order:
+### New service (no existing mech)
 
-1. **Agent build** — creates the AI agent via `olas-operate-middleware` (skipped if already set up)
-2. **Mech deployment** — deploys a mech on the marketplace (skipped if already deployed)
-3. **Env configuration** — writes `~/.operate-mech/.env` with required variables
-4. **Private key setup** — configures operator and agent keys
-5. **Metadata generation** — generates `metadata.json` from package definitions
-6. **IPFS publish** — pushes metadata to IPFS
-7. **On-chain update** — updates the metadata hash on-chain via Safe transaction
+1. Set up the workspace and deploy the mech on-chain:
+    ```bash
+    mech setup -c <chain>
+    ```
 
-## Adding a tool
+2. Scaffold a tool:
+    ```bash
+    mech add-tool <author> <tool_name> -d "Tool description"
+    ```
 
-```bash
-poetry run mech add-tool <author> <tool_name> -d "My tool description"
-```
+3. Implement the tool logic in `~/.operate-mech/packages/<author>/customs/<tool_name>/<tool_name>.py`. The scaffold generates a working stub with the correct structure:
+    ```python
+    ALLOWED_TOOLS = ["tool_name"]
 
-Implement the tool in `~/.operate-mech/packages/<author>/customs/<tool_name>/<tool_name>.py`, then publish and register on-chain:
+    def run(**kwargs: Any) -> MechResponse:
+        prompt = kwargs.get("prompt")
+        if prompt is None:
+            return error_response("No prompt has been given.")
+        result = do_work(prompt)
+        return result, prompt, None, None, None
+    ```
 
-```bash
-poetry run mech push-metadata
-poetry run mech update-metadata
-```
+4. If your tool requires API keys or other secrets, add them to `~/.operate-mech/.env`.
 
-See the [documentation](https://stack.olas.network) for the full tool creation, publishing, and on-chain registration workflow.
+5. Publish metadata and update the on-chain registry:
+    ```bash
+    mech push-metadata
+    mech update-metadata
+    ```
+
+6. Run:
+    ```bash
+    mech run -c <chain>
+    ```
+
+### Existing service (mech already running)
+
+1. Stop the service:
+    ```bash
+    mech stop -c <chain>
+    ```
+
+2. Scaffold, implement, and set any required API keys (same as steps 2–4 above).
+
+3. Publish and update:
+    ```bash
+    mech push-metadata
+    mech update-metadata
+    ```
+
+4. Restart:
+    ```bash
+    mech run -c <chain>
+    ```
 
 ## Documentation
 
-Find the full tutorial (Hello World, creating and publishing tools, sending requests) at [stack.olas.network](https://stack.olas.network).
+Find the full tutorial (tool development, publishing, sending requests) at [stack.olas.network](https://stack.olas.network).
