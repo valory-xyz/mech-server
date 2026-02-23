@@ -21,10 +21,10 @@
 </p>
 <p align="center">
   <a href="https://github.com/valory-xyz/mech-server/actions/workflows/common_checks.yaml">
-    <img alt="Sanity checks and tests" src="https://github.com/valory-xyz/mech-server/workflows/main_workflow/badge.svg?branch=main">
+    <img alt="Sanity checks and tests" src="https://github.com/valory-xyz/mech-server/actions/workflows/common_checks.yaml/badge.svg?branch=main">
   </a>
   <a href="https://codecov.io/gh/valory-xyz/mech-server">
-    <img alt="Coverage" src="https://codecov.io/gh/valory-xyz/mech-server/graph/badge.svg">
+    <img alt="Coverage" src="https://img.shields.io/codecov/c/github/valory-xyz/mech-server">
   </a>
   <a href="https://flake8.pycqa.org">
     <img alt="flake8" src="https://img.shields.io/badge/lint-flake8-yellow">
