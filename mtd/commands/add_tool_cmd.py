@@ -29,7 +29,7 @@ import click
 from aea.cli.packages import package_type_selector_prompt
 
 from autonomy.cli.packages import get_package_manager
-from mtd.commands.context_utils import get_mtd_context, require_initialized
+from mtd.commands.context_utils import get_mtd_context
 
 
 CUSTOMS_DIR = "customs"
@@ -140,8 +140,6 @@ def add_tool(
 ) -> None:
     """Scaffold a new mech tool."""
     context = get_mtd_context(ctx)
-    require_initialized(context)
-
     target_packages_dir = packages_dir or context.packages_dir
     target_packages_dir.mkdir(parents=True, exist_ok=True)
 
