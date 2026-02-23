@@ -21,15 +21,7 @@
 
 import click
 
-from mtd.commands import (
-    add_tool,
-    deploy_mech_command,
-    push_metadata,
-    run,
-    setup,
-    stop,
-    update_metadata,
-)
+from mtd.commands import add_tool, push_metadata, run, setup, stop, update_metadata
 from mtd.context import build_context
 
 
@@ -42,7 +34,6 @@ def cli(ctx: click.Context) -> None:
 
 
 cli.add_command(add_tool)
-cli.add_command(deploy_mech_command)
 cli.add_command(setup)
 cli.add_command(run)
 cli.add_command(stop)
