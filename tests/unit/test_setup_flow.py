@@ -592,7 +592,7 @@ def test_read_and_update_env_missing_home_chain(
 
     with patch(f"{MOD}.read_text_resource", return_value=""):
         with pytest.raises(ValueError, match="home_chain"):
-            _read_and_update_env(data={}, context=context)
+            _read_and_update_env(data={}, context=context, chain="gnosis")
 
 
 def test_read_and_update_env_unsupported_chain(
@@ -604,7 +604,9 @@ def test_read_and_update_env_unsupported_chain(
 
     with patch(f"{MOD}.read_text_resource", return_value=""):
         with pytest.raises(ValueError, match="Unsupported"):
-            _read_and_update_env(data={"home_chain": "badchain"}, context=context)
+            _read_and_update_env(
+                data={"home_chain": "badchain"}, context=context, chain="badchain"
+            )
 
 
 def test_read_and_update_env_missing_safe_address(
@@ -620,7 +622,7 @@ def test_read_and_update_env_missing_safe_address(
 
     with patch(f"{MOD}.read_text_resource", return_value=""):
         with pytest.raises(ValueError, match="safe address"):
-            _read_and_update_env(data=data, context=context)
+            _read_and_update_env(data=data, context=context, chain="gnosis")
 
 
 def test_read_and_update_env_missing_chain_rpc(
@@ -630,7 +632,6 @@ def test_read_and_update_env_missing_chain_rpc(
     monkeypatch.setenv("HOME", str(tmp_path))
     context = build_context()
     context.workspace_path.mkdir(parents=True, exist_ok=True)
-    context.env_path.touch()
     data: dict = {
         "home_chain": "gnosis",
         "chain_configs": {"gnosis": {"chain_data": {"multisig": "0xsafe"}}},
@@ -643,17 +644,16 @@ def test_read_and_update_env_missing_chain_rpc(
 
     with patch(f"{MOD}.read_text_resource", return_value="KEY=\n"):
         with pytest.raises(ValueError, match="GNOSIS_LEDGER_RPC_0"):
-            _read_and_update_env(data=data, context=context)
+            _read_and_update_env(data=data, context=context, chain="gnosis")
 
 
-def test_read_and_update_env_writes_env_file(
+def test_read_and_update_env_writes_chain_env_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Write the env file with computed values on the happy path."""
+    """Write the chain-scoped env file with computed values on the happy path."""
     monkeypatch.setenv("HOME", str(tmp_path))
     context = build_context()
     context.workspace_path.mkdir(parents=True, exist_ok=True)
-    context.env_path.touch()
     data: dict = {
         "home_chain": "gnosis",
         "chain_configs": {"gnosis": {"chain_data": {"multisig": "0xsafe"}}},
@@ -665,9 +665,10 @@ def test_read_and_update_env_writes_env_file(
     }
 
     with patch(f"{MOD}.read_text_resource", return_value="SAFE_CONTRACT_ADDRESS=\n"):
-        _read_and_update_env(data=data, context=context)
+        _read_and_update_env(data=data, context=context, chain="gnosis")
 
-    content = context.env_path.read_text(encoding="utf-8")
+    chain_env = context.chain_env_path("gnosis")
+    content = chain_env.read_text(encoding="utf-8")
     assert "SAFE_CONTRACT_ADDRESS=0xsafe" in content
 
 
@@ -678,7 +679,6 @@ def test_read_and_update_env_covers_comment_lines_and_dict_values(
     monkeypatch.setenv("HOME", str(tmp_path))
     context = build_context()
     context.workspace_path.mkdir(parents=True, exist_ok=True)
-    context.env_path.touch()
     data: dict = {
         "home_chain": "gnosis",
         "chain_configs": {"gnosis": {"chain_data": {"multisig": "0xsafe"}}},
@@ -693,9 +693,10 @@ def test_read_and_update_env_covers_comment_lines_and_dict_values(
     template = "# comment line\nSAFE_CONTRACT_ADDRESS=\nCUSTOM_KEY=\n"
 
     with patch(f"{MOD}.read_text_resource", return_value=template):
-        _read_and_update_env(data=data, context=context)
+        _read_and_update_env(data=data, context=context, chain="gnosis")
 
-    content = context.env_path.read_text(encoding="utf-8")
+    chain_env = context.chain_env_path("gnosis")
+    content = chain_env.read_text(encoding="utf-8")
     assert "# comment line" in content
     assert "SAFE_CONTRACT_ADDRESS=0xsafe" in content
     assert 'CUSTOM_KEY={"nested":"dict"}' in content
@@ -720,7 +721,9 @@ def test_setup_env_reads_config_and_delegates(
     with patch(f"{MOD}._read_and_update_env") as mock_read_update:
         _setup_env(context=context, chain_config="gnosis")
 
-    mock_read_update.assert_called_once_with(data=config_data, context=context)
+    mock_read_update.assert_called_once_with(
+        data=config_data, context=context, chain="gnosis"
+    )
 
 
 def test_setup_env_ignores_configs_for_other_chains(
@@ -742,6 +745,7 @@ def test_setup_env_ignores_configs_for_other_chains(
 
     called_data = mock_read_update.call_args[1]["data"]
     assert called_data["home_chain"] == "gnosis"
+    assert mock_read_update.call_args[1]["chain"] == "gnosis"
     mock_read_update.assert_called_once()
 
 

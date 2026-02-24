@@ -180,18 +180,13 @@ def _normalize_service_nullable_env_vars(context: MtdContext) -> None:
             click.echo(f"Normalized nullable env vars in {file_path}")
 
 
-def _read_and_update_env(data: dict, context: MtdContext) -> None:
-    """Read generated env from operate and create required workspace .env file."""
+def _read_and_update_env(data: dict, context: MtdContext, chain: str) -> None:
+    """Read generated env from operate and create chain-scoped workspace .env file."""
     template_text = read_text_resource("mtd.templates.runtime", ".example.env")
     lines = [
         line if line.endswith("\n") else f"{line}\n"
         for line in template_text.splitlines()
     ]
-
-    existing_env = dotenv_values(context.env_path)
-    existing_operate_password = existing_env.get("OPERATE_PASSWORD") or os.environ.get(
-        "OPERATE_PASSWORD", ""
-    )
 
     home_chain = data.get("home_chain")
     if not home_chain:
@@ -264,15 +259,7 @@ def _read_and_update_env(data: dict, context: MtdContext) -> None:
         if value not in ("", None, {}, []):
             filled_lines.append(f"{key}={_format_env_value(value)}\n")
 
-    if (
-        existing_operate_password not in ("", None)
-        and "OPERATE_PASSWORD" not in written_keys
-    ):
-        filled_lines.append(
-            f"OPERATE_PASSWORD={_format_env_value(existing_operate_password)}\n"
-        )
-
-    context.env_path.write_text("".join(filled_lines), encoding="utf-8")
+    context.chain_env_path(chain).write_text("".join(filled_lines), encoding="utf-8")
 
 
 def _setup_env(context: MtdContext, chain_config: str) -> None:
@@ -281,7 +268,7 @@ def _setup_env(context: MtdContext, chain_config: str) -> None:
         data = json.loads(file_path.read_text(encoding="utf-8"))
         if data.get("home_chain") == chain_config:
             click.echo(f"Reading from: {file_path}")
-            _read_and_update_env(data=data, context=context)
+            _read_and_update_env(data=data, context=context, chain=chain_config)
             return
 
     raise FileNotFoundError(
