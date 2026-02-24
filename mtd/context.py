@@ -51,6 +51,10 @@ class MtdContext:
         """Ensure workspace root exists."""
         self.workspace_path.mkdir(parents=True, exist_ok=True)
 
+    def chain_env_path(self, chain: str) -> Path:
+        """Return the chain-specific env file path."""
+        return self.workspace_path / f".env.{chain}"
+
     def is_initialized(self) -> bool:
         """Check whether the workspace has been initialized."""
         return (

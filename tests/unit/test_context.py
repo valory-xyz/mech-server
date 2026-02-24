@@ -45,3 +45,15 @@ def test_context_is_initialized_false_then_true(
     context.initialized_marker_path.write_text("initialized\n", encoding="utf-8")
 
     assert context.is_initialized() is True
+
+
+def test_chain_env_path_returns_expected_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Return a chain-specific env file path under workspace root."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+
+    result = context.chain_env_path("gnosis")
+
+    assert result == context.workspace_path / ".env.gnosis"
