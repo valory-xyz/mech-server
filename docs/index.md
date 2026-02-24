@@ -288,6 +288,53 @@ If your Mech is already running and you want to add or update tools:
     ```
 
 
+## Off-chain requests
+
+In addition to the standard on-chain request flow, Mechs also expose an HTTP endpoint that allows **off-chain requests**. This is useful for faster iteration during development or lower-latency interactions.
+
+### Endpoint and configuration
+
+Every running Mech agent starts an HTTP server (default port **8000**) that accepts off-chain requests directly. The two relevant endpoints are:
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/send_signed_requests` | POST | Submit a signed off-chain request to the Mech |
+| `/fetch_offchain_info` | GET | Poll for the result of a previously submitted off-chain request |
+
+When a request is sent to `/send_signed_requests`, the Mech processes it the same way it would an on-chain request — it reads the prompt and tool from the metadata, executes the tool, writes the result to IPFS, and delivers the response on-chain. The requester polls `/fetch_offchain_info` with the `request_id` to retrieve the result once it's ready.
+
+The HTTP server is configured in the agent's `aea-config.yaml` under the `valory/http_server` connection:
+
+```yaml
+public_id: valory/http_server:0.22.0
+type: connection
+config:
+  host: ${str:0.0.0.0}
+  target_skill_id: valory/mech_abci:0.1.0
+  port: ${int:8000}
+```
+
+The port is mapped in the service's Docker configuration (`service.yaml`), so for a single-agent deployment the Mech's HTTP endpoint is available at `http://localhost:8000`.
+
+### Sending an off-chain request
+
+To send an off-chain request, `POST` to `/send_signed_requests` with the following form-encoded fields:
+
+| Field | Description |
+|---|---|
+| `sender` | The sender's Ethereum address |
+| `signature` | EIP-191 signature of the `request_id` bytes |
+| `ipfs_hash` | The IPFS hash of the request metadata (hex, `0x`-prefixed) |
+| `request_id` | The request ID (integer string), computed from the marketplace contract |
+| `delivery_rate` | The max delivery rate (integer string, in wei) |
+| `nonce` | The sender's current nonce from the marketplace contract |
+| `ipfs_data` | The request metadata as a JSON string: `{"prompt": "...", "tool": "...", "nonce": "..."}` |
+
+The response is a JSON object containing the `request_id` confirming receipt.
+
+To poll for the result, send a `GET` to `/fetch_offchain_info` with `request_id=<integer_request_id>` as a query parameter. The response is empty (`{}`) while the task is pending, and contains the full result object once complete.
+
+
 ## Minting a tool on the Olas Registry
 
 To register your tool as a component on the Olas Registry, mint it [here](https://marketplace.olas.network/ethereum/components/mint).
