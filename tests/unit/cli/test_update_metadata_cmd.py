@@ -42,21 +42,36 @@ class TestUpdateMetadataCommand:
         mock_update: MagicMock,
         tmp_path: Path,
     ) -> None:
-        """Test successful update-metadata."""
+        """Test successful update-metadata with chain flag."""
         context = MagicMock()
-        context.env_path = tmp_path / ".env"
+        context.chain_env_path.return_value = tmp_path / ".env.gnosis"
         context.keys_dir = tmp_path / "keys"
         mock_get_context.return_value = context
 
         runner = CliRunner()
-        result = runner.invoke(update_metadata, [])
+        result = runner.invoke(update_metadata, ["-c", "gnosis"])
 
         assert result.exit_code == 0
         mock_require_initialized.assert_called_once_with(context)
+        context.chain_env_path.assert_called_once_with("gnosis")
         mock_update.assert_called_once_with(
-            env_path=context.env_path,
+            env_path=tmp_path / ".env.gnosis",
             private_key_path=context.keys_dir / "ethereum_private_key.txt",
         )
+
+    def test_update_metadata_missing_chain_config(self) -> None:
+        """Fail when required chain-config option is missing."""
+        runner = CliRunner()
+        result = runner.invoke(update_metadata, [])
+
+        assert result.exit_code != 0
+
+    def test_update_metadata_invalid_chain_config(self) -> None:
+        """Fail when chain-config value is not a supported chain."""
+        runner = CliRunner()
+        result = runner.invoke(update_metadata, ["-c", "invalid_chain"])
+
+        assert result.exit_code != 0
 
     def test_update_metadata_help(self) -> None:
         """Test update-metadata help output."""
@@ -65,3 +80,4 @@ class TestUpdateMetadataCommand:
 
         assert result.exit_code == 0
         assert "Update the metadata hash on-chain" in result.output
+        assert "chain-config" in result.output

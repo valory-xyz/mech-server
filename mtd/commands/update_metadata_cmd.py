@@ -21,23 +21,34 @@
 
 import click
 
-from mtd.commands.context_utils import get_mtd_context, require_initialized
+from mtd.commands.context_utils import (
+    SUPPORTED_CHAINS,
+    get_mtd_context,
+    require_initialized,
+)
 from mtd.services.metadata.update_onchain import update_metadata_onchain
 
 
 @click.command(name="update-metadata")
+@click.option(
+    "-c",
+    "--chain-config",
+    type=click.Choice(SUPPORTED_CHAINS, case_sensitive=False),
+    required=True,
+    help="Target chain for the metadata update.",
+)
 @click.pass_context
-def update_metadata(ctx: click.Context) -> None:
+def update_metadata(ctx: click.Context, chain_config: str) -> None:
     """Update the metadata hash on-chain via Safe transaction.
 
-    Example: mech update-metadata
+    Example: mech update-metadata -c gnosis
     """
     context = get_mtd_context(ctx)
     require_initialized(context)
 
     click.echo("Updating metadata hash on-chain...")
     success, tx_hash = update_metadata_onchain(
-        env_path=context.env_path,
+        env_path=context.chain_env_path(chain_config),
         private_key_path=context.keys_dir / "ethereum_private_key.txt",
     )
     click.echo(f"Success: {success}")
