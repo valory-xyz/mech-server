@@ -22,13 +22,18 @@
 import json
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 import click
 from aea.cli.packages import package_type_selector_prompt
 from dotenv import set_key
 
 from autonomy.cli.packages import get_package_manager
-from mtd.commands.context_utils import get_mtd_context, require_initialized
+from mtd.commands.context_utils import (
+    SUPPORTED_CHAINS,
+    get_mtd_context,
+    require_initialized,
+)
 from mtd.services.metadata import (
     DEFAULT_IPFS_NODE,
     generate_metadata,
@@ -104,20 +109,32 @@ def _compute_tools_to_package_hash(packages_dir: Path) -> str:
 
 @click.command(name="prepare-metadata")
 @click.option(
+    "-c",
+    "--chain-config",
+    type=click.Choice(SUPPORTED_CHAINS, case_sensitive=False),
+    required=False,
+    default=None,
+    help="Target chain whose .env to update. Updates all chain envs when omitted.",
+)
+@click.option(
     "--ipfs-node",
     type=str,
     default=DEFAULT_IPFS_NODE,
     help="IPFS node address.",
 )
 @click.pass_context
-def prepare_metadata(ctx: click.Context, ipfs_node: str) -> None:
+def prepare_metadata(
+    ctx: click.Context, chain_config: Optional[str], ipfs_node: str
+) -> None:
     """Generate metadata.json from packages and publish to IPFS.
 
     Locks package hashes, pushes all packages to IPFS, generates
-    metadata, publishes it, and updates .env with METADATA_HASH
-    and TOOLS_TO_PACKAGE_HASH.
+    metadata, publishes it, and updates chain .env files with
+    METADATA_HASH and TOOLS_TO_PACKAGE_HASH.
 
-    Example: mech prepare-metadata
+    Examples:
+        mech prepare-metadata
+        mech prepare-metadata -c gnosis
     """
     context = get_mtd_context(ctx)
     require_initialized(context)
@@ -135,11 +152,23 @@ def prepare_metadata(ctx: click.Context, ipfs_node: str) -> None:
         metadata_path=context.metadata_path,
         ipfs_node=ipfs_node,
     )
-    set_key(str(context.env_path), "METADATA_HASH", metadata_hash)
+
+    if chain_config:
+        chains = [chain_config]
+    else:
+        chains = [c for c in SUPPORTED_CHAINS if context.chain_env_path(c).exists()]
+
+    for chain in chains:
+        set_key(str(context.chain_env_path(chain)), "METADATA_HASH", metadata_hash)
     click.echo(f"Metadata hash: {metadata_hash}")
 
     click.echo("Computing tools-to-package-hash mapping...")
     tools_hash_value = _compute_tools_to_package_hash(context.packages_dir)
     if tools_hash_value:
-        set_key(str(context.env_path), "TOOLS_TO_PACKAGE_HASH", tools_hash_value)
+        for chain in chains:
+            set_key(
+                str(context.chain_env_path(chain)),
+                "TOOLS_TO_PACKAGE_HASH",
+                tools_hash_value,
+            )
         click.echo(f"Tools-to-package-hash: {tools_hash_value}")

@@ -46,7 +46,7 @@ class TestPrepareMetadataCommand:
     @patch(f"{MOCK_PATH}._lock_packages")
     @patch(f"{MOCK_PATH}.require_initialized")
     @patch(f"{MOCK_PATH}.get_mtd_context")
-    def test_prepare_metadata_success(
+    def test_prepare_metadata_success_with_chain(
         self,
         mock_get_context: MagicMock,
         mock_require_initialized: MagicMock,
@@ -58,16 +58,16 @@ class TestPrepareMetadataCommand:
         mock_compute_tools: MagicMock,
         tmp_path: Path,
     ) -> None:
-        """Test successful prepare-metadata."""
+        """Test successful prepare-metadata with explicit chain flag."""
         context = MagicMock()
         context.packages_dir = tmp_path / "packages"
         context.workspace_path = tmp_path
         context.metadata_path = tmp_path / "metadata.json"
-        context.env_path = tmp_path / ".env"
+        context.chain_env_path.return_value = tmp_path / ".env.gnosis"
         mock_get_context.return_value = context
 
         runner = CliRunner()
-        result = runner.invoke(prepare_metadata, [])
+        result = runner.invoke(prepare_metadata, ["-c", "gnosis"])
 
         assert result.exit_code == 0
         mock_require_initialized.assert_called_once_with(context)
@@ -81,7 +81,7 @@ class TestPrepareMetadataCommand:
         )
         mock_publish.assert_called_once()
         mock_set_key.assert_called_once_with(
-            str(context.env_path), "METADATA_HASH", "f0170abc"
+            str(tmp_path / ".env.gnosis"), "METADATA_HASH", "f0170abc"
         )
         mock_compute_tools.assert_called_once_with(context.packages_dir)
 
@@ -108,25 +108,109 @@ class TestPrepareMetadataCommand:
         mock_compute_tools: MagicMock,
         tmp_path: Path,
     ) -> None:
-        """Write TOOLS_TO_PACKAGE_HASH to .env when tools mapping is non-empty."""
+        """Write TOOLS_TO_PACKAGE_HASH to chain .env when tools mapping is non-empty."""
         context = MagicMock()
         context.packages_dir = tmp_path / "packages"
         context.workspace_path = tmp_path
         context.metadata_path = tmp_path / "metadata.json"
-        context.env_path = tmp_path / ".env"
+        context.chain_env_path.return_value = tmp_path / ".env.gnosis"
+        mock_get_context.return_value = context
+
+        runner = CliRunner()
+        result = runner.invoke(prepare_metadata, ["-c", "gnosis"])
+
+        assert result.exit_code == 0
+        mock_set_key.assert_any_call(
+            str(tmp_path / ".env.gnosis"), "METADATA_HASH", "f0170abc"
+        )
+        mock_set_key.assert_any_call(
+            str(tmp_path / ".env.gnosis"),
+            "TOOLS_TO_PACKAGE_HASH",
+            '{"echo":"bafyabc","mytool":"bafydef"}',
+        )
+        assert mock_set_key.call_count == 2
+
+    @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
+    @patch(f"{MOCK_PATH}.set_key")
+    @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
+    @patch(f"{MOCK_PATH}.generate_metadata")
+    @patch(f"{MOCK_PATH}._push_all_packages")
+    @patch(f"{MOCK_PATH}._lock_packages")
+    @patch(f"{MOCK_PATH}.require_initialized")
+    @patch(f"{MOCK_PATH}.get_mtd_context")
+    def test_prepare_metadata_updates_all_existing_chain_envs(
+        self,
+        mock_get_context: MagicMock,
+        mock_require_initialized: MagicMock,
+        mock_lock_packages: MagicMock,
+        mock_push_all: MagicMock,
+        mock_generate: MagicMock,
+        mock_publish: MagicMock,
+        mock_set_key: MagicMock,
+        mock_compute_tools: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """Update METADATA_HASH in all existing chain env files when no -c given."""
+        context = MagicMock()
+        context.packages_dir = tmp_path / "packages"
+        context.workspace_path = tmp_path
+        context.metadata_path = tmp_path / "metadata.json"
+
+        gnosis_env = tmp_path / ".env.gnosis"
+        base_env = tmp_path / ".env.base"
+        gnosis_env.touch()
+        base_env.touch()
+
+        def _chain_env_path(chain: str) -> Path:
+            return tmp_path / f".env.{chain}"
+
+        context.chain_env_path.side_effect = _chain_env_path
         mock_get_context.return_value = context
 
         runner = CliRunner()
         result = runner.invoke(prepare_metadata, [])
 
         assert result.exit_code == 0
-        mock_set_key.assert_any_call(str(context.env_path), "METADATA_HASH", "f0170abc")
-        mock_set_key.assert_any_call(
-            str(context.env_path),
-            "TOOLS_TO_PACKAGE_HASH",
-            '{"echo":"bafyabc","mytool":"bafydef"}',
-        )
-        assert mock_set_key.call_count == 2
+        mock_set_key.assert_any_call(str(gnosis_env), "METADATA_HASH", "f0170abc")
+        mock_set_key.assert_any_call(str(base_env), "METADATA_HASH", "f0170abc")
+
+    @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
+    @patch(f"{MOCK_PATH}.set_key")
+    @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
+    @patch(f"{MOCK_PATH}.generate_metadata")
+    @patch(f"{MOCK_PATH}._push_all_packages")
+    @patch(f"{MOCK_PATH}._lock_packages")
+    @patch(f"{MOCK_PATH}.require_initialized")
+    @patch(f"{MOCK_PATH}.get_mtd_context")
+    def test_prepare_metadata_no_chain_files_still_succeeds(
+        self,
+        mock_get_context: MagicMock,
+        mock_require_initialized: MagicMock,
+        mock_lock_packages: MagicMock,
+        mock_push_all: MagicMock,
+        mock_generate: MagicMock,
+        mock_publish: MagicMock,
+        mock_set_key: MagicMock,
+        mock_compute_tools: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """Succeed without updating any env files when none exist and no -c given."""
+        context = MagicMock()
+        context.packages_dir = tmp_path / "packages"
+        context.workspace_path = tmp_path
+        context.metadata_path = tmp_path / "metadata.json"
+
+        def _chain_env_path(chain: str) -> Path:
+            return tmp_path / f".env.{chain}"
+
+        context.chain_env_path.side_effect = _chain_env_path
+        mock_get_context.return_value = context
+
+        runner = CliRunner()
+        result = runner.invoke(prepare_metadata, [])
+
+        assert result.exit_code == 0
+        mock_set_key.assert_not_called()
 
 
 class TestLockPackages:
