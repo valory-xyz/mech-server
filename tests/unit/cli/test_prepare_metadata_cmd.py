@@ -25,6 +25,7 @@ from unittest.mock import MagicMock, patch
 from click.testing import CliRunner
 
 from mtd.commands.prepare_metadata_cmd import (
+    _clean_packages_dir,
     _compute_tools_to_package_hash,
     _lock_packages,
     _push_all_packages,
@@ -449,6 +450,40 @@ class TestResolveOffchainUrl:
         assert result == ""
 
 
+class TestCleanPackagesDir:
+    """Tests for _clean_packages_dir."""
+
+    def test_removes_pycache_dirs(self, tmp_path: Path) -> None:
+        """Remove __pycache__ directories from the packages tree."""
+        pycache = tmp_path / "valory" / "customs" / "echo" / "__pycache__"
+        pycache.mkdir(parents=True)
+        (pycache / "echo.cpython-311.pyc").write_bytes(b"\x80\x00\x00\x00")
+
+        _clean_packages_dir(tmp_path)
+
+        assert not pycache.exists()
+
+    def test_removes_ds_store_files(self, tmp_path: Path) -> None:
+        """Remove .DS_Store files from the packages tree."""
+        ds_store = tmp_path / "valory" / "customs" / ".DS_Store"
+        ds_store.parent.mkdir(parents=True)
+        ds_store.write_bytes(b"\x00\x00\x00\x01")
+
+        _clean_packages_dir(tmp_path)
+
+        assert not ds_store.exists()
+
+    def test_noop_when_clean(self, tmp_path: Path) -> None:
+        """Do nothing when there are no __pycache__ or .DS_Store entries."""
+        tool_dir = tmp_path / "valory" / "customs" / "echo"
+        tool_dir.mkdir(parents=True)
+        (tool_dir / "echo.py").write_text("print('hi')", encoding="utf-8")
+
+        _clean_packages_dir(tmp_path)
+
+        assert (tool_dir / "echo.py").exists()
+
+
 class TestLockPackages:
     """Tests for _lock_packages."""
 
@@ -688,3 +723,18 @@ class TestComputeToolsToPackageHash:
         parsed = json.loads(result)
 
         assert parsed == {"openai-gpt-4": "bafybeiabc"}
+
+    def test_no_models_match_any_package(self, tmp_path: Path) -> None:
+        """Return empty string when no model names match any package."""
+        packages_json = {"dev": {"custom/valory/echo/0.1.0": "bafybeiabc"}}
+        (tmp_path / "packages.json").write_text(
+            json.dumps(packages_json), encoding="utf-8"
+        )
+        metadata_path = self._write_metadata(
+            tmp_path,
+            {"unknown-model": {"name": "nonexistent"}},
+        )
+
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
+
+        assert result == ""
