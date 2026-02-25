@@ -197,7 +197,7 @@ class TestPrepareMetadataCommand:
         assert result.exit_code == 0
         mock_set_key.assert_any_call(str(gnosis_env), "METADATA_HASH", "f0170abc")
         mock_set_key.assert_any_call(str(base_env), "METADATA_HASH", "f0170abc")
-        assert mock_sync_svc.call_count == 2
+        mock_sync_svc.assert_not_called()
 
     @patch(f"{MOCK_PATH}._sync_service_env_vars")
     @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
