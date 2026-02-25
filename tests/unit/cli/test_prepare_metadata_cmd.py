@@ -19,7 +19,9 @@
 """Tests for prepare-metadata command."""
 
 import json
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Iterator
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
@@ -29,6 +31,7 @@ from mtd.commands.prepare_metadata_cmd import (
     _lock_packages,
     _push_all_packages,
     _resolve_offchain_url,
+    _sync_service_env_vars,
     prepare_metadata,
 )
 
@@ -39,6 +42,7 @@ MOCK_PATH = "mtd.commands.prepare_metadata_cmd"
 class TestPrepareMetadataCommand:
     """Tests for prepare-metadata command."""
 
+    @patch(f"{MOCK_PATH}._sync_service_env_vars")
     @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
     @patch(f"{MOCK_PATH}.set_key")
     @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
@@ -57,6 +61,7 @@ class TestPrepareMetadataCommand:
         mock_publish: MagicMock,
         mock_set_key: MagicMock,
         mock_compute_tools: MagicMock,
+        mock_sync_svc: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Test successful prepare-metadata with explicit chain flag."""
@@ -87,7 +92,11 @@ class TestPrepareMetadataCommand:
         mock_compute_tools.assert_called_once_with(
             context.packages_dir, context.metadata_path
         )
+        mock_sync_svc.assert_called_once_with(
+            context, "gnosis", {"METADATA_HASH": "f0170abc"}
+        )
 
+    @patch(f"{MOCK_PATH}._sync_service_env_vars")
     @patch(
         f"{MOCK_PATH}._compute_tools_to_package_hash",
         return_value='{"openai-gpt-4":"bafyabc","custom-search":"bafydef"}',
@@ -109,6 +118,7 @@ class TestPrepareMetadataCommand:
         mock_publish: MagicMock,
         mock_set_key: MagicMock,
         mock_compute_tools: MagicMock,
+        mock_sync_svc: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Write TOOLS_TO_PACKAGE_HASH to chain .env when tools mapping is non-empty."""
@@ -132,7 +142,17 @@ class TestPrepareMetadataCommand:
             '{"openai-gpt-4":"bafyabc","custom-search":"bafydef"}',
         )
         assert mock_set_key.call_count == 2
+        mock_sync_svc.assert_called_once_with(
+            context,
+            "gnosis",
+            {
+                "METADATA_HASH": "f0170abc",
+                "TOOLS_TO_PACKAGE_HASH": '{"openai-gpt-4":"bafyabc",'
+                '"custom-search":"bafydef"}',
+            },
+        )
 
+    @patch(f"{MOCK_PATH}._sync_service_env_vars")
     @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
     @patch(f"{MOCK_PATH}.set_key")
     @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
@@ -151,6 +171,7 @@ class TestPrepareMetadataCommand:
         mock_publish: MagicMock,
         mock_set_key: MagicMock,
         mock_compute_tools: MagicMock,
+        mock_sync_svc: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Update METADATA_HASH in all existing chain env files when no -c given."""
@@ -176,7 +197,9 @@ class TestPrepareMetadataCommand:
         assert result.exit_code == 0
         mock_set_key.assert_any_call(str(gnosis_env), "METADATA_HASH", "f0170abc")
         mock_set_key.assert_any_call(str(base_env), "METADATA_HASH", "f0170abc")
+        assert mock_sync_svc.call_count == 2
 
+    @patch(f"{MOCK_PATH}._sync_service_env_vars")
     @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
     @patch(f"{MOCK_PATH}.set_key")
     @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
@@ -195,6 +218,7 @@ class TestPrepareMetadataCommand:
         mock_publish: MagicMock,
         mock_set_key: MagicMock,
         mock_compute_tools: MagicMock,
+        mock_sync_svc: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Succeed without updating any env files when none exist and no -c given."""
@@ -214,7 +238,9 @@ class TestPrepareMetadataCommand:
 
         assert result.exit_code == 0
         mock_set_key.assert_not_called()
+        mock_sync_svc.assert_not_called()
 
+    @patch(f"{MOCK_PATH}._sync_service_env_vars")
     @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
     @patch(f"{MOCK_PATH}.set_key")
     @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
@@ -233,6 +259,7 @@ class TestPrepareMetadataCommand:
         mock_publish: MagicMock,
         mock_set_key: MagicMock,
         mock_compute_tools: MagicMock,
+        mock_sync_svc: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Pass --offchain-url to generate and persist to .env."""
@@ -260,6 +287,7 @@ class TestPrepareMetadataCommand:
             str(env_path), "MECH_OFFCHAIN_URL", "https://mech.example.com/"
         )
 
+    @patch(f"{MOCK_PATH}._sync_service_env_vars")
     @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
     @patch(f"{MOCK_PATH}.set_key")
     @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
@@ -278,6 +306,7 @@ class TestPrepareMetadataCommand:
         mock_publish: MagicMock,
         mock_set_key: MagicMock,
         mock_compute_tools: MagicMock,
+        mock_sync_svc: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Read MECH_OFFCHAIN_URL from chain .env when --offchain-url not given."""
@@ -302,6 +331,168 @@ class TestPrepareMetadataCommand:
             metadata_path=context.metadata_path,
             offchain_url="https://stored.example.com/",
         )
+
+
+class TestSyncServiceEnvVars:
+    """Tests for _sync_service_env_vars."""
+
+    @staticmethod
+    @contextmanager
+    def _noop_workspace_cwd(context: object) -> Iterator[None]:  # type: ignore[misc]
+        """No-op replacement for workspace_cwd."""
+        yield
+
+    @patch("operate.cli.OperateApp")
+    @patch(f"{MOCK_PATH}._workspace_cwd")
+    def test_mutates_env_vars_and_stores(
+        self,
+        mock_ws_cwd: MagicMock,
+        mock_operate_cls: MagicMock,
+    ) -> None:
+        """Mutate env_variables on the service and call store()."""
+        mock_ws_cwd.side_effect = self._noop_workspace_cwd
+
+        service = MagicMock()
+        service.home_chain = "gnosis"
+        service.env_variables = {
+            "METADATA_HASH": {
+                "name": "METADATA_HASH",
+                "value": "old_hash",
+                "provision_type": "fixed",
+            },
+            "TOOLS_TO_PACKAGE_HASH": {
+                "name": "TOOLS_TO_PACKAGE_HASH",
+                "value": "old_tools",
+                "provision_type": "fixed",
+            },
+        }
+
+        operate = mock_operate_cls.return_value
+        operate.service_manager.return_value.get_all_services.return_value = (
+            [service],
+            True,
+        )
+
+        context = MagicMock()
+        _sync_service_env_vars(
+            context,
+            "gnosis",
+            {"METADATA_HASH": "new_hash", "TOOLS_TO_PACKAGE_HASH": "new_tools"},
+        )
+
+        assert service.env_variables["METADATA_HASH"]["value"] == "new_hash"
+        assert service.env_variables["TOOLS_TO_PACKAGE_HASH"]["value"] == "new_tools"
+        service.store.assert_called_once()
+
+    @patch("operate.cli.OperateApp")
+    @patch(f"{MOCK_PATH}._workspace_cwd")
+    def test_skips_when_no_service_found(
+        self,
+        mock_ws_cwd: MagicMock,
+        mock_operate_cls: MagicMock,
+    ) -> None:
+        """Skip gracefully when no service matches the chain."""
+        mock_ws_cwd.side_effect = self._noop_workspace_cwd
+
+        service = MagicMock()
+        service.home_chain = "base"
+
+        operate = mock_operate_cls.return_value
+        operate.service_manager.return_value.get_all_services.return_value = (
+            [service],
+            True,
+        )
+
+        context = MagicMock()
+        _sync_service_env_vars(context, "gnosis", {"METADATA_HASH": "new"})
+
+        service.store.assert_not_called()
+
+    @patch("operate.cli.OperateApp")
+    @patch(f"{MOCK_PATH}._workspace_cwd")
+    def test_skips_store_when_values_unchanged(
+        self,
+        mock_ws_cwd: MagicMock,
+        mock_operate_cls: MagicMock,
+    ) -> None:
+        """Do not call store() when all values already match."""
+        mock_ws_cwd.side_effect = self._noop_workspace_cwd
+
+        service = MagicMock()
+        service.home_chain = "gnosis"
+        service.env_variables = {
+            "METADATA_HASH": {
+                "name": "METADATA_HASH",
+                "value": "same_hash",
+                "provision_type": "fixed",
+            },
+        }
+
+        operate = mock_operate_cls.return_value
+        operate.service_manager.return_value.get_all_services.return_value = (
+            [service],
+            True,
+        )
+
+        context = MagicMock()
+        _sync_service_env_vars(context, "gnosis", {"METADATA_HASH": "same_hash"})
+
+        service.store.assert_not_called()
+
+    @patch("operate.cli.OperateApp")
+    @patch(f"{MOCK_PATH}._workspace_cwd")
+    def test_skips_unknown_keys(
+        self,
+        mock_ws_cwd: MagicMock,
+        mock_operate_cls: MagicMock,
+    ) -> None:
+        """Ignore update keys that are absent from env_variables."""
+        mock_ws_cwd.side_effect = self._noop_workspace_cwd
+
+        service = MagicMock()
+        service.home_chain = "gnosis"
+        service.env_variables = {
+            "METADATA_HASH": {
+                "name": "METADATA_HASH",
+                "value": "old",
+                "provision_type": "fixed",
+            },
+        }
+
+        operate = mock_operate_cls.return_value
+        operate.service_manager.return_value.get_all_services.return_value = (
+            [service],
+            True,
+        )
+
+        context = MagicMock()
+        _sync_service_env_vars(
+            context,
+            "gnosis",
+            {"METADATA_HASH": "new", "NONEXISTENT_KEY": "ignored"},
+        )
+
+        assert service.env_variables["METADATA_HASH"]["value"] == "new"
+        service.store.assert_called_once()
+
+    @patch("operate.cli.OperateApp")
+    @patch(f"{MOCK_PATH}._workspace_cwd")
+    def test_empty_services_list(
+        self,
+        mock_ws_cwd: MagicMock,
+        mock_operate_cls: MagicMock,
+    ) -> None:
+        """Skip gracefully when no services exist at all."""
+        mock_ws_cwd.side_effect = self._noop_workspace_cwd
+
+        operate = mock_operate_cls.return_value
+        operate.service_manager.return_value.get_all_services.return_value = (
+            [],
+            True,
+        )
+
+        context = MagicMock()
+        _sync_service_env_vars(context, "gnosis", {"METADATA_HASH": "new"})
 
 
 class TestResolveOffchainUrl:

@@ -31,6 +31,7 @@ from dotenv import dotenv_values, set_key
 from autonomy.cli.packages import get_package_manager
 from mtd.commands.context_utils import (
     SUPPORTED_CHAINS,
+    _workspace_cwd,
     get_mtd_context,
     require_initialized,
 )
@@ -139,6 +140,41 @@ def _compute_tools_to_package_hash(  # pylint: disable=too-many-return-statement
     return json.dumps(tools_mapping, separators=(",", ":"))
 
 
+def _sync_service_env_vars(
+    context: MtdContext, chain: str, updates: dict[str, str]
+) -> None:
+    """Push updated values into the operate service config for *chain*.
+
+    Directly mutates ``env_variables`` on the in-memory Service object and
+    calls ``store()`` to persist to ``config.json``.  The next ``mech run``
+    regenerates ``agent_0.env`` from the persisted config.
+    """
+    from operate.cli import OperateApp  # pylint: disable=import-outside-toplevel
+
+    with _workspace_cwd(context):
+        operate = OperateApp(home=context.operate_dir)
+        operate.setup()
+        services, _ = operate.service_manager().get_all_services()
+
+    service = next((s for s in services if s.home_chain == chain), None)
+    if service is None:
+        click.echo(
+            f"No service found for chain '{chain}', " "skipping service config sync."
+        )
+        return
+
+    changed = False
+    for key, value in updates.items():
+        entry = service.env_variables.get(key)
+        if isinstance(entry, dict) and entry.get("value") != value:
+            entry["value"] = value
+            changed = True
+
+    if changed:
+        service.store()
+        click.echo(f"  Synced service config for {chain}")
+
+
 def _resolve_offchain_url(
     explicit_url: Optional[str],
     context: MtdContext,
@@ -244,3 +280,11 @@ def prepare_metadata(
                 tools_hash_value,
             )
         click.echo(f"Tools-to-package-hash: {tools_hash_value}")
+
+    click.echo("Syncing service config...")
+    for chain in chains:
+        svc_updates: dict[str, str] = {"METADATA_HASH": metadata_hash}
+        if tools_hash_value:
+            svc_updates["TOOLS_TO_PACKAGE_HASH"] = tools_hash_value
+        _sync_service_env_vars(context, chain, svc_updates)
+    click.echo("Done.")
