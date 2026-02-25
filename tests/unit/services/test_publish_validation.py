@@ -81,6 +81,22 @@ def test_validate_valid_metadata(tmp_path: Path) -> None:
     assert msg == ""
 
 
+def test_validate_valid_metadata_with_url(tmp_path: Path) -> None:
+    """Valid metadata with optional url field should return (True, '')."""
+    data = {**VALID_METADATA, "url": "https://example.com"}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is True
+    assert msg == ""
+
+
+def test_validate_metadata_with_wrong_url_type(tmp_path: Path) -> None:
+    """Return (False, error) when url field has wrong type."""
+    data = {**VALID_METADATA, "url": 123}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert "url" in msg
+
+
 def test_validate_valid_metadata_schema_without_required(tmp_path: Path) -> None:
     """Valid metadata with an output schema that omits 'required' should return (True, '')."""
     schema_no_required = {

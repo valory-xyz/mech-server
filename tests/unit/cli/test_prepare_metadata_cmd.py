@@ -28,6 +28,7 @@ from mtd.commands.prepare_metadata_cmd import (
     _compute_tools_to_package_hash,
     _lock_packages,
     _push_all_packages,
+    _resolve_offchain_url,
     prepare_metadata,
 )
 
@@ -63,7 +64,8 @@ class TestPrepareMetadataCommand:
         context.packages_dir = tmp_path / "packages"
         context.workspace_path = tmp_path
         context.metadata_path = tmp_path / "metadata.json"
-        context.chain_env_path.return_value = tmp_path / ".env.gnosis"
+        env_path = tmp_path / ".env.gnosis"
+        context.chain_env_path.return_value = env_path
         mock_get_context.return_value = context
 
         runner = CliRunner()
@@ -78,16 +80,17 @@ class TestPrepareMetadataCommand:
         mock_generate.assert_called_once_with(
             packages_dir=context.packages_dir,
             metadata_path=context.metadata_path,
+            offchain_url="",
         )
         mock_publish.assert_called_once()
-        mock_set_key.assert_called_once_with(
-            str(tmp_path / ".env.gnosis"), "METADATA_HASH", "f0170abc"
+        mock_set_key.assert_called_once_with(str(env_path), "METADATA_HASH", "f0170abc")
+        mock_compute_tools.assert_called_once_with(
+            context.packages_dir, context.metadata_path
         )
-        mock_compute_tools.assert_called_once_with(context.packages_dir)
 
     @patch(
         f"{MOCK_PATH}._compute_tools_to_package_hash",
-        return_value='{"echo":"bafyabc","mytool":"bafydef"}',
+        return_value='{"openai-gpt-4":"bafyabc","custom-search":"bafydef"}',
     )
     @patch(f"{MOCK_PATH}.set_key")
     @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
@@ -126,7 +129,7 @@ class TestPrepareMetadataCommand:
         mock_set_key.assert_any_call(
             str(tmp_path / ".env.gnosis"),
             "TOOLS_TO_PACKAGE_HASH",
-            '{"echo":"bafyabc","mytool":"bafydef"}',
+            '{"openai-gpt-4":"bafyabc","custom-search":"bafydef"}',
         )
         assert mock_set_key.call_count == 2
 
@@ -212,6 +215,140 @@ class TestPrepareMetadataCommand:
         assert result.exit_code == 0
         mock_set_key.assert_not_called()
 
+    @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
+    @patch(f"{MOCK_PATH}.set_key")
+    @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
+    @patch(f"{MOCK_PATH}.generate_metadata")
+    @patch(f"{MOCK_PATH}._push_all_packages")
+    @patch(f"{MOCK_PATH}._lock_packages")
+    @patch(f"{MOCK_PATH}.require_initialized")
+    @patch(f"{MOCK_PATH}.get_mtd_context")
+    def test_prepare_metadata_with_explicit_offchain_url(
+        self,
+        mock_get_context: MagicMock,
+        mock_require_initialized: MagicMock,
+        mock_lock_packages: MagicMock,
+        mock_push_all: MagicMock,
+        mock_generate: MagicMock,
+        mock_publish: MagicMock,
+        mock_set_key: MagicMock,
+        mock_compute_tools: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """Pass --offchain-url to generate and persist to .env."""
+        context = MagicMock()
+        context.packages_dir = tmp_path / "packages"
+        context.workspace_path = tmp_path
+        context.metadata_path = tmp_path / "metadata.json"
+        env_path = tmp_path / ".env.gnosis"
+        context.chain_env_path.return_value = env_path
+        mock_get_context.return_value = context
+
+        runner = CliRunner()
+        result = runner.invoke(
+            prepare_metadata,
+            ["-c", "gnosis", "--offchain-url", "https://mech.example.com/"],
+        )
+
+        assert result.exit_code == 0
+        mock_generate.assert_called_once_with(
+            packages_dir=context.packages_dir,
+            metadata_path=context.metadata_path,
+            offchain_url="https://mech.example.com/",
+        )
+        mock_set_key.assert_any_call(
+            str(env_path), "MECH_OFFCHAIN_URL", "https://mech.example.com/"
+        )
+
+    @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
+    @patch(f"{MOCK_PATH}.set_key")
+    @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
+    @patch(f"{MOCK_PATH}.generate_metadata")
+    @patch(f"{MOCK_PATH}._push_all_packages")
+    @patch(f"{MOCK_PATH}._lock_packages")
+    @patch(f"{MOCK_PATH}.require_initialized")
+    @patch(f"{MOCK_PATH}.get_mtd_context")
+    def test_prepare_metadata_reads_url_from_env(
+        self,
+        mock_get_context: MagicMock,
+        mock_require_initialized: MagicMock,
+        mock_lock_packages: MagicMock,
+        mock_push_all: MagicMock,
+        mock_generate: MagicMock,
+        mock_publish: MagicMock,
+        mock_set_key: MagicMock,
+        mock_compute_tools: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """Read MECH_OFFCHAIN_URL from chain .env when --offchain-url not given."""
+        context = MagicMock()
+        context.packages_dir = tmp_path / "packages"
+        context.workspace_path = tmp_path
+        context.metadata_path = tmp_path / "metadata.json"
+        env_path = tmp_path / ".env.gnosis"
+        env_path.write_text(
+            "MECH_OFFCHAIN_URL=https://stored.example.com/\n",
+            encoding="utf-8",
+        )
+        context.chain_env_path.return_value = env_path
+        mock_get_context.return_value = context
+
+        runner = CliRunner()
+        result = runner.invoke(prepare_metadata, ["-c", "gnosis"])
+
+        assert result.exit_code == 0
+        mock_generate.assert_called_once_with(
+            packages_dir=context.packages_dir,
+            metadata_path=context.metadata_path,
+            offchain_url="https://stored.example.com/",
+        )
+
+
+class TestResolveOffchainUrl:
+    """Tests for _resolve_offchain_url."""
+
+    def test_explicit_url_takes_precedence(self, tmp_path: Path) -> None:
+        """Return explicit URL when provided."""
+        context = MagicMock()
+        result = _resolve_offchain_url("https://explicit.com/", context, "gnosis")
+        assert result == "https://explicit.com/"
+
+    def test_reads_from_env_file(self, tmp_path: Path) -> None:
+        """Read MECH_OFFCHAIN_URL from chain .env file."""
+        context = MagicMock()
+        env_path = tmp_path / ".env.gnosis"
+        env_path.write_text(
+            "MECH_OFFCHAIN_URL=https://from-env.com/\n", encoding="utf-8"
+        )
+        context.chain_env_path.return_value = env_path
+
+        result = _resolve_offchain_url(None, context, "gnosis")
+        assert result == "https://from-env.com/"
+
+    def test_returns_empty_when_no_chain(self) -> None:
+        """Return empty string when chain_config is None."""
+        context = MagicMock()
+        result = _resolve_offchain_url(None, context, None)
+        assert result == ""
+
+    def test_returns_empty_when_env_file_missing(self, tmp_path: Path) -> None:
+        """Return empty string when chain .env does not exist."""
+        context = MagicMock()
+        context.chain_env_path.return_value = tmp_path / ".env.gnosis"
+
+        result = _resolve_offchain_url(None, context, "gnosis")
+        assert result == ""
+
+    def test_returns_empty_when_env_var_absent(self, tmp_path: Path) -> None:
+        """Return empty string when MECH_OFFCHAIN_URL not in .env."""
+        context = MagicMock()
+        env_path = tmp_path / ".env.gnosis"
+        env_path.write_text("OTHER_VAR=something\n", encoding="utf-8")
+        context.chain_env_path.return_value = env_path
+
+        result = _resolve_offchain_url(None, context, "gnosis")
+        assert result == ""
+
 
 class TestLockPackages:
     """Tests for _lock_packages."""
@@ -286,8 +423,16 @@ class TestPushAllPackages:
 class TestComputeToolsToPackageHash:
     """Tests for _compute_tools_to_package_hash."""
 
-    def test_happy_path_two_custom_tools(self, tmp_path: Path) -> None:
-        """Return JSON mapping for two custom tool entries."""
+    @staticmethod
+    def _write_metadata(tmp_path: Path, tool_metadata: dict) -> Path:
+        """Write a metadata.json with the given toolMetadata section."""
+        metadata = {"tools": list(tool_metadata.keys()), "toolMetadata": tool_metadata}
+        metadata_path = tmp_path / "metadata.json"
+        metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+        return metadata_path
+
+    def test_happy_path_maps_model_names(self, tmp_path: Path) -> None:
+        """Map each model name from toolMetadata to the tool IPFS hash."""
         packages_json = {
             "dev": {
                 "custom/valory/echo/0.1.0": "bafybeiabc",
@@ -297,11 +442,23 @@ class TestComputeToolsToPackageHash:
         (tmp_path / "packages.json").write_text(
             json.dumps(packages_json), encoding="utf-8"
         )
+        metadata_path = self._write_metadata(
+            tmp_path,
+            {
+                "openai-gpt-4": {"name": "echo"},
+                "openai-gpt-3.5": {"name": "echo"},
+                "custom-search": {"name": "mytool"},
+            },
+        )
 
-        result = _compute_tools_to_package_hash(tmp_path)
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
         parsed = json.loads(result)
 
-        assert parsed == {"echo": "bafybeiabc", "mytool": "bafybeidef"}
+        assert parsed == {
+            "openai-gpt-4": "bafybeiabc",
+            "openai-gpt-3.5": "bafybeiabc",
+            "custom-search": "bafybeidef",
+        }
 
     def test_skips_non_custom_entries(self, tmp_path: Path) -> None:
         """Exclude agent and service entries from the mapping."""
@@ -315,15 +472,20 @@ class TestComputeToolsToPackageHash:
         (tmp_path / "packages.json").write_text(
             json.dumps(packages_json), encoding="utf-8"
         )
+        metadata_path = self._write_metadata(
+            tmp_path, {"openai-gpt-4": {"name": "echo"}}
+        )
 
-        result = _compute_tools_to_package_hash(tmp_path)
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
         parsed = json.loads(result)
 
-        assert parsed == {"echo": "bafybeiabc"}
+        assert parsed == {"openai-gpt-4": "bafybeiabc"}
 
     def test_missing_packages_json(self, tmp_path: Path) -> None:
         """Return empty string when packages.json does not exist."""
-        result = _compute_tools_to_package_hash(tmp_path)
+        metadata_path = tmp_path / "metadata.json"
+
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
 
         assert result == ""
 
@@ -337,8 +499,9 @@ class TestComputeToolsToPackageHash:
         (tmp_path / "packages.json").write_text(
             json.dumps(packages_json), encoding="utf-8"
         )
+        metadata_path = tmp_path / "metadata.json"
 
-        result = _compute_tools_to_package_hash(tmp_path)
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
 
         assert result == ""
 
@@ -348,8 +511,9 @@ class TestComputeToolsToPackageHash:
         (tmp_path / "packages.json").write_text(
             json.dumps(packages_json), encoding="utf-8"
         )
+        metadata_path = tmp_path / "metadata.json"
 
-        result = _compute_tools_to_package_hash(tmp_path)
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
 
         assert result == ""
 
@@ -364,16 +528,64 @@ class TestComputeToolsToPackageHash:
         (tmp_path / "packages.json").write_text(
             json.dumps(packages_json), encoding="utf-8"
         )
+        metadata_path = self._write_metadata(
+            tmp_path, {"openai-gpt-4": {"name": "echo"}}
+        )
 
-        result = _compute_tools_to_package_hash(tmp_path)
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
         parsed = json.loads(result)
 
-        assert parsed == {"echo": "bafybeiabc"}
+        assert parsed == {"openai-gpt-4": "bafybeiabc"}
 
-    def test_invalid_json(self, tmp_path: Path) -> None:
+    def test_invalid_packages_json(self, tmp_path: Path) -> None:
         """Return empty string when packages.json contains invalid JSON."""
         (tmp_path / "packages.json").write_text("not valid json{{{", encoding="utf-8")
+        metadata_path = tmp_path / "metadata.json"
 
-        result = _compute_tools_to_package_hash(tmp_path)
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
 
         assert result == ""
+
+    def test_missing_metadata_json(self, tmp_path: Path) -> None:
+        """Return empty string when metadata.json does not exist."""
+        packages_json = {"dev": {"custom/valory/echo/0.1.0": "bafybeiabc"}}
+        (tmp_path / "packages.json").write_text(
+            json.dumps(packages_json), encoding="utf-8"
+        )
+        metadata_path = tmp_path / "metadata.json"
+
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
+
+        assert result == ""
+
+    def test_invalid_metadata_json(self, tmp_path: Path) -> None:
+        """Return empty string when metadata.json contains invalid JSON."""
+        packages_json = {"dev": {"custom/valory/echo/0.1.0": "bafybeiabc"}}
+        (tmp_path / "packages.json").write_text(
+            json.dumps(packages_json), encoding="utf-8"
+        )
+        metadata_path = tmp_path / "metadata.json"
+        metadata_path.write_text("not valid json{{{", encoding="utf-8")
+
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
+
+        assert result == ""
+
+    def test_model_without_matching_package(self, tmp_path: Path) -> None:
+        """Skip model names whose tool name has no entry in packages.json."""
+        packages_json = {"dev": {"custom/valory/echo/0.1.0": "bafybeiabc"}}
+        (tmp_path / "packages.json").write_text(
+            json.dumps(packages_json), encoding="utf-8"
+        )
+        metadata_path = self._write_metadata(
+            tmp_path,
+            {
+                "openai-gpt-4": {"name": "echo"},
+                "unknown-model": {"name": "nonexistent"},
+            },
+        )
+
+        result = _compute_tools_to_package_hash(tmp_path, metadata_path)
+        parsed = json.loads(result)
+
+        assert parsed == {"openai-gpt-4": "bafybeiabc"}
