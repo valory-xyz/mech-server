@@ -31,7 +31,6 @@ from dotenv import dotenv_values, set_key
 from autonomy.cli.packages import get_package_manager
 from mtd.commands.context_utils import (
     SUPPORTED_CHAINS,
-    _workspace_cwd,
     get_mtd_context,
     require_initialized,
 )
@@ -140,39 +139,33 @@ def _compute_tools_to_package_hash(  # pylint: disable=too-many-return-statement
     return json.dumps(tools_mapping, separators=(",", ":"))
 
 
-def _sync_service_env_vars(
+def _update_chain_config(
     context: MtdContext, chain: str, updates: dict[str, str]
 ) -> None:
-    """Push updated values into the operate service config for *chain*.
+    """Update env_variables in the chain config template JSON.
 
-    Directly mutates ``env_variables`` on the in-memory Service object and
-    calls ``store()`` to persist to ``config.json``.  The next ``mech run``
-    regenerates ``agent_0.env`` from the persisted config.
+    The template at ``config/<chain>.json`` is read by ``mech run`` via
+    ``run_service()`` which re-applies its values to the service.  Keeping
+    the template in sync prevents ``mech run`` from overwriting values
+    that ``_sync_service_env_vars`` wrote to the service ``config.json``.
     """
-    from operate.cli import OperateApp  # pylint: disable=import-outside-toplevel
-
-    with _workspace_cwd(context):
-        operate = OperateApp(home=context.operate_dir)
-        operate.setup()
-        services, _ = operate.service_manager().get_all_services()
-
-    service = next((s for s in services if s.home_chain == chain), None)
-    if service is None:
-        click.echo(
-            f"No service found for chain '{chain}', " "skipping service config sync."
-        )
+    config_path = context.config_dir / f"config_mech_{chain}.json"
+    if not config_path.exists():
         return
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    env_vars = config.get("env_variables", {})
 
     changed = False
     for key, value in updates.items():
-        entry = service.env_variables.get(key)
+        entry = env_vars.get(key)
         if isinstance(entry, dict) and entry.get("value") != value:
             entry["value"] = value
             changed = True
 
     if changed:
-        service.store()
-        click.echo(f"  Synced service config for {chain}")
+        config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+        click.echo(f"  Updated chain config template for {chain}")
 
 
 def _resolve_offchain_url(
@@ -288,5 +281,5 @@ def prepare_metadata(
             svc_updates["TOOLS_TO_PACKAGE_HASH"] = tools_hash_value
         if resolved_url:
             svc_updates["SERVICE_ENDPOINT_BASE"] = resolved_url
-        _sync_service_env_vars(context, chain_config, svc_updates)
+        _update_chain_config(context, chain_config, svc_updates)
     click.echo("Done.")
