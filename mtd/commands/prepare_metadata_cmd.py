@@ -26,7 +26,7 @@ from typing import Optional
 
 import click
 from aea.cli.packages import package_type_selector_prompt
-from dotenv import set_key
+from dotenv import dotenv_values, set_key
 
 from autonomy.cli.packages import get_package_manager
 from mtd.commands.context_utils import (
@@ -107,6 +107,22 @@ def _compute_tools_to_package_hash(packages_dir: Path) -> str:
     return json.dumps(tools_mapping, separators=(",", ":"))
 
 
+def _resolve_offchain_url(
+    explicit_url: Optional[str],
+    context: MtdContext,
+    chain_config: Optional[str],
+) -> str:
+    """Resolve the offchain URL from CLI option or chain .env file."""
+    if explicit_url:
+        return explicit_url
+    if chain_config:
+        env_path = context.chain_env_path(chain_config)
+        if env_path.exists():
+            env_values = dotenv_values(str(env_path))
+            return (env_values.get("MECH_OFFCHAIN_URL") or "").strip()
+    return ""
+
+
 @click.command(name="prepare-metadata")
 @click.option(
     "-c",
@@ -122,9 +138,18 @@ def _compute_tools_to_package_hash(packages_dir: Path) -> str:
     default=DEFAULT_IPFS_NODE,
     help="IPFS node address.",
 )
+@click.option(
+    "--offchain-url",
+    type=str,
+    default=None,
+    help="Public URL where the mech serves off-chain requests.",
+)
 @click.pass_context
 def prepare_metadata(
-    ctx: click.Context, chain_config: Optional[str], ipfs_node: str
+    ctx: click.Context,
+    chain_config: Optional[str],
+    ipfs_node: str,
+    offchain_url: Optional[str],
 ) -> None:
     """Generate metadata.json from packages and publish to IPFS.
 
@@ -135,6 +160,7 @@ def prepare_metadata(
     Examples:
         mech prepare-metadata
         mech prepare-metadata -c gnosis
+        mech prepare-metadata -c gnosis --offchain-url https://my-mech.example.com/
     """
     context = get_mtd_context(ctx)
     require_initialized(context)
@@ -142,9 +168,15 @@ def prepare_metadata(
     _lock_packages(context.packages_dir)
     _push_all_packages(context.workspace_path, context.packages_dir)
 
+    resolved_url = _resolve_offchain_url(offchain_url, context, chain_config)
+    if resolved_url:
+        click.echo(f"Including offchain URL in metadata: {resolved_url}")
+
     click.echo("Generating metadata...")
     generate_metadata(
-        packages_dir=context.packages_dir, metadata_path=context.metadata_path
+        packages_dir=context.packages_dir,
+        metadata_path=context.metadata_path,
+        offchain_url=resolved_url,
     )
 
     click.echo("Publishing metadata to IPFS...")
@@ -160,6 +192,12 @@ def prepare_metadata(
 
     for chain in chains:
         set_key(str(context.chain_env_path(chain)), "METADATA_HASH", metadata_hash)
+        if offchain_url:
+            set_key(
+                str(context.chain_env_path(chain)),
+                "MECH_OFFCHAIN_URL",
+                offchain_url,
+            )
     click.echo(f"Metadata hash: {metadata_hash}")
 
     click.echo("Computing tools-to-package-hash mapping...")
