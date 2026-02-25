@@ -20,6 +20,7 @@
 """Prepare-metadata command for generating and publishing metadata to IPFS."""
 
 import json
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -40,6 +41,21 @@ from mtd.services.metadata import (
     generate_metadata,
     publish_metadata_to_ipfs,
 )
+
+
+def _clean_packages_dir(packages_dir: Path) -> None:
+    """Remove __pycache__ dirs and .DS_Store files before locking/pushing.
+
+    ``generate_metadata`` imports tool modules via ``importlib``, which
+    creates ``__pycache__`` directories containing binary ``.pyc`` files.
+    If these are present when ``autonomy push-all`` runs they get uploaded
+    to IPFS, and the mech's IPFS connection fails with a
+    ``UnicodeDecodeError`` when it tries to decode them as UTF-8.
+    """
+    for pycache in packages_dir.rglob("__pycache__"):
+        shutil.rmtree(pycache, ignore_errors=True)
+    for ds_store in packages_dir.rglob(".DS_Store"):
+        ds_store.unlink(missing_ok=True)
 
 
 def _lock_packages(packages_dir: Path) -> None:
@@ -226,6 +242,7 @@ def prepare_metadata(
     context = get_mtd_context(ctx)
     require_initialized(context)
 
+    _clean_packages_dir(context.packages_dir)
     _lock_packages(context.packages_dir)
     _push_all_packages(context.workspace_path, context.packages_dir)
 
@@ -239,6 +256,7 @@ def prepare_metadata(
         metadata_path=context.metadata_path,
         offchain_url=resolved_url,
     )
+    _clean_packages_dir(context.packages_dir)
 
     click.echo("Publishing metadata to IPFS...")
     metadata_hash = publish_metadata_to_ipfs(
