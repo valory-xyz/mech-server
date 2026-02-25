@@ -224,14 +224,14 @@ In addition to on-chain requests, a mech can serve off-chain requests over HTTP.
 Set the URL by passing `--offchain-url` to `prepare-metadata`:
 
 ```bash
-mech prepare-metadata -c gnosis --offchain-url https://example.com/my-mech/
+mech prepare-metadata -c gnosis --offchain-url <url>
 ```
 
 Alternatively, set the `MECH_OFFCHAIN_URL` variable in the chain `.env` file and run `prepare-metadata` without the flag:
 
 ```bash
 # ~/.operate-mech/.env.gnosis
-MECH_OFFCHAIN_URL=https://example.com/my-mech/
+MECH_OFFCHAIN_URL=<url>
 ```
 
 ```bash

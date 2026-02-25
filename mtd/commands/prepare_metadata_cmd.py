@@ -237,7 +237,7 @@ def prepare_metadata(
     Examples:
         mech prepare-metadata
         mech prepare-metadata -c gnosis
-        mech prepare-metadata -c gnosis --offchain-url https://my-mech.example.com/
+        mech prepare-metadata -c gnosis --offchain-url <url>
     """
     context = get_mtd_context(ctx)
     require_initialized(context)
