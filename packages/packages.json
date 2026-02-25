@@ -1,6 +1,5 @@
 {
     "dev": {
-        "agent/valory/mech/0.1.0": "bafybeigi2zz7bqpgwivitfchlzwt3emv7vdcs7del27lsfyqzbf2h3bpz4",
         "service/valory/mech/0.1.0": "bafybeib4udxjswq3aaxjp6vmjmr2brnsalbgzdekuy25gonringgwugeti"
     },
     "third_party": {
@@ -42,6 +41,7 @@
         "skill/valory/abstract_round_abci/0.1.0": "bafybeico2i67lk5wkgyvmu5ska7phbugxbfh4ofnm57vwpypis5zmpjnim",
         "skill/valory/reset_pause_abci/0.1.0": "bafybeibgbbt4yzd6amf2wuldrdvhyfqibjqx2uxhybqhrkumlp4jcfndia",
         "skill/valory/registration_abci/0.1.0": "bafybeiaur5o7xjf5jod2gzbhxa2m2l2m7z76rfs7gf2sfuf3ffjlqodaxy",
-        "skill/valory/abstract_abci/0.1.0": "bafybeieoc35cjm3dlt2ayj6iidjfdgry6fmhnzniml5dqalmwu4so6vmme"
+        "skill/valory/abstract_abci/0.1.0": "bafybeieoc35cjm3dlt2ayj6iidjfdgry6fmhnzniml5dqalmwu4so6vmme",
+        "agent/valory/mech/0.1.0": "bafybeihfa3yh6zoacwbbwipfchxrls3duirij5rgyqfkxk74tvddsfhxjy"
     }
 }
