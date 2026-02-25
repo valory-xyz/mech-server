@@ -34,6 +34,7 @@ from mtd.commands.context_utils import (
     get_mtd_context,
     require_initialized,
 )
+from mtd.context import MtdContext
 from mtd.services.metadata import (
     DEFAULT_IPFS_NODE,
     generate_metadata,
@@ -75,8 +76,15 @@ def _push_all_packages(workspace_path: Path, packages_dir: Path) -> None:
     click.echo("Packages pushed.")
 
 
-def _compute_tools_to_package_hash(packages_dir: Path) -> str:
-    """Compute TOOLS_TO_PACKAGE_HASH from workspace packages.json."""
+def _compute_tools_to_package_hash(  # pylint: disable=too-many-return-statements
+    packages_dir: Path, metadata_path: Path
+) -> str:
+    """Compute TOOLS_TO_PACKAGE_HASH mapping model names to IPFS hashes.
+
+    Each model name from ALLOWED_TOOLS (e.g. ``openai-gpt-3.5-turbo-instruct``)
+    is mapped to the IPFS hash of its parent tool package, rather than mapping
+    the tool package name itself.
+    """
     packages_json_path = packages_dir / "packages.json"
     if not packages_json_path.exists():
         click.echo(
@@ -93,13 +101,37 @@ def _compute_tools_to_package_hash(packages_dir: Path) -> str:
         return ""
 
     dev_packages = packages_data.get("dev", {})
-    tools_mapping: dict = {}
+    package_hash_by_name: dict = {}
     for key, ipfs_hash in dev_packages.items():
         parts = key.split("/")
         if len(parts) != 4 or parts[0] != "custom":
             continue
         tool_name = parts[2]
-        tools_mapping[tool_name] = ipfs_hash
+        package_hash_by_name[tool_name] = ipfs_hash
+
+    if not package_hash_by_name:
+        return ""
+
+    if not metadata_path.exists():
+        click.echo(
+            f"Warning: {metadata_path} not found. "
+            "Cannot resolve model names for TOOLS_TO_PACKAGE_HASH."
+        )
+        return ""
+
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        click.echo(f"Warning: {metadata_path} contains invalid JSON. Skipping.")
+        return ""
+
+    tool_metadata = metadata.get("toolMetadata", {})
+    tools_mapping: dict = {}
+    for model_name, meta in tool_metadata.items():
+        tool_name = meta.get("name", "")
+        ipfs_hash = package_hash_by_name.get(tool_name)
+        if ipfs_hash:
+            tools_mapping[model_name] = ipfs_hash
 
     if not tools_mapping:
         return ""
@@ -201,7 +233,9 @@ def prepare_metadata(
     click.echo(f"Metadata hash: {metadata_hash}")
 
     click.echo("Computing tools-to-package-hash mapping...")
-    tools_hash_value = _compute_tools_to_package_hash(context.packages_dir)
+    tools_hash_value = _compute_tools_to_package_hash(
+        context.packages_dir, context.metadata_path
+    )
     if tools_hash_value:
         for chain in chains:
             set_key(
