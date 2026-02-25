@@ -151,12 +151,6 @@
       "description": "",
       "value": 2160,
       "provision_type": "fixed"
-    },
-    "SERVICE_ENDPOINT_BASE": {
-      "name": "Service endpoint base URL",
-      "description": "Public base URL where the mech serves off-chain requests. Used by the HTTP handler to allowlist incoming request hostnames.",
-      "value": "https://dummy_service.autonolas.tech/",
-      "provision_type": "fixed"
     }
   },
   "agent_release": {

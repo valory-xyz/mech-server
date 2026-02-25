@@ -147,7 +147,7 @@ def _update_chain_config(
     The template at ``config/<chain>.json`` is read by ``mech run`` via
     ``run_service()`` which re-applies its values to the service.  Keeping
     the template in sync prevents ``mech run`` from overwriting values
-    that ``_sync_service_env_vars`` wrote to the service ``config.json``.
+    set by ``prepare-metadata``.
     """
     config_path = context.config_dir / f"config_mech_{chain}.json"
     if not config_path.exists():
@@ -279,7 +279,5 @@ def prepare_metadata(
         svc_updates: dict[str, str] = {"METADATA_HASH": metadata_hash}
         if tools_hash_value:
             svc_updates["TOOLS_TO_PACKAGE_HASH"] = tools_hash_value
-        if resolved_url:
-            svc_updates["SERVICE_ENDPOINT_BASE"] = resolved_url
         _update_chain_config(context, chain_config, svc_updates)
     click.echo("Done.")

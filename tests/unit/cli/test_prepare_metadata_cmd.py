@@ -280,10 +280,7 @@ class TestPrepareMetadataCommand:
         mock_update_cfg.assert_called_once_with(
             context,
             "gnosis",
-            {
-                "METADATA_HASH": "f0170abc",
-                "SERVICE_ENDPOINT_BASE": "https://mech.example.com/",
-            },
+            {"METADATA_HASH": "f0170abc"},
         )
 
     @patch(f"{MOCK_PATH}._update_chain_config")
