@@ -286,6 +286,14 @@ class TestPrepareMetadataCommand:
         mock_set_key.assert_any_call(
             str(env_path), "MECH_OFFCHAIN_URL", "https://mech.example.com/"
         )
+        mock_sync_svc.assert_called_once_with(
+            context,
+            "gnosis",
+            {
+                "METADATA_HASH": "f0170abc",
+                "SERVICE_ENDPOINT_BASE": "https://mech.example.com/",
+            },
+        )
 
     @patch(f"{MOCK_PATH}._sync_service_env_vars")
     @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")

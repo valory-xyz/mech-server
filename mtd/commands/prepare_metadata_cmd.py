@@ -286,5 +286,7 @@ def prepare_metadata(
         svc_updates: dict[str, str] = {"METADATA_HASH": metadata_hash}
         if tools_hash_value:
             svc_updates["TOOLS_TO_PACKAGE_HASH"] = tools_hash_value
+        if resolved_url:
+            svc_updates["SERVICE_ENDPOINT_BASE"] = resolved_url
         _sync_service_env_vars(context, chain, svc_updates)
     click.echo("Done.")
