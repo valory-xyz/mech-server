@@ -73,8 +73,9 @@ poetry run mech run -c <chain>
 |---|---|
 | `poetry run mech setup -c <chain>` | Full first-time setup: workspace, agent build, mech deployment, env config, key setup |
 | `poetry run mech add-tool <author> <name>` | Scaffold a new mech tool |
-| `poetry run mech prepare-metadata` | Recompute package fingerprints, push packages and metadata to IPFS, and write `METADATA_HASH` and `TOOLS_TO_PACKAGE_HASH` to `.env` |
-| `poetry run mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
+| `poetry run mech prepare-metadata -c <chain>` | Recompute package fingerprints, push packages and metadata to IPFS, and write `METADATA_HASH` and `TOOLS_TO_PACKAGE_HASH` to `.env` |
+| `poetry run mech prepare-metadata -c <chain> --offchain-url <url>` | Same as above, also sets the offchain URL in metadata and `.env` |
+| `poetry run mech update-metadata -c <chain>` | Update the metadata hash on-chain via Safe transaction |
 | `poetry run mech run -c <chain>` | Run the mech AI agent via Docker |
 | `poetry run mech stop -c <chain>` | Stop a running mech AI agent |
 
@@ -109,13 +110,19 @@ poetry run mech run -c <chain>
 
 4. If your tool requires API keys or other secrets, add them to `~/.operate-mech/.env`.
 
-5. Generate and publish metadata (to IPFS), then update the on-chain registry:
+5. **(Optional)** If your mech should serve off-chain requests over HTTP, provide a URL that routes to the mech's HTTP server (`localhost:8000`). This URL is included in the mech's on-chain metadata so that clients can discover it:
     ```bash
-    poetry run mech prepare-metadata
-    poetry run mech update-metadata
+    poetry run mech prepare-metadata -c <chain> --offchain-url https://my-mech.example.com/
+    ```
+    Alternatively, set `MECH_OFFCHAIN_URL` in `~/.operate-mech/.env.<chain>` and run `prepare-metadata` without the flag.
+
+6. Generate and publish metadata (to IPFS), then update the on-chain registry:
+    ```bash
+    poetry run mech prepare-metadata -c <chain>
+    poetry run mech update-metadata -c <chain>
     ```
 
-6. Run:
+7. Run:
     ```bash
     poetry run mech run -c <chain>
     ```
@@ -131,8 +138,8 @@ poetry run mech run -c <chain>
 
 3. Generate and publish metadata (to IPFS), then update:
     ```bash
-    poetry run mech prepare-metadata
-    poetry run mech update-metadata
+    poetry run mech prepare-metadata -c <chain>
+    poetry run mech update-metadata -c <chain>
     ```
 
 4. Restart:
