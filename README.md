@@ -112,7 +112,7 @@ poetry run mech run -c <chain>
 
 5. **(Optional)** If your mech should serve off-chain requests over HTTP, provide a URL that routes to the mech's HTTP server (`localhost:8000`). This URL is included in the mech's on-chain metadata so that clients can discover it:
     ```bash
-    poetry run mech prepare-metadata -c <chain> --offchain-url https://my-mech.example.com/
+    poetry run mech prepare-metadata -c <chain> --offchain-url <url>
     ```
     Alternatively, set `MECH_OFFCHAIN_URL` in `~/.operate-mech/.env.<chain>` and run `prepare-metadata` without the flag.
 
