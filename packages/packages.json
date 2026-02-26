@@ -1,6 +1,6 @@
 {
     "dev": {
-        "service/valory/mech/0.1.0": "bafybeif25frhupcphbn65lrumt73tcxul3b2pl2a4o2tucjhlytrmaxjli"
+        "service/valory/mech_server/0.1.0": "bafybeicvxkdwyyaq6ey6sztsz67m3h6bz72n5k2aq4jy66rbnwjokohgbm"
     },
     "third_party": {
         "protocol/valory/acn_data_share/0.1.0": "bafybeiebct3enol4nkiy3uxm2xnn2hniwnorjfwtcjbsywea5ql36pqk3y",
