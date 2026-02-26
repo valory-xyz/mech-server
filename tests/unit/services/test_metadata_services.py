@@ -53,6 +53,54 @@ def test_generate_metadata_creates_file(tmp_path: Path) -> None:
     assert "echo" in metadata["tools"]
 
 
+def test_generate_metadata_includes_url_when_provided(tmp_path: Path) -> None:
+    """Generate metadata should include offchain URL when provided."""
+    packages_dir = tmp_path / "packages"
+    tool_dir = packages_dir / "alice" / "customs" / "echo"
+    tool_dir.mkdir(parents=True)
+
+    (tool_dir / "component.yaml").write_text(
+        "author: alice\nname: echo\ndescription: Echo tool\n",
+        encoding="utf-8",
+    )
+    (tool_dir / "echo.py").write_text(
+        "ALLOWED_TOOLS = ['echo']\n",
+        encoding="utf-8",
+    )
+
+    metadata_path = tmp_path / "metadata.json"
+    generate_metadata(
+        packages_dir=packages_dir,
+        metadata_path=metadata_path,
+        offchain_url="https://mech.example.com/",
+    )
+
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    assert metadata["url"] == "https://mech.example.com/"
+
+
+def test_generate_metadata_default_url_empty(tmp_path: Path) -> None:
+    """Generate metadata should have empty URL when none provided."""
+    packages_dir = tmp_path / "packages"
+    tool_dir = packages_dir / "alice" / "customs" / "echo"
+    tool_dir.mkdir(parents=True)
+
+    (tool_dir / "component.yaml").write_text(
+        "author: alice\nname: echo\ndescription: Echo tool\n",
+        encoding="utf-8",
+    )
+    (tool_dir / "echo.py").write_text(
+        "ALLOWED_TOOLS = ['echo']\n",
+        encoding="utf-8",
+    )
+
+    metadata_path = tmp_path / "metadata.json"
+    generate_metadata(packages_dir=packages_dir, metadata_path=metadata_path)
+
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    assert metadata["url"] == ""
+
+
 def test_generate_metadata_raises_when_packages_dir_missing(tmp_path: Path) -> None:
     """Raise FileNotFoundError when packages_dir does not exist."""
     with pytest.raises(FileNotFoundError, match="Packages directory not found"):

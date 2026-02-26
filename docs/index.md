@@ -217,12 +217,35 @@ Key points:
 - The first element is the tool's response (typically a string or JSON string).
 - The second element is the original prompt.
 
-### 4. Publish metadata and update on-chain
+### 4. Configure the offchain URL
+
+In addition to on-chain requests, a mech can serve off-chain requests over HTTP. If you want to enable off-chain requests, provide a URL that routes to your mech's HTTP server (which binds to `localhost:8000`). This URL is included in the mech's on-chain metadata so that clients can discover it.
+
+Set the URL by passing `--offchain-url` to `prepare-metadata`:
+
+```bash
+mech prepare-metadata -c gnosis --offchain-url <url>
+```
+
+Alternatively, set the `MECH_OFFCHAIN_URL` variable in the chain `.env` file and run `prepare-metadata` without the flag:
+
+```bash
+# ~/.operate-mech/.env.gnosis
+MECH_OFFCHAIN_URL=<url>
+```
+
+```bash
+mech prepare-metadata -c gnosis
+```
+
+The CLI persists the URL to `MECH_OFFCHAIN_URL` in the chain `.env` file and includes it in the generated `metadata.json` under the `"url"` field. If no URL is configured, the field defaults to empty.
+
+### 5. Publish metadata and update on-chain
 
 Once your tool is implemented, publish everything with a single command:
 
 ```bash
-mech prepare-metadata
+mech prepare-metadata -c gnosis
 ```
 
 This command handles the full publish pipeline:
@@ -235,16 +258,16 @@ This command handles the full publish pipeline:
 Then update the on-chain metadata hash:
 
 ```bash
-mech update-metadata
+mech update-metadata -c gnosis
 ```
 
-### 5. Run your Mech
+### 6. Run your Mech
 
 ```bash
 mech run -c <gnosis|base|polygon|optimism>
 ```
 
-### 6. Send a request
+### 7. Send a request
 
 1. Get your Mech's address from the workspace `.env`:
     ```bash
@@ -258,7 +281,7 @@ mech run -c <gnosis|base|polygon|optimism>
 
 3. Wait for the response. If there's an error in the tool, you will see it in the Mech's logs.
 
-### 7. Stop your Mech
+### 8. Stop your Mech
 
 ```bash
 mech stop -c <gnosis|base|polygon|optimism>
@@ -278,8 +301,8 @@ If your Mech is already running and you want to add or update tools:
 
 3. Publish the updated metadata and update the on-chain registry:
     ```bash
-    mech prepare-metadata
-    mech update-metadata
+    mech prepare-metadata -c <chain>
+    mech update-metadata -c <chain>
     ```
 
 4. Restart your Mech:
@@ -311,7 +334,8 @@ mechx push-to-ipfs ./<file_name>
 |---|---|
 | `mech setup -c <chain>` | Full first-time setup: workspace, agent build, mech deployment, env config, key setup |
 | `mech add-tool <author> <name>` | Scaffold a new mech tool |
-| `mech prepare-metadata` | Lock packages, push to IPFS, generate and publish metadata |
-| `mech update-metadata` | Update the metadata hash on-chain via Safe transaction |
+| `mech prepare-metadata -c <chain>` | Lock packages, push to IPFS, generate and publish metadata |
+| `mech prepare-metadata -c <chain> --offchain-url <url>` | Same as above, also sets the public offchain URL in metadata and `.env` |
+| `mech update-metadata -c <chain>` | Update the metadata hash on-chain via Safe transaction |
 | `mech run -c <chain>` | Run the mech AI agent via Docker |
 | `mech stop -c <chain>` | Stop a running mech AI agent |

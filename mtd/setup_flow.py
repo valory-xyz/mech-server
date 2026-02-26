@@ -231,7 +231,7 @@ def _read_and_update_env(data: dict, context: MtdContext, chain: str) -> None:
         "MECHX_CHAIN_RPC": chain_rpc,
         "MECHX_LEDGER_ADDRESS": chain_rpc,
         "MECHX_CHAIN_CONFIG": home_chain,
-        "MECHX_MECH_OFFCHAIN_URL": "http://localhost:8000/",
+        "MECH_OFFCHAIN_URL": "http://localhost:8000/",
     }
 
     def _format_env_value(value: object) -> str:

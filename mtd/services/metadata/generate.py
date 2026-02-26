@@ -38,6 +38,7 @@ METADATA_TEMPLATE: Dict[str, Any] = {
     "inputFormat": "ipfs-v0.1",
     "outputFormat": "ipfs-v0.1",
     "image": "tbd",
+    "url": "",
     "tools": [],
     "toolMetadata": {},
 }
@@ -154,14 +155,19 @@ def _build_metadata(tools_data: List[Dict[str, Any]]) -> Dict[str, Any]:
     return result
 
 
-def generate_metadata(packages_dir: Path, metadata_path: Path) -> Path:
+def generate_metadata(
+    packages_dir: Path, metadata_path: Path, offchain_url: str = ""
+) -> Path:
     """Generate metadata from package customs and write to path."""
     if not packages_dir.exists():
         raise FileNotFoundError(
-            f"Packages directory not found: {packages_dir}. Use 'mech add-tool' first or run in --dev mode."
+            f"Packages directory not found: {packages_dir}. "
+            "Use 'mech add-tool' first or run in --dev mode."
         )
 
     tools_data = _build_tools_data(packages_dir=packages_dir)
     metadata = _build_metadata(tools_data=tools_data)
+    if offchain_url:
+        metadata["url"] = offchain_url
     metadata_path.write_text(json.dumps(metadata, indent=4), encoding="utf-8")
     return metadata_path

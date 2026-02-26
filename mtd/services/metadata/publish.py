@@ -43,6 +43,9 @@ metadata_schema = {
     "tools": List,
     "toolMetadata": Dict,
 }
+optional_metadata_fields = {
+    "url": str,
+}
 
 tool_schema = {
     "name": str,
@@ -82,6 +85,14 @@ def _validate_metadata_structure(metadata: Dict) -> Optional[str]:
             expected = expected_type.__name__
             actual = type(metadata[key]).__name__
             return f"Invalid type for key in metadata json. Expected {expected!r}, but got {actual!r}"
+    for key, expected_type in optional_metadata_fields.items():
+        if key in metadata and not isinstance(metadata[key], expected_type):
+            expected = expected_type.__name__
+            actual = type(metadata[key]).__name__
+            return (
+                f"Invalid type for optional key {key!r} in metadata json. "
+                f"Expected {expected!r}, but got {actual!r}"
+            )
     tools = metadata["tools"]
     tools_metadata = metadata["toolMetadata"]
     if len(tools) != len(tools_metadata):
