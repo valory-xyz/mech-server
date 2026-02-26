@@ -13,7 +13,7 @@
         "protocol/valory/acn/1.1.0": "bafybeih6o2ts4thjluddizqesxbrcqkaciz3zlbolq6e77dgblqdnht2rm",
         "protocol/valory/ipfs/0.1.0": "bafybeidqfs3njcishcwv4ymf4srxibw44u7qrnryxiwrg5ulk2h7myvt6q",
         "protocol/valory/tendermint/0.1.0": "bafybeie4jqosqiicefnlnxsvrymqj6tycv7x5qeitsdew6abhdcxlu23r4",
-        "contract/valory/agent_mech/0.1.0": "bafybeiaytfc6v6hjv6i6ixndca63jlreslgcye5vmouvhq4ylezoldo7ky",
+        "contract/valory/olas_mech/0.1.0": "bafybeicgih6blrqvlktg5sjbtdr6rs5hm2fhjcpuwljeaqapw3waonjz2a",
         "contract/valory/complementary_service_metadata/0.1.0": "bafybeibjk5gdgc54wx5bz4fl2666urmfj6mx3ocqxyumqpj7wq5fdg4diu",
         "contract/valory/hash_checkpoint/0.1.0": "bafybeic7x3cqr46yw7wzbvfc7mc6l3vsilx7g7tltqsb3whzfyolukoev4",
         "contract/valory/mech_marketplace/0.1.0": "bafybeicnxlb62tmpure2fppbsnhbmek4zur2cfaiyg4nujek4h35ijh72a",
