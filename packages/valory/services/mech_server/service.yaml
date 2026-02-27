@@ -1,13 +1,13 @@
-name: mech
+name: mech_server
 author: valory
 version: 0.1.0
 description: A decentralised task execution engine.
 aea_version: '>=2.0.0, <3.0.0'
 license: Apache-2.0
 fingerprint:
-  README.md: bafybeif7ia4jdlazy6745ke2k2x5yoqlwsgwr6sbztbgqtwvs3ndm2p7ba
+  README.md: bafybeifm54s6e37mjdcjtfubkyiyusykxbyza5m3njlquokq2zupfottzm
 fingerprint_ignore_patterns: []
-agent: valory/mech:0.1.0:bafybeigi2zz7bqpgwivitfchlzwt3emv7vdcs7del27lsfyqzbf2h3bpz4
+agent: valory/mech:0.1.0:bafybeicqfsser2225fqxggwxwfw7jkzwgmsuz4fzn425sgingch6f32auy
 number_of_agents: 4
 deployment:
   agent:

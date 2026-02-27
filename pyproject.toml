@@ -79,6 +79,7 @@ werkzeug = "*"
 attrs = "*"
 prometheus_client = "==0.23.1"
 pebble = "==5.1.3"
+py-eth-sig-utils = "*"
 
 [tool.poetry.scripts]
 mech = "mtd.cli:cli"
