@@ -201,7 +201,7 @@ Also update `SECURITY.md` to reflect the new supported version.
 
 - `open-autonomy==0.21.11` — FSM agent framework
 - `olas-operate-middleware>=0.14.16` — service/workspace orchestration
-- `mech-client==0.18.8` — mech interaction client
+- `mech-client==0.19.1` — mech interaction client
 - `safe-eth-py^7.18.0` — Gnosis Safe on-chain operations
 - `ipfshttpclient==0.8.0a2` — IPFS uploads
 - `click==8.1.8` — CLI framework

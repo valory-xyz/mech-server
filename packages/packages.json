@@ -1,7 +1,7 @@
 {
     "dev": {
-        "agent/valory/mech_server/0.1.0": "bafybeigy2fm7vx3leu5t6nrja5m6fs662p4h3mvsbc7dolqoyt5aldekwe",
-        "service/valory/mech_server/0.1.0": "bafybeihwukss36xibi2kn4ld3r3xlahzpzapgxlogucudi2ibnjqa2zmai"
+        "agent/valory/mech_server/0.1.0": "bafybeifkxyd2fpnvfh2zjj4as73sp4aialntcm6d4hmygxyr2jsnmhppjq",
+        "service/valory/mech_server/0.1.0": "bafybeic6j57lpmuvdcvjrt3w3semq5j7ayvvxrxisjrvth726rife7o5fe"
     },
     "third_party": {
         "protocol/valory/acn_data_share/0.1.0": "bafybeiebct3enol4nkiy3uxm2xnn2hniwnorjfwtcjbsywea5ql36pqk3y",
@@ -16,7 +16,7 @@
         "protocol/valory/tendermint/0.1.0": "bafybeie4jqosqiicefnlnxsvrymqj6tycv7x5qeitsdew6abhdcxlu23r4",
         "contract/valory/complementary_service_metadata/0.1.0": "bafybeibjk5gdgc54wx5bz4fl2666urmfj6mx3ocqxyumqpj7wq5fdg4diu",
         "contract/valory/hash_checkpoint/0.1.0": "bafybeic7x3cqr46yw7wzbvfc7mc6l3vsilx7g7tltqsb3whzfyolukoev4",
-        "contract/valory/balance_tracker/0.1.0": "bafybeif3ziyaqnx5lj4mambwf3nw7jjp2xng2ib2c3qewj3r653duxg7em",
+        "contract/valory/balance_tracker/0.1.0": "bafybeif27pp2772gkhnrdyxlswkr4whf2ka6bwf5wtdym6mzdgddyq3v3a",
         "contract/valory/service_registry/0.1.0": "bafybeidheiinltcynckpgs35vknbs7s6zal3d544nfjcdjrbvely32j5le",
         "contract/valory/gnosis_safe_proxy_factory/0.1.0": "bafybeihnuhz6n7quvmfi36owk3k2qse7unjeykrlmjecet5o6kcrrhtpsa",
         "contract/valory/gnosis_safe/0.1.0": "bafybeig666ryzt3bzavejkmk4jtspihzziq72qpxy4g2ta3d5j5sdwzv5i",
@@ -40,8 +40,8 @@
         "skill/valory/abstract_abci/0.1.0": "bafybeieoc35cjm3dlt2ayj6iidjfdgry6fmhnzniml5dqalmwu4so6vmme",
         "skill/valory/contract_subscription/0.1.0": "bafybeic3ngmx5uw3b6wp5oe4efa22slgjrllf4irhwsulwefbbgwsiidxq",
         "skill/valory/delivery_rate_abci/0.1.0": "bafybeifzw4okhzax55zuuusggfcyz2z2ulrto4fww2l36julte5ks7e7kq",
-        "skill/valory/mech_abci/0.1.0": "bafybeiebvjvilbyga5jlrtxfzjw4mcr7nvtsbgjr6vxq4njb6lemnz47na",
-        "skill/valory/task_submission_abci/0.1.0": "bafybeifqewhyglr6znfj32slh3a4gpz7xy7i3ar4qncafxzbgivggtiwea",
-        "skill/valory/task_execution/0.1.0": "bafybeicc6h4jx23g6jem57yagie26k642ce6jnlyisxhwebl2v2h3j7544"
+        "skill/valory/mech_abci/0.1.0": "bafybeicace7xfnqfrvrlijeximx66osejmv4fs6yt52zty3bcwnmgvkwge",
+        "skill/valory/task_submission_abci/0.1.0": "bafybeihleykoygbyf2ezzkvy4begcf5uisqpievoq672rpaak37xrumvpy",
+        "skill/valory/task_execution/0.1.0": "bafybeibkzt2tq4mpjf6jtq63tdfih2s4smbuvosbnnlttrlf632tuyr5jy"
     }
 }

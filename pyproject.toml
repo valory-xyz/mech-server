@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "mech-server"
-version = "0.6.0"
+version = "0.7.0"
 description = ""
 authors = [ "David Minarsch <david.minarsch@googlemail.com>",]
 readme = "README.md"
@@ -70,7 +70,7 @@ pycryptodome = "==3.20.0"
 openapi-core = "==0.15.0"
 openapi-spec-validator = "<0.5.0,>=0.4.0"
 click = "==8.1.8"
-mech-client = "==0.18.8"
+mech-client = "==0.19.1"
 olas-operate-middleware = ">=0.14.16"
 safe-eth-py = "^7.18.0"
 mkdocs = "^1.6.1"
