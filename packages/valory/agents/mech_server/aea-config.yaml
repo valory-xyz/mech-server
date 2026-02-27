@@ -1,0 +1,238 @@
+agent_name: mech_server
+author: valory
+version: 0.1.0
+license: Apache-2.0
+description: A mech server agent
+aea_version: '>=2.0.0, <3.0.0'
+fingerprint: {}
+fingerprint_ignore_patterns: []
+connections:
+- valory/abci:0.1.0:bafybeifvjaobfl2mwwrb6jb26havbz3pu5lbb4so7gkhnvv2ilfkdywq7y
+- valory/http_client:0.23.0:bafybeigwzn4hkry3wy7nf2myk3h3pl5xrqkvvxp2ppdbwwffa4c2s2bkwy
+- valory/http_server:0.22.0:bafybeigyjwg6nfwmdkwzt7i56n4zv3oj6hii2mkkgstuaztyunscjifdee
+- valory/ipfs:0.1.0:bafybeif2252xypx25p42fva4y3wi4loinxi6pfwf4wkwgcbdbfiu3gmjqu
+- valory/ledger:0.19.0:bafybeigiipjmtjdivz2wd54c7bmbqxbayk5b5st7wcrsvsnqkfc2f2rbaa
+- valory/p2p_libp2p_client:0.1.0:bafybeigg3kzkywemiswrgjhb7hei5qsysxcsx36c6weyewtirctbmleowm
+- valory/websocket_client:0.1.0:bafybeicdavar2qg2s2h7qp2ugzab6zf2jzehvu4zgxjjrfucjqeac575iu
+contracts:
+- valory/olas_mech:0.1.0:bafybeigo6cldicov4ce2yxjztk4spemxf3sreztmkucmywvty6c5luwbw4
+- valory/complementary_service_metadata:0.1.0:bafybeibjk5gdgc54wx5bz4fl2666urmfj6mx3ocqxyumqpj7wq5fdg4diu
+- valory/gnosis_safe:0.1.0:bafybeig666ryzt3bzavejkmk4jtspihzziq72qpxy4g2ta3d5j5sdwzv5i
+- valory/gnosis_safe_proxy_factory:0.1.0:bafybeihnuhz6n7quvmfi36owk3k2qse7unjeykrlmjecet5o6kcrrhtpsa
+- valory/hash_checkpoint:0.1.0:bafybeic7x3cqr46yw7wzbvfc7mc6l3vsilx7g7tltqsb3whzfyolukoev4
+- valory/multisend:0.1.0:bafybeidjdgi2kyexajirj3cnpzgse4y5u664b2blztt4flv6i7knlecyr4
+- valory/service_registry:0.1.0:bafybeidheiinltcynckpgs35vknbs7s6zal3d544nfjcdjrbvely32j5le
+- valory/mech_marketplace:0.1.0:bafybeifnabe3hqdizvdtc2q33sr6q7glmojid332irkhbmczev3wzvq5lq
+- valory/balance_tracker:0.1.0:bafybeif3ziyaqnx5lj4mambwf3nw7jjp2xng2ib2c3qewj3r653duxg7em
+- valory/erc20:0.1.0:bafybeig3avtl5ffku556ipvuviiat5p2psfw46fa2ieofcc4eculxe3vde
+protocols:
+- open_aea/signing:1.0.0:bafybeiei6h5suazzfta7n3uyq7bsz26zkmdiiylptu5i44p7s2wiygxt24
+- valory/abci:0.1.0:bafybeicjjeintlqgg53zrreflmoafeiynt3gvdnovy5ocea7doddos3e5a
+- valory/acn:1.1.0:bafybeih6o2ts4thjluddizqesxbrcqkaciz3zlbolq6e77dgblqdnht2rm
+- valory/acn_data_share:0.1.0:bafybeiebct3enol4nkiy3uxm2xnn2hniwnorjfwtcjbsywea5ql36pqk3y
+- valory/contract_api:1.0.0:bafybeigl7mxuyxngk4gztgygeccbgdfrllx73kwbvvkjvtkfw6ionyd56q
+- valory/http:1.0.0:bafybeia4tq7ycivm3dnekelrnlzdwb4qnrjdykk6gf5tizq6djr66adotm
+- valory/ipfs:0.1.0:bafybeidqfs3njcishcwv4ymf4srxibw44u7qrnryxiwrg5ulk2h7myvt6q
+- valory/ledger_api:1.0.0:bafybeig7yk77pmebqcb33jbavodcslmltitz2uolq6s5arklvsvu5bvp7y
+- valory/tendermint:0.1.0:bafybeie4jqosqiicefnlnxsvrymqj6tycv7x5qeitsdew6abhdcxlu23r4
+- valory/websocket_client:0.1.0:bafybeig6omutaqt5rbvidju4zc7pwwdi6tkagwu3dwiirosadyoo534v3q
+skills:
+- valory/abstract_abci:0.1.0:bafybeieoc35cjm3dlt2ayj6iidjfdgry6fmhnzniml5dqalmwu4so6vmme
+- valory/abstract_round_abci:0.1.0:bafybeico2i67lk5wkgyvmu5ska7phbugxbfh4ofnm57vwpypis5zmpjnim
+- valory/contract_subscription:0.1.0:bafybeic3ngmx5uw3b6wp5oe4efa22slgjrllf4irhwsulwefbbgwsiidxq
+- valory/mech_abci:0.1.0:bafybeiebvjvilbyga5jlrtxfzjw4mcr7nvtsbgjr6vxq4njb6lemnz47na
+- valory/registration_abci:0.1.0:bafybeiaur5o7xjf5jod2gzbhxa2m2l2m7z76rfs7gf2sfuf3ffjlqodaxy
+- valory/reset_pause_abci:0.1.0:bafybeibgbbt4yzd6amf2wuldrdvhyfqibjqx2uxhybqhrkumlp4jcfndia
+- valory/delivery_rate_abci:0.1.0:bafybeifzw4okhzax55zuuusggfcyz2z2ulrto4fww2l36julte5ks7e7kq
+- valory/task_execution:0.1.0:bafybeicc6h4jx23g6jem57yagie26k642ce6jnlyisxhwebl2v2h3j7544
+- valory/task_submission_abci:0.1.0:bafybeifqewhyglr6znfj32slh3a4gpz7xy7i3ar4qncafxzbgivggtiwea
+- valory/termination_abci:0.1.0:bafybeifjwbctocnxrtgyzn7z2ml2q6bxdxrd4sa7m5u43p7ts6hk6ujvce
+- valory/transaction_settlement_abci:0.1.0:bafybeidmg3beiqyubkze6wdiwhz4oqwvidhsjexjgcvso5bkrryqkbsgzu
+- valory/websocket_client:0.1.0:bafybeidbcdcvyy2svob6p52akdx4ezsqpxdh4kphhqgf6hbageneu7unwi
+default_ledger: ethereum
+required_ledgers:
+- ethereum
+- cosmos
+default_routing: {}
+connection_private_key_paths: {}
+private_key_paths: {}
+logging_config:
+  version: 1
+  disable_existing_loggers: false
+  formatters:
+    standard:
+      format: '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s'
+  handlers:
+    logfile:
+      class: logging.FileHandler
+      formatter: standard
+      filename: ${LOG_FILE:str:log.txt}
+      level: ${LOG_LEVEL:str:INFO}
+    console:
+      class: logging.StreamHandler
+      formatter: standard
+      stream: ext://sys.stdout
+  loggers:
+    aea:
+      handlers:
+      - logfile
+      - console
+      propagate: true
+dependencies:
+  aiohttp:
+    version: <4.0.0,>=3.8.5
+  hypothesis:
+    version: ==6.21.6
+  open-aea-ledger-ethereum:
+    version: ==2.0.8
+  typing_extensions:
+    version: <=4.13.2,>=3.10.0.2
+  pebble:
+    version: ==5.1.3
+customs: []
+default_connection: null
+---
+public_id: valory/websocket_client:0.1.0:bafybeiexove4oqyhoae5xmk2hilskthosov5imdp65olpgj3cfrepbouyy
+type: connection
+config:
+  endpoint: ${str:wss://rpc.gnosischain.com/wss}
+  target_skill_id: valory/contract_subscription:0.1.0
+is_abstract: true
+---
+public_id: valory/contract_subscription:0.1.0:bafybeiby5ajjc7a3m2uq73d2pprx6enqt4ghfcq2gkmrtsr75e4d4napi4
+type: skill
+behaviours:
+  contract_subscriptions:
+    args: {}
+handlers:
+  new_event:
+    args:
+      contract_to_monitor: ${str:0xFf82123dFB52ab75C417195c5fDB87630145ae81}
+      websocket_provider: ${str:https://rpc.gnosischain.com}
+models:
+  params:
+    args:
+      use_polling: ${bool:false}
+is_abstract: true
+---
+public_id: valory/abci:0.1.0
+type: connection
+config:
+  target_skill_id: valory/mech_abci:0.1.0
+  host: ${str:localhost}
+  port: ${int:26658}
+  use_tendermint: ${bool:false}
+---
+public_id: valory/p2p_libp2p_client:0.1.0
+type: connection
+config:
+  nodes:
+  - uri: ${str:acn.staging.autonolas.tech:9005}
+    public_key: ${str:02d3a830c9d6ea1ae91936951430dee11f4662f33118b02190693be835359a9d77}
+cert_requests:
+- identifier: acn
+  ledger_id: ethereum
+  message_format: '{public_key}'
+  not_after: '2024-01-01'
+  not_before: '2023-01-01'
+  public_key: ${str:02d3a830c9d6ea1ae91936951430dee11f4662f33118b02190693be835359a9d77}
+  save_path: .certs/acn_cosmos_9005.txt
+is_abstract: false
+---
+public_id: valory/mech_abci:0.1.0
+type: skill
+models:
+  benchmark_tool:
+    args:
+      log_dir: ${str:/logs}
+  params:
+    args:
+      sleep_time: ${int:1}
+      ipfs_fetch_timeout: ${float:15.0}
+      tendermint_check_sleep_delay: ${int:3}
+      tendermint_p2p_url: ${str:localhost:26656}
+      tendermint_com_url: ${str:http://localhost:8080}
+      tendermint_max_retries: ${int:5}
+      tendermint_url: ${str:http://localhost:26657}
+      use_termination: ${bool:false}
+      round_timeout_seconds: ${float:30.0}
+      reset_period_count: ${int:1000}
+      on_chain_service_id: ${int:1}
+      mech_staking_instance_address: ${str:0x0000000000000000000000000000000000000000}
+      mech_marketplace_address: ${str:0x0000000000000000000000000000000000000000}
+      complementary_service_metadata_address: ${str:0x0000000000000000000000000000000000000000}
+      metadata_hash: ${str:0000000000000000000000000000000000000000000000000000000000000000}
+      share_tm_config_on_startup: ${bool:false}
+      multisend_address: ${str:0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761}
+      service_registry_address: ${str:0x9338b5153AE39BB89f50468E608eD9d764B755fD}
+      service_endpoint_base: ${str:https://dummy_service.autonolas.tech/}
+      gas_params: ${dict:{"gas_price":null, "max_fee_per_gas":null, "max_priority_fee_per_gas":null}}
+      init_fallback_gas: ${int:500000}
+      manual_gas_limit: ${int:1000000}
+      service_owner_share: ${int:1000}
+      profit_split_balance: ${int:1000000000000000000}
+      agent_funding_amount: ${int:200000000000000000}
+      minimum_agent_balance: ${int:100000000000000000}
+      termination_from_block: ${int:0}
+      mech_to_max_delivery_rate: ${dict:{}}
+      mech_to_config: ${dict:{}}
+      hash_checkpoint_address: ${str:0x694e62BDF7Ff510A4EE66662cf4866A961a31653}
+      setup:
+        all_participants: ${list:["0x10E867Ac2Fb0Aa156ca81eF440a5cdf373bE1AaC"]}
+        safe_contract_address: ${str:0x5e1D1eb61E1164D5a50b28C575dA73A29595dFf7}
+        consensus_threshold: ${int:null}
+      default_chain_id: ${str:gnosis}
+---
+public_id: valory/task_execution:0.1.0
+type: skill
+models:
+  params:
+    args:
+      task_deadline: ${float:240.0}
+      tools_to_package_hash: ${dict:{}}
+      api_keys: ${dict:{}}
+      polling_interval: ${float:10}
+      agent_index: ${int:0}
+      num_agents: ${int:4}
+      from_block_range: ${int:50000}
+      mech_marketplace_address: ${str:0x0000000000000000000000000000000000000000}
+      step_in_list_size: ${int:20}
+      mech_to_config: ${dict:{}}
+      tools_to_pricing: ${dict:{}}
+      mech_to_max_delivery_rate: ${dict:{}}
+      timeout_limit: ${int:3}
+      max_block_window: ${int:500}
+      default_chain_id: ${str:gnosis}
+---
+public_id: valory/ledger:0.19.0
+type: connection
+config:
+  ledger_apis:
+    base:
+      address: ${str:http://localhost:8545}
+      chain_id: ${int:8453}
+      poa_chain: ${bool:false}
+      default_gas_price_strategy: ${str:eip1559}
+    gnosis:
+      address: ${str:http://localhost:8545}
+      chain_id: ${int:100}
+      poa_chain: ${bool:false}
+      default_gas_price_strategy: ${str:eip1559}
+    polygon:
+      address: ${str:http://localhost:8545}
+      chain_id: ${int:137}
+      poa_chain: ${bool:true}
+      default_gas_price_strategy: ${str:eip1559_polygon}
+    optimism:
+      address: ${str:http://localhost:8545}
+      chain_id: ${int:10}
+      poa_chain: ${bool:false}
+      default_gas_price_strategy: ${str:eip1559}
+---
+public_id: valory/http_server:0.22.0:bafybeicblltx7ha3ulthg7bzfccuqqyjmihhrvfeztlgrlcoxhr7kf6nbq
+type: connection
+config:
+  host: ${str:0.0.0.0}
+  target_skill_id: valory/mech_abci:0.1.0
+  port: ${int:8000}
+is_abstract: false

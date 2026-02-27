@@ -6,7 +6,6 @@ packages/valory/skills
 packages/valory/connections
 packages/valory/contracts
 packages/valory/protocols
-packages/valory/agents
 
 *test_mech.py
 
