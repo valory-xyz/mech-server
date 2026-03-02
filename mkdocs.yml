@@ -1,6 +1,6 @@
 site_name: mech-server #Required format to work with monorepo including a specific route in the address.
-site_url: https://docs.olas.network/mech-tool/
-site_description: Autonolas ContributionKit developer documentation
+site_url: https://stack.olas.network/mech-server/
+site_description: Mech Server - Create, deploy and manage AI Mechs on the Olas Marketplace
 repo_url: https://github.com/valory-xyz/mech-tools-dev
 site_author: developer@valory.xyz
 edit_uri: ""
@@ -29,10 +29,6 @@ theme:
     - content.code.copy
     - content.code.annotate
     - content.tabs.link
-
-
-extra_css:
-  - stylesheets/extra.css
 
 
 nav:
@@ -99,7 +95,6 @@ extra:
 
 
 extra_javascript:
-    - https://unpkg.com/mermaid@8.10.1/dist/mermaid.min.js
+    - https://unpkg.com/mermaid@11.4.1/dist/mermaid.min.js
     - javascripts/mathjax.js
-    - https://polyfill.io/v3/polyfill.min.js?features=es6
     - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

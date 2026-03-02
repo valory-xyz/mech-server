@@ -47,6 +47,16 @@ When creating a Mech, deployers can select between the following payment models:
 - **Nevermined subscription token**: a dynamic pricing model that allows flexible pricing across different services using a specified ERC20 token.
 
 
+## Supported chains
+
+| Chain | Native | OLAS Token | USDC Token | Nevermined |
+|-------|--------|------------|------------|------------|
+| Gnosis | ✅ | ✅ | ❌ | ✅ |
+| Base | ✅ | ✅ | ❌ | ✅ |
+| Polygon | ✅ | ✅ | ✅ | ✅ |
+| Optimism | ✅ | ✅ | ❌ | ✅ |
+
+
 ## How the request-response flow works
 
 Here's a simplified version of the mech request-response:
@@ -93,6 +103,13 @@ Here's a simplified version of the mech request-response:
     ```
 
 See some examples of requests and responses on the [Mech Hub](https://mech.olas.network/gnosis/mech/0x77af31de935740567cf4ff1986d04b2c964a786a?legacy=true).
+
+
+## Requirements
+
+- [Python](https://www.python.org/) `>=3.10, <3.12`
+- [Poetry](https://python-poetry.org/docs/)
+- [Docker Engine](https://docs.docker.com/engine/install/) + [Docker Compose](https://docs.docker.com/compose/install/)
 
 
 ## Quick start
