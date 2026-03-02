@@ -47,6 +47,16 @@ When creating a Mech, deployers can select between the following payment models:
 - **Nevermined subscription token**: a dynamic pricing model that allows flexible pricing across different services using a specified ERC20 token.
 
 
+## Supported chains
+
+| Chain | Native | OLAS Token | USDC Token | Nevermined |
+|-------|--------|------------|------------|------------|
+| Gnosis | ✅ | ✅ | ❌ | ✅ |
+| Base | ✅ | ✅ | ❌ | ✅ |
+| Polygon | ✅ | ✅ | ✅ | ✅ |
+| Optimism | ✅ | ✅ | ❌ | ✅ |
+
+
 ## How the request-response flow works
 
 Here's a simplified version of the mech request-response:
@@ -93,6 +103,13 @@ Here's a simplified version of the mech request-response:
     ```
 
 See some examples of requests and responses on the [Mech Hub](https://mech.olas.network/gnosis/mech/0x77af31de935740567cf4ff1986d04b2c964a786a?legacy=true).
+
+
+## Requirements
+
+- [Python](https://www.python.org/) `>=3.10, <3.12`
+- [Poetry](https://python-poetry.org/docs/)
+- [Docker Engine](https://docs.docker.com/engine/install/) + [Docker Compose](https://docs.docker.com/compose/install/)
 
 
 ## Quick start
@@ -171,6 +188,7 @@ This generates the following structure:
 ### 3. Configure and implement the tool
 
 **`component.yaml`** — review and update:
+
 - `name`: the name of the tool.
 - `author`: the author's name.
 - `version`: the version of the tool.
@@ -212,6 +230,7 @@ def run(**kwargs: Any) -> MechResponse:
 ```
 
 Key points:
+
 - `ALLOWED_TOOLS` must list the tool name exactly as it appears in requests.
 - `run()` must return a 5-tuple `(result, prompt, context, extra, extra)`.
 - The first element is the tool's response (typically a string or JSON string).
@@ -249,6 +268,7 @@ mech prepare-metadata -c gnosis
 ```
 
 This command handles the full publish pipeline:
+
 1. Locks package hashes (re-computes fingerprints after your edits)
 2. Pushes all packages to IPFS
 3. Generates `metadata.json` from your tool definitions
@@ -317,6 +337,7 @@ To register your tool as a component on the Olas Registry, mint it [here](https:
 
 You will need an address (EOA) and the hash of the metadata file.
 Click on "Generate Hash & File" and provide:
+
 - name (name of the tool)
 - description (of the tool)
 - version (must match the version in `component.yaml`)
