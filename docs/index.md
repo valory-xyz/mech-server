@@ -268,6 +268,7 @@ mech prepare-metadata -c gnosis
 ```
 
 This command handles the full publish pipeline:
+
 1. Locks package hashes (re-computes fingerprints after your edits)
 2. Pushes all packages to IPFS
 3. Generates `metadata.json` from your tool definitions
@@ -336,6 +337,7 @@ To register your tool as a component on the Olas Registry, mint it [here](https:
 
 You will need an address (EOA) and the hash of the metadata file.
 Click on "Generate Hash & File" and provide:
+
 - name (name of the tool)
 - description (of the tool)
 - version (must match the version in `component.yaml`)
