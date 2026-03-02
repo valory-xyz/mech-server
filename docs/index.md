@@ -188,6 +188,7 @@ This generates the following structure:
 ### 3. Configure and implement the tool
 
 **`component.yaml`** — review and update:
+
 - `name`: the name of the tool.
 - `author`: the author's name.
 - `version`: the version of the tool.
@@ -229,6 +230,7 @@ def run(**kwargs: Any) -> MechResponse:
 ```
 
 Key points:
+
 - `ALLOWED_TOOLS` must list the tool name exactly as it appears in requests.
 - `run()` must return a 5-tuple `(result, prompt, context, extra, extra)`.
 - The first element is the tool's response (typically a string or JSON string).

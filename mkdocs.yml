@@ -32,7 +32,7 @@ theme:
 
 
 nav:
-  - mech-server: 'index.md'
+  - Home: 'index.md'
 
 
 plugins:
