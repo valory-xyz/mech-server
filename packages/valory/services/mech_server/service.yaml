@@ -7,7 +7,7 @@ license: Apache-2.0
 fingerprint:
   README.md: bafybeifm54s6e37mjdcjtfubkyiyusykxbyza5m3njlquokq2zupfottzm
 fingerprint_ignore_patterns: []
-agent: valory/mech_server:0.1.0:bafybeifkxyd2fpnvfh2zjj4as73sp4aialntcm6d4hmygxyr2jsnmhppjq
+agent: valory/mech_server:0.1.0:bafybeiedm2zy5pbkjm774ijsf5hedel7xphja34wqkuie3yem7zqvwuezy
 number_of_agents: 4
 deployment:
   agent:
@@ -365,7 +365,7 @@ public_id: valory/p2p_libp2p_client:0.1.0
 type: connection
 config:
   nodes:
-  - uri: ${ACN_URI:str:acn.staging.autonolas.tech:9005}
+  - uri: ${ACN_URI:str:acn.autonolas.tech:9006}
     public_key: ${ACN_NODE_PUBLIC_KEY:str:02d3a830c9d6ea1ae91936951430dee11f4662f33118b02190693be835359a9d77}
 cert_requests:
 - identifier: acn
