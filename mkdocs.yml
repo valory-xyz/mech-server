@@ -1,7 +1,7 @@
 site_name: mech-server #Required format to work with monorepo including a specific route in the address.
 site_url: https://stack.olas.network/mech-server/
 site_description: Mech Server - Create, deploy and manage AI Mechs on the Olas Marketplace
-repo_url: https://github.com/valory-xyz/mech-tools-dev
+repo_url: https://github.com/valory-xyz/mech-server
 site_author: developer@valory.xyz
 edit_uri: ""
 copyright:  Copyright &copy; 2021 - 2025 Valory AG
