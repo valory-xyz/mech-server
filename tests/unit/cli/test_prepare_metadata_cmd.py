@@ -34,7 +34,6 @@ from mtd.commands.prepare_metadata_cmd import (
     prepare_metadata,
 )
 
-
 MOCK_PATH = "mtd.commands.prepare_metadata_cmd"
 
 

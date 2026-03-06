@@ -31,7 +31,6 @@ from aea.cli.packages import package_type_selector_prompt
 from autonomy.cli.packages import get_package_manager
 from mtd.commands.context_utils import get_mtd_context, require_initialized
 
-
 CUSTOMS_DIR = "customs"
 PY_SUFFIX = ".py"
 INIT_FILENAME = f"__init__{PY_SUFFIX}"

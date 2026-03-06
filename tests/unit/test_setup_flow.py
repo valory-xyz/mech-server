@@ -44,7 +44,6 @@ from mtd.setup_flow import (
     run_setup,
 )
 
-
 MOD = "mtd.setup_flow"
 
 

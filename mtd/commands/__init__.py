@@ -27,7 +27,6 @@ from mtd.commands.setup_cmd import setup
 from mtd.commands.stop_cmd import stop
 from mtd.commands.update_metadata_cmd import update_metadata
 
-
 __all__ = [
     "add_tool",
     "get_mtd_context",

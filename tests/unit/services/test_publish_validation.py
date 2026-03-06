@@ -29,7 +29,6 @@ from mtd.services.metadata.publish import (
     publish_metadata_to_ipfs,
 )
 
-
 PUB_MOD = "mtd.services.metadata.publish"
 
 

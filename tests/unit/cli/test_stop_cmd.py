@@ -25,7 +25,6 @@ from click.testing import CliRunner
 
 from mtd.commands.stop_cmd import stop
 
-
 MOCK_PATH = "mtd.commands.stop_cmd"
 
 
