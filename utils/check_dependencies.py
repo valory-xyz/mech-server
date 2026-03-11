@@ -25,6 +25,7 @@ In particular:
 
 It is assumed the script is run from the repository root.
 """
+
 import os
 import sys
 from copy import deepcopy
@@ -35,7 +36,6 @@ import toml
 from aea.configurations.data_types import Dependency, PackageType
 from aea.package_manager.base import load_configuration
 from aea.package_manager.v1 import PackageManagerV1
-
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_PYPROJECT_TOML_PATH = ROOT_DIR / "pyproject.toml"
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     original_tox_ini = DEFAULT_TOX_INI_PATH.read_text(encoding="utf-8")
     package_dependencies = get_package_dependencies()
     # temp hack
-    package_dependencies["requests"] = "==2.28.2"
+    package_dependencies["requests"] = "==2.32.5"
     listed_package_dependencies = load_pyproject_toml()
     original_listed_package_dependencies = deepcopy(listed_package_dependencies)
     listed_package_dependencies.update(package_dependencies)

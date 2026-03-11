@@ -19,10 +19,9 @@
 
 """Mech Tools Dev CLI."""
 
-__version__ = "0.7.3"
+__version__ = "0.8.0"
 
 from mtd.context import MtdContext, build_context, get_default_workspace
-
 
 __all__ = [
     "MtdContext",

@@ -27,7 +27,6 @@ import pytest
 from mtd.context import build_context
 from mtd.workspace import initialize_workspace
 
-
 MOD = "mtd.workspace"
 
 

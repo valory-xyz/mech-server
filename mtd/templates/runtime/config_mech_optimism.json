@@ -1,6 +1,6 @@
 {
   "name": "Mech on Optimism",
-  "hash": "bafybeiaku727bbwmetq5ltlwcoaz73ug5ftkxpnoecj3dnbm2pzpelnr6a",
+  "hash": "bafybeighzqhoyflt55fblp47bqpwnxg3renhc7hgfnn4wqrnffk72mticm",
   "description": "The mech executes AI tasks requested on-chain and delivers the results to the requester.",
   "image": "https://gateway.autonolas.tech/ipfs/bafybeidzpenez565d7vp7jexfrwisa2wijzx6vwcffli57buznyyqkrceq",
   "service_version": "v0.9.0",

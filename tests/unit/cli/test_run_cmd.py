@@ -33,7 +33,6 @@ from mtd.commands.run_cmd import (
     run,
 )
 
-
 MOCK_PATH = "mtd.commands.run_cmd"
 
 

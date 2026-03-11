@@ -33,7 +33,6 @@ from mtd.deploy_mech import (
     update_service_after_deploy,
 )
 
-
 MOD = "mtd.deploy_mech"
 
 

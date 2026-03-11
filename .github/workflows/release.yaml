@@ -9,22 +9,30 @@ permissions:
 jobs:
   publish-pip-packages:
     name: Publish to PyPI
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
+        python-version: ["3.10"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.10"
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: "1.8.0"
+          python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          poetry install --no-interaction
+          sudo apt-get update --fix-missing
+          sudo apt-get autoremove
+          sudo apt-get autoclean
+          python -m pip install --upgrade pip
+          pip install poetry==1.8.3
+          poetry install
+          poetry run pip install --upgrade setuptools
           poetry run autonomy packages sync --update-packages
+
       - name: Build distribution
         run: make dist
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

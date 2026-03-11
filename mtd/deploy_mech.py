@@ -30,7 +30,6 @@ from operate.services.protocol import EthSafeTxBuilder
 from operate.services.service import Service
 from operate.utils.gnosis import SafeOperation
 
-
 MECH_MARKETPLACE_JSON_URL = (
     "https://raw.githubusercontent.com/valory-xyz/mech-quickstart/"
     "refs/heads/main/contracts/MechMarketplace.json"

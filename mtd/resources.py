@@ -25,7 +25,6 @@ from typing import Iterable, Tuple
 
 from mtd.context import MtdContext
 
-
 RUNTIME_RESOURCE_PACKAGE = "mtd.templates.runtime"
 
 

@@ -7,48 +7,48 @@ aea_version: '>=2.0.0, <3.0.0'
 fingerprint: {}
 fingerprint_ignore_patterns: []
 connections:
-- valory/abci:0.1.0:bafybeifvjaobfl2mwwrb6jb26havbz3pu5lbb4so7gkhnvv2ilfkdywq7y
-- valory/http_client:0.23.0:bafybeigwzn4hkry3wy7nf2myk3h3pl5xrqkvvxp2ppdbwwffa4c2s2bkwy
-- valory/http_server:0.22.0:bafybeigyjwg6nfwmdkwzt7i56n4zv3oj6hii2mkkgstuaztyunscjifdee
-- valory/ipfs:0.1.0:bafybeif2252xypx25p42fva4y3wi4loinxi6pfwf4wkwgcbdbfiu3gmjqu
-- valory/ledger:0.19.0:bafybeigiipjmtjdivz2wd54c7bmbqxbayk5b5st7wcrsvsnqkfc2f2rbaa
-- valory/p2p_libp2p_client:0.1.0:bafybeigg3kzkywemiswrgjhb7hei5qsysxcsx36c6weyewtirctbmleowm
-- valory/websocket_client:0.1.0:bafybeicdavar2qg2s2h7qp2ugzab6zf2jzehvu4zgxjjrfucjqeac575iu
+- valory/abci:0.1.0:bafybeigme5ttg5o6us66dk7c67szstrybesqcew4uhmdqnki3k4b7cn4mu
+- valory/http_client:0.23.0:bafybeihel6sg2yayxu7lqygaswdgciaxpqrgsbl5rwx74c6znu5qz2edd4
+- valory/http_server:0.22.0:bafybeid4oqsfkqo36lryoecymjnq4whme3tgupqfq6m4l7lbr5r4yxtswu
+- valory/ipfs:0.1.0:bafybeifcwxo3l56mlcucpdaoqhiczzkbyemrgtffoxzsqx67g567jcfeya
+- valory/ledger:0.19.0:bafybeid5uwx4uqxkiibw6kazr7my5mk5kcqg2dx2owtcf7kcpbs2jrns2e
+- valory/p2p_libp2p_client:0.1.0:bafybeielj3jso3wvrarp5n5rq7llpw4vgxybqiyensgjalb5ubfiawwhhu
+- valory/websocket_client:0.1.0:bafybeid4cnbjpmzcsw3usg7umufgqyod2u3xfw5uso3vukt3n5hfuxvdea
 contracts:
-- valory/olas_mech:0.1.0:bafybeigo6cldicov4ce2yxjztk4spemxf3sreztmkucmywvty6c5luwbw4
+- valory/olas_mech:0.1.0:bafybeibraj4uypb5pafavzrbeyfdlnbcchm5vefpuev5dhiypqb7av25om
 - valory/complementary_service_metadata:0.1.0:bafybeibjk5gdgc54wx5bz4fl2666urmfj6mx3ocqxyumqpj7wq5fdg4diu
-- valory/gnosis_safe:0.1.0:bafybeig666ryzt3bzavejkmk4jtspihzziq72qpxy4g2ta3d5j5sdwzv5i
-- valory/gnosis_safe_proxy_factory:0.1.0:bafybeihnuhz6n7quvmfi36owk3k2qse7unjeykrlmjecet5o6kcrrhtpsa
-- valory/hash_checkpoint:0.1.0:bafybeic7x3cqr46yw7wzbvfc7mc6l3vsilx7g7tltqsb3whzfyolukoev4
-- valory/multisend:0.1.0:bafybeidjdgi2kyexajirj3cnpzgse4y5u664b2blztt4flv6i7knlecyr4
-- valory/service_registry:0.1.0:bafybeidheiinltcynckpgs35vknbs7s6zal3d544nfjcdjrbvely32j5le
-- valory/mech_marketplace:0.1.0:bafybeifnabe3hqdizvdtc2q33sr6q7glmojid332irkhbmczev3wzvq5lq
-- valory/balance_tracker:0.1.0:bafybeif27pp2772gkhnrdyxlswkr4whf2ka6bwf5wtdym6mzdgddyq3v3a
-- valory/erc20:0.1.0:bafybeig3avtl5ffku556ipvuviiat5p2psfw46fa2ieofcc4eculxe3vde
+- valory/gnosis_safe:0.1.0:bafybeico3uzjdwumf2jg2e627ut4rwzwmedjavenw6e2hshi2m6yw642bq
+- valory/gnosis_safe_proxy_factory:0.1.0:bafybeibp5vuocmwxl4jvw4sp3vmybsklvhnxhv3ohi5fi6ta5owqxig3im
+- valory/hash_checkpoint:0.1.0:bafybeihpds2kkr5okehfa4ohbalur3fihzyk5xz3we7thshsoh5jbgn7jy
+- valory/multisend:0.1.0:bafybeiaf3hapi3prgpjeugwhq64k7lqelo6kibhol5rkajt7id3knomp5q
+- valory/service_registry:0.1.0:bafybeifc4gpaz6vlpgvghsm64tkbukt744rpeoqpxijglxrv46gb7sbda4
+- valory/mech_marketplace:0.1.0:bafybeiapnlzimazvfivnrxxiy4syd77xqeswn5un24isa7m3562ozqsgn4
+- valory/balance_tracker:0.1.0:bafybeigitc6tsfopaib7vtk5gsvozbnwiuwryvpweqj6kjrmijtnvzqkzi
+- valory/erc20:0.1.0:bafybeif37n2xmh6xkn3vzybty7q37fq4f5rsey5ep33vvobh2yofeao5ae
 protocols:
-- open_aea/signing:1.0.0:bafybeiei6h5suazzfta7n3uyq7bsz26zkmdiiylptu5i44p7s2wiygxt24
-- valory/abci:0.1.0:bafybeicjjeintlqgg53zrreflmoafeiynt3gvdnovy5ocea7doddos3e5a
-- valory/acn:1.1.0:bafybeih6o2ts4thjluddizqesxbrcqkaciz3zlbolq6e77dgblqdnht2rm
-- valory/acn_data_share:0.1.0:bafybeiebct3enol4nkiy3uxm2xnn2hniwnorjfwtcjbsywea5ql36pqk3y
-- valory/contract_api:1.0.0:bafybeigl7mxuyxngk4gztgygeccbgdfrllx73kwbvvkjvtkfw6ionyd56q
-- valory/http:1.0.0:bafybeia4tq7ycivm3dnekelrnlzdwb4qnrjdykk6gf5tizq6djr66adotm
-- valory/ipfs:0.1.0:bafybeidqfs3njcishcwv4ymf4srxibw44u7qrnryxiwrg5ulk2h7myvt6q
-- valory/ledger_api:1.0.0:bafybeig7yk77pmebqcb33jbavodcslmltitz2uolq6s5arklvsvu5bvp7y
-- valory/tendermint:0.1.0:bafybeie4jqosqiicefnlnxsvrymqj6tycv7x5qeitsdew6abhdcxlu23r4
+- open_aea/signing:1.0.0:bafybeifsjmldwyki3beqyvdt5lzenrg6wyrqaar5plc5rpnvtc4zlentye
+- valory/abci:0.1.0:bafybeiak4pwac3pwjtd7weskxdhkrcopckr32vtazfbuteu6yqjkwarpte
+- valory/acn:1.1.0:bafybeiea66z4k6cgcazxd6qzvnkllulyjzbnxufkoenge7qzh4qfogrvoa
+- valory/acn_data_share:0.1.0:bafybeieqisfr6lhaaesq37lk7vyaxza2h6nucshksgyo2djqfyf2saqo4i
+- valory/contract_api:1.0.0:bafybeibld2xb5m7kyluiptkamp4nrt6oeomkohz7a3yppbv2oo7qw2e4la
+- valory/http:1.0.0:bafybeidxkp3vga7t6x2pbt2tpkgyaxa5bgpdgryao54py7w3yxyzr7neoy
+- valory/ipfs:0.1.0:bafybeibz5xqhxdbuvba7nuw2w6ardjermtcoqercopnypdplnaekf3joam
+- valory/ledger_api:1.0.0:bafybeiecq56phjfws36rgrefw6niyo4ezesloodsfis647mpm5ygqo4ysi
+- valory/tendermint:0.1.0:bafybeihzb7e32f7jcrzvubilqaxzmyk7ea6ss3pg3tliatdlrr76qeknyq
 - valory/websocket_client:0.1.0:bafybeig6omutaqt5rbvidju4zc7pwwdi6tkagwu3dwiirosadyoo534v3q
 skills:
-- valory/abstract_abci:0.1.0:bafybeieoc35cjm3dlt2ayj6iidjfdgry6fmhnzniml5dqalmwu4so6vmme
-- valory/abstract_round_abci:0.1.0:bafybeico2i67lk5wkgyvmu5ska7phbugxbfh4ofnm57vwpypis5zmpjnim
-- valory/contract_subscription:0.1.0:bafybeic3ngmx5uw3b6wp5oe4efa22slgjrllf4irhwsulwefbbgwsiidxq
-- valory/mech_abci:0.1.0:bafybeicace7xfnqfrvrlijeximx66osejmv4fs6yt52zty3bcwnmgvkwge
-- valory/registration_abci:0.1.0:bafybeiaur5o7xjf5jod2gzbhxa2m2l2m7z76rfs7gf2sfuf3ffjlqodaxy
-- valory/reset_pause_abci:0.1.0:bafybeibgbbt4yzd6amf2wuldrdvhyfqibjqx2uxhybqhrkumlp4jcfndia
-- valory/delivery_rate_abci:0.1.0:bafybeifzw4okhzax55zuuusggfcyz2z2ulrto4fww2l36julte5ks7e7kq
-- valory/task_execution:0.1.0:bafybeibkzt2tq4mpjf6jtq63tdfih2s4smbuvosbnnlttrlf632tuyr5jy
-- valory/task_submission_abci:0.1.0:bafybeihleykoygbyf2ezzkvy4begcf5uisqpievoq672rpaak37xrumvpy
-- valory/termination_abci:0.1.0:bafybeifjwbctocnxrtgyzn7z2ml2q6bxdxrd4sa7m5u43p7ts6hk6ujvce
-- valory/transaction_settlement_abci:0.1.0:bafybeidmg3beiqyubkze6wdiwhz4oqwvidhsjexjgcvso5bkrryqkbsgzu
-- valory/websocket_client:0.1.0:bafybeidbcdcvyy2svob6p52akdx4ezsqpxdh4kphhqgf6hbageneu7unwi
+- valory/abstract_abci:0.1.0:bafybeia36n7ci7b6pi2bpa4r4ty6dcb3r4vs46vjftolsdxfl4y5iieyyy
+- valory/abstract_round_abci:0.1.0:bafybeiaalla55aprhvoumv4u7qt4v6l53fjmgln6wgyjr5e5tw7u4kscja
+- valory/contract_subscription:0.1.0:bafybeibtcbtgm5ptzn6srfts3lxts5722sygmkypcknv5ocmydqwcvgeem
+- valory/mech_abci:0.1.0:bafybeidf6ebula6h76a2s4ls34ibgujkdj5ccofquxwsuoubqe2qj5amlm
+- valory/registration_abci:0.1.0:bafybeiayry7tzttlivibbfnwikilbgdl54g3btvc4uhl4x5qqdv6a673o4
+- valory/reset_pause_abci:0.1.0:bafybeibsdhil35py7zjhielonaycxo7gp34jfufe2ynprjv2etwxnzcxqy
+- valory/delivery_rate_abci:0.1.0:bafybeied5aejittwqk3il2pvt52dlnvp4el5tan6azuxynfka3h4qv2w3u
+- valory/task_execution:0.1.0:bafybeidgm6yw4jpvpgdgaag2y66neyx4k4vv373svgqhitrd36ualjml7y
+- valory/task_submission_abci:0.1.0:bafybeidjogcmrwvzroj3xitulcbwel65gwmhs5r7sjf2r54y2a3qs6vdum
+- valory/termination_abci:0.1.0:bafybeic3jppoya7jkmylbl5evcssl5qhppl6hadxebfxcxmi5o7qysce6a
+- valory/transaction_settlement_abci:0.1.0:bafybeigspkourznaiagdkedyxjbjl6svhuhdwbvejr3jv3e3dil2hslose
+- valory/websocket_client:0.1.0:bafybeie63j65ffblz6g6oiaynjpz4ae5mgyjz2w6o5ovqitzdbnvqzlhzu
 default_ledger: ethereum
 required_ledgers:
 - ethereum
@@ -81,14 +81,78 @@ logging_config:
 dependencies:
   aiohttp:
     version: <4.0.0,>=3.8.5
+  asn1crypto:
+    version: <1.5.0,>=1.4.0
+  attrs:
+    version: ==25.4.0
+  certifi:
+    version: ==2026.2.25
+  ecdsa:
+    version: '>=0.15'
+  eth-abi:
+    version: ==5.2.0
+  eth-utils:
+    version: ==5.3.0
+  eth_typing:
+    version: ==5.2.1
+  grpcio:
+    version: ==1.78.0
+  hexbytes:
+    version: ==1.3.1
   hypothesis:
     version: ==6.21.6
+  ipfshttpclient:
+    version: ==0.8.0a2
+  multidict:
+    version: ==6.7.1
+  open-aea-cli-ipfs:
+    version: ==2.1.0
+  open-aea-ledger-cosmos:
+    version: ==2.1.0
   open-aea-ledger-ethereum:
-    version: ==2.0.8
-  typing_extensions:
-    version: <=4.13.2,>=3.10.0.2
+    version: ==2.1.0
+  open-aea-test-autonomy:
+    version: ==0.21.13
+  openapi-core:
+    version: ==0.22.0
+  openapi-spec-validator:
+    version: <0.8.0,>=0.7.0
+  packaging:
+    version: ==26
   pebble:
     version: ==5.1.3
+  protobuf:
+    version: <6,>=5
+  py-ecc:
+    version: ==8.0.0
+  py-eth-sig-utils:
+    version: ==0.4.0
+  py-multibase:
+    version: ==1.0.3
+  py-multicodec:
+    version: ==0.2.1
+  pycryptodome:
+    version: ==3.20.0
+  pytest:
+    version: ==8.4.2
+  pytest-asyncio:
+    version: ==1.3.0
+  pytz:
+    version: ==2022.2.1
+  PyYAML:
+    version: ==6.0.1
+  requests:
+    version: <2.32.5,>=2.28.1
+  typing_extensions:
+    version: <=4.15.0,>=3.10.0.2
+  web3:
+    version: <8,>=7.0.0
+  websocket_client:
+    version: <1,>=0.32.0
+  werkzeug:
+    version: ==3.1.6
+  prometheus_client:
+    version: ==0.23.1
 customs: []
 default_connection: null
 ---

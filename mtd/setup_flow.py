@@ -34,7 +34,6 @@ from mtd.context import MtdContext, SUPPORTED_CHAINS
 from mtd.context import workspace_cwd as _workspace_cwd
 from mtd.resources import read_text_resource
 
-
 OPERATE_CONFIG_PATH = "services/sc-*/config.json"
 AGENT_KEY = "ethereum_private_key.txt"
 SERVICE_KEY = "keys.json"

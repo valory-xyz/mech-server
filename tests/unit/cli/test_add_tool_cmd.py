@@ -32,7 +32,6 @@ from mtd.commands.add_tool_cmd import (
     generate_tool_file,
 )
 
-
 MOCK_PATH = "mtd.commands.add_tool_cmd"
 
 

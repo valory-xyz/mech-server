@@ -28,7 +28,6 @@ from aea_cli_ipfs.ipfs_utils import IPFSTool
 from multibase import multibase
 from multicodec import multicodec
 
-
 PREFIX = "f01701220"
 IPFS_PREFIX_LENGTH = 6
 RESPONSE_KEY = "Hash"

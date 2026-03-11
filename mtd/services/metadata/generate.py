@@ -27,7 +27,6 @@ from typing import Any, Dict, List
 
 import yaml
 
-
 CUSTOMS = "customs"
 INIT_PY = "__init__.py"
 COMPONENT_YAML = "component.yaml"

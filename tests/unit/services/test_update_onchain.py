@@ -33,7 +33,6 @@ from mtd.services.metadata.update_onchain import (
     update_metadata_onchain,
 )
 
-
 MOD = "mtd.services.metadata.update_onchain"
 
 _VALID_ENV = {

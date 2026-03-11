@@ -25,7 +25,6 @@ from click.testing import CliRunner
 
 from mtd.commands.update_metadata_cmd import update_metadata
 
-
 MOCK_PATH = "mtd.commands.update_metadata_cmd"
 
 

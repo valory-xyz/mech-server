@@ -25,7 +25,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Tuple
 
-
 INITIALIZED_MARKER = ".mech_initialized"
 SUPPORTED_CHAINS: Tuple[str, ...] = ("gnosis", "base", "polygon", "optimism")
 
