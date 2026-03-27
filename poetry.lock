@@ -2,19 +2,21 @@
 
 [[package]]
 name = "aea-helpers"
-version = "0.21.15"
+version = "0.21.16"
 description = "CLI helpers for CI and dependency management in AEA-based projects."
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "aea_helpers-0.21.15-py3-none-any.whl", hash = "sha256:71b86792c96ae23d52a18f3866f97014c6d56c1ca0c4091e46539085eef9ec82"},
-    {file = "aea_helpers-0.21.15.tar.gz", hash = "sha256:99c88b24e959ec82db19ea789391db83517e72ad158addd2f5e0a603ae2d1f21"},
+    {file = "aea_helpers-0.21.16-py3-none-any.whl", hash = "sha256:cf61403295cd42d1143b03fbdf1b3dd1f984066ca9dbf25e8ae45c969a79c4c2"},
+    {file = "aea_helpers-0.21.16.tar.gz", hash = "sha256:069e1a209bdb350335cf39c52bab7140d6688ae8fd0dcc9a36c27b1d6dc4829c"},
 ]
 
 [package.dependencies]
 click = ">=8.1.0,<9"
 open-autonomy = ">=0.21.0,<0.22.0"
+python-dotenv = ">=0.14.5,<2"
+PyYAML = ">=6.0,<7"
 requests = ">=2.28.0,<3"
 toml = ">=0.10,<1"
 
@@ -3110,14 +3112,14 @@ open-aea-ledger-ethereum = ">=2.1.0,<2.2.0"
 
 [[package]]
 name = "open-aea-test-autonomy"
-version = "0.21.15"
+version = "0.21.16"
 description = "Plugin containing test tools for open-autonomy packages."
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "open_aea_test_autonomy-0.21.15-py3-none-any.whl", hash = "sha256:cead677c56921457b80572d33da7a8bfea9908539d206f516bdf6578e9fa203b"},
-    {file = "open_aea_test_autonomy-0.21.15.tar.gz", hash = "sha256:08f08e68442781b3208f4accba8585c069fd95facf75e7aab274eabf19d7484a"},
+    {file = "open_aea_test_autonomy-0.21.16-py3-none-any.whl", hash = "sha256:c646c8bf75a166d0acd65c1cdc6ce2464177b9a0a1ff1835e1a6aa0be7d464f7"},
+    {file = "open_aea_test_autonomy-0.21.16.tar.gz", hash = "sha256:ede9075beac9640b9073efdba219c4c45f54f470398b1b69892575cb882fed56"},
 ]
 
 [package.dependencies]
@@ -3128,14 +3130,14 @@ pytest = "8.4.2"
 
 [[package]]
 name = "open-autonomy"
-version = "0.21.15"
+version = "0.21.16"
 description = "A framework for the creation of autonomous agent services."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "open_autonomy-0.21.15-py3-none-any.whl", hash = "sha256:31dc5cd756090e2c7add8efbe419d5671a9887bc9a8758aadf9bd8848ba0880c"},
-    {file = "open_autonomy-0.21.15.tar.gz", hash = "sha256:194386cfdbdac679c58b5ac1077c269dc60f92e380afe80f48dd03cc183cb740"},
+    {file = "open_autonomy-0.21.16-py3-none-any.whl", hash = "sha256:0a5b9a65997a20a2bf979f50a53f25f05b49e0c3162d0d8a4115ade60fa27286"},
+    {file = "open_autonomy-0.21.16.tar.gz", hash = "sha256:d7c7cea3cd8f4da492aa94e8263aedc26618194aad9d2a0efb80caf6b963ed98"},
 ]
 
 [package.dependencies]
@@ -5491,4 +5493,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.15"
-content-hash = "66ee9a5d7d9e874e8c1e835a21b11d35c69c480c87109696fa3ec6dfebf7de29"
+content-hash = "c06c11f983388e10a3dd82163e129843e5660e766bd9d1d080a8a310327b621e"
