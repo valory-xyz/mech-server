@@ -25,10 +25,9 @@ jobs:
           sudo apt-get autoremove
           sudo apt-get autoclean
           python -m pip install --upgrade pip
-          pip install poetry==1.8.3
-          poetry install
-          poetry run pip install --upgrade setuptools
-          poetry run autonomy packages sync --update-packages
+          pip install uv
+          uv sync --all-groups
+          uv run autonomy packages sync --update-packages
 
       - name: Build distribution
         run: make dist

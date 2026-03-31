@@ -99,8 +99,9 @@ def test_load_env_returns_dict_when_all_vars_present(tmp_path: Path) -> None:
     """Return the runtime env dict when all required variables are present."""
     env_path = tmp_path / ".env"
     env_path.write_text("", encoding="utf-8")
-    with patch(f"{MOD}.dotenv.load_dotenv"), patch.dict(
-        os.environ, _VALID_ENV, clear=True
+    with (
+        patch(f"{MOD}.dotenv.load_dotenv"),
+        patch.dict(os.environ, _VALID_ENV, clear=True),
     ):
         result = _load_env(env_path)
 
@@ -126,8 +127,9 @@ def test_fetch_metadata_hash_returns_bytes_for_valid_cid() -> None:
     """Return extracted hash bytes for a well-formed CID."""
     # multicodec.remove_prefix returns 35 null bytes:
     # hex is 70 chars; [6:] = 64 chars = 32 bytes
-    with patch(f"{MOD}.multibase.decode", return_value=b"x" * 10), patch(
-        f"{MOD}.multicodec.remove_prefix", return_value=bytes(35)
+    with (
+        patch(f"{MOD}.multibase.decode", return_value=b"x" * 10),
+        patch(f"{MOD}.multicodec.remove_prefix", return_value=bytes(35)),
     ):
         result = _fetch_metadata_hash("f01701220")
 

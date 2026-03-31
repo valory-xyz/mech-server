@@ -336,9 +336,10 @@ def test_deploy_mech_skips_when_already_deployed() -> None:
     manager.get_all_services.return_value = ([service], None)
     operate.service_manager.return_value = manager
 
-    with patch("mtd.deploy_mech.needs_mech_deployment", return_value=False), patch(
-        "mtd.deploy_mech.deploy_mech"
-    ) as mock_deploy:
+    with (
+        patch("mtd.deploy_mech.needs_mech_deployment", return_value=False),
+        patch("mtd.deploy_mech.deploy_mech") as mock_deploy,
+    ):
         _deploy_mech(operate, "gnosis")
 
     mock_deploy.assert_not_called()
@@ -353,9 +354,13 @@ def test_deploy_mech_deploys_when_needed() -> None:
     manager.get_all_services.return_value = ([service], None)
     operate.service_manager.return_value = manager
 
-    with patch("mtd.deploy_mech.needs_mech_deployment", return_value=True), patch(
-        "mtd.deploy_mech.deploy_mech", return_value=("0xmech", 42)
-    ) as mock_deploy, patch("mtd.deploy_mech.update_service_after_deploy"):
+    with (
+        patch("mtd.deploy_mech.needs_mech_deployment", return_value=True),
+        patch(
+            "mtd.deploy_mech.deploy_mech", return_value=("0xmech", 42)
+        ) as mock_deploy,
+        patch("mtd.deploy_mech.update_service_after_deploy"),
+    ):
         _deploy_mech(operate, "gnosis")
 
     mock_deploy.assert_called_once()
@@ -464,9 +469,10 @@ def test_setup_private_keys_decrypts_and_creates(
     (keys_dir / "key_file.json").write_text("{}", encoding="utf-8")
 
     mock_key_data = {"private_key": "0xkey", "address": "0xaddr"}
-    with patch(f"{MOD}.KeysManager") as mock_km, patch(
-        f"{MOD}._create_private_key_files"
-    ) as mock_create:
+    with (
+        patch(f"{MOD}.KeysManager") as mock_km,
+        patch(f"{MOD}._create_private_key_files") as mock_create,
+    ):
         mock_km.return_value.get_decrypted.return_value = mock_key_data
         _setup_private_keys(context=context)
 
