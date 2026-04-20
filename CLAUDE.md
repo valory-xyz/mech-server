@@ -37,7 +37,7 @@ mech-server/
 ├── tests/unit/                 # Unit tests
 ├── utils/                      # Dev utility scripts (check_dependencies, bump, etc.)
 ├── docs/                       # MkDocs documentation source
-├── pyproject.toml              # Poetry config and package metadata
+├── pyproject.toml              # Project config and package metadata (uv)
 ├── tox.ini                     # Tox environments + flake8/isort/mypy/pytest config
 └── Makefile                    # All common dev tasks
 ```
@@ -49,10 +49,11 @@ mech-server/
 ## Installation
 
 ```bash
-poetry install
+uv sync
+source .venv/bin/activate
 ```
 
-Requires Python 3.10–3.11, Poetry, Docker, Docker Compose, and Tendermint `0.34.19`.
+Requires Python 3.10–3.11, uv, Docker, Docker Compose, and Tendermint `0.34.19`.
 
 ---
 
@@ -118,8 +119,8 @@ make abci-docstrings      # regenerate ABCI docstrings
 If you modified anything under `packages/`:
 ```bash
 # First, sync all third-party packages from IPFS (required before locking hashes)
-poetry run autonomy init --reset --author ci --remote --ipfs --ipfs-node "/dns/registry.autonolas.tech/tcp/443/https"
-poetry run autonomy packages sync
+uv run autonomy init --reset --author ci --remote --ipfs --ipfs-node "/dns/registry.autonolas.tech/tcp/443/https"
+uv run autonomy packages sync
 
 # Then regenerate hashes and run generators
 make generators           # copyright headers + ABCI docstrings + package lock + doc hashes
@@ -153,11 +154,11 @@ make common-checks-2      # check-abci-docstrings, check-abciapp-specs, check-ha
 ## Testing
 
 ```bash
-poetry run pytest tests/                                      # all unit tests
-poetry run pytest tests/unit/cli/                            # CLI tests only
-poetry run pytest -vv tests/                                 # verbose
-poetry run pytest -m "not integration and not e2e" tests/   # skip slow tests
-poetry run pytest tests/ --cov=mtd --cov-report=term-missing # coverage report
+uv run pytest tests/                                      # all unit tests
+uv run pytest tests/unit/cli/                            # CLI tests only
+uv run pytest -vv tests/                                 # verbose
+uv run pytest -m "not integration and not e2e" tests/   # skip slow tests
+uv run pytest tests/ --cov=mtd --cov-report=term-missing # coverage report
 ```
 
 Current state: **170 tests, 100% line coverage (880/880 statements).** Maintain 100% when adding new code — run the coverage command to verify before committing.
@@ -330,7 +331,7 @@ dev time, and the initial content seeded into every new workspace.
 **How it reaches the user after `pip install mech-server`:**
 
 ```
-pyproject.toml: [[tool.poetry.packages]] include = "packages"
+pyproject.toml: [tool.uv.build-backend] module-name = ["mtd", "packages"]
     ↓
 site-packages/packages/   (AEA components land alongside mtd/)
     ↓

@@ -5,14 +5,15 @@ Thank you for your interest in contributing to **mech-server**! This guide will 
 ## Prerequisites
 
 - Python 3.10 or 3.11
-- [Poetry](https://python-poetry.org/)
+- [uv](https://docs.astral.sh/uv/)
 - Docker and Docker Compose
 - Tendermint `0.34.19`
 
 Install dependencies:
 
 ```bash
-poetry install
+uv sync
+source .venv/bin/activate
 ```
 
 ## Branch Naming
@@ -35,7 +36,7 @@ fix/some-bug
 - **Tests:** the PR must include tests for any new or updated code. Current coverage is **100%** — maintain it. Run the coverage command to verify:
 
 ```bash
-poetry run pytest tests/ --cov=mtd --cov-report=term-missing --cov-fail-under=100
+uv run pytest tests/ --cov=mtd --cov-report=term-missing --cov-fail-under=100
 ```
 
 Also mention potential effects on other branches or code that your changes might have.
@@ -85,8 +86,8 @@ make abci-docstrings
 
 ```bash
 # Sync third-party packages from IPFS first (required before locking hashes)
-poetry run autonomy init --reset --author ci --remote --ipfs --ipfs-node "/dns/registry.autonolas.tech/tcp/443/https"
-poetry run autonomy packages sync
+uv run autonomy init --reset --author ci --remote --ipfs --ipfs-node "/dns/registry.autonolas.tech/tcp/443/https"
+uv run autonomy packages sync
 
 # Then regenerate hashes and run checks
 make generators
@@ -108,11 +109,11 @@ make common-checks-2
 ## Running Tests
 
 ```bash
-poetry run pytest tests/                                      # all unit tests
-poetry run pytest tests/unit/cli/                            # CLI tests only
-poetry run pytest -vv tests/                                 # verbose
-poetry run pytest -m "not integration and not e2e" tests/   # skip slow tests
-poetry run pytest tests/ --cov=mtd --cov-report=term-missing # coverage report
+uv run pytest tests/                                      # all unit tests
+uv run pytest tests/unit/cli/                            # CLI tests only
+uv run pytest -vv tests/                                 # verbose
+uv run pytest -m "not integration and not e2e" tests/   # skip slow tests
+uv run pytest tests/ --cov=mtd --cov-report=term-missing # coverage report
 ```
 
 Pytest config lives in `tox.ini`. Markers: `integration`, `e2e`.

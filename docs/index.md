@@ -108,7 +108,7 @@ See some examples of requests and responses on the [Mech Hub](https://mech.olas.
 ## Requirements
 
 - [Python](https://www.python.org/) `>=3.10, <3.12`
-- [Poetry](https://python-poetry.org/docs/)
+- [uv](https://docs.astral.sh/uv/) (for the "From source" path only)
 - [Docker Engine](https://docs.docker.com/engine/install/) + [Docker Compose](https://docs.docker.com/compose/install/)
 
 
@@ -136,18 +136,18 @@ mech stop -c <gnosis|base|polygon|optimism>
 
 2. Install all Python dependencies:
     ```bash
-    poetry install
+    uv sync
+    source .venv/bin/activate
     ```
-    Use `poetry run <command>` for Python/CLI commands below when using Poetry 2.
 
 3. Download all the mech packages from IPFS:
     ```bash
-    poetry run autonomy packages sync --update-packages
+    autonomy packages sync --update-packages
     ```
 
 4. Run the setup command:
     ```bash
-    poetry run mech setup -c <gnosis|base|polygon|optimism>
+    mech setup -c <gnosis|base|polygon|optimism>
     ```
 
     You will be prompted to fill in some details, including the RPC for your chosen chain. You can get one from a provider like [Quiknode](https://www.quicknode.com/) but we encourage you to first test against a virtual network using [Tenderly](https://tenderly.co/). This way, you can also use the faucet to fund the required wallets.
