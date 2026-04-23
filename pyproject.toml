@@ -11,10 +11,7 @@ readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
     "open-autonomy[all]==0.21.19",
-    "openai==1.30.2",
     "requests==2.32.5",
-    "py-multibase==1.0.3",
-    "py-multicodec==0.2.1",
     "grpcio==1.78.0",
     "asn1crypto<1.5.0,>=1.4.0",
     "open-aea-ledger-ethereum==2.2.1",
@@ -33,7 +30,6 @@ dependencies = [
     "pytest==8.4.2",
     "openapi-core==0.22.0",
     "openapi-spec-validator<0.8.0,>=0.7.0",
-    "jsonschema>=4.23.0,<5.0.0",
     "click==8.1.8",
     "mech-client==0.20.0",
     "olas-operate-middleware>=0.15.2",
