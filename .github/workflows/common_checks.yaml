@@ -64,6 +64,8 @@ jobs:
       run: tox -e liccheck
     - name: Check dependencies
       run: tox -e check-dependencies
+    - name: Check third-party package hashes match upstream
+      run: tox -e check-third-party-hashes
     - name: Check doc links
       run: tomte check-doc-links -n https://1rpc.io/gnosis -n https://github.com/PyCQA/bandit
     - name: Check doc IPFS hashes
