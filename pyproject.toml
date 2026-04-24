@@ -38,6 +38,11 @@ dependencies = [
     "prometheus_client>=0.23.1,<0.24",
     "pebble>=5.1,<5.2",
     "python-dotenv",
+    # flask needed at runtime by operate.services.utils.tendermint; was
+    # pulled transitively before, but the range-ify widened paths and
+    # the resolver now picks an olas-operate-middleware path without
+    # flask. Declare explicitly.
+    "flask>=3.1,<4",
     # mech-server-specific deps (CLI + middleware).
     "mech-client>=0.20,<0.21",
     "olas-operate-middleware>=0.15.2,<0.16",
