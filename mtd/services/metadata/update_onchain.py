@@ -26,8 +26,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 import dotenv
-from multibase import multibase
-from multicodec import multicodec
+from aea.helpers.multiformat import multibase_decode, multicodec_remove_prefix
 from safe_eth.eth import EthereumClient  # pylint: disable=import-error
 from safe_eth.safe import Safe  # pylint: disable=import-error
 from web3 import Web3
@@ -94,10 +93,10 @@ def _load_contract(
 
 def _fetch_metadata_hash(metadata_hash: str) -> bytes:
     """Convert metadata CID to bytes for contract call."""
-    cid_bytes = multibase.decode(metadata_hash)
+    cid_bytes = multibase_decode(metadata_hash.encode("ascii"))
     if not cid_bytes:
         raise ValueError(f"Invalid or empty metadata hash CID: {metadata_hash!r}")
-    multihash_bytes = multicodec.remove_prefix(cid_bytes)
+    multihash_bytes = multicodec_remove_prefix(cid_bytes)
     hex_multihash = multihash_bytes.hex()
     metadata_str = hex_multihash[6:]
     return bytes.fromhex(metadata_str)

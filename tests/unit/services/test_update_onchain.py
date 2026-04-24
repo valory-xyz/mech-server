@@ -118,18 +118,18 @@ def test_load_env_returns_dict_when_all_vars_present(tmp_path: Path) -> None:
 
 def test_fetch_metadata_hash_raises_for_empty_cid() -> None:
     """Raise ValueError when multibase decode yields empty bytes."""
-    with patch(f"{MOD}.multibase.decode", return_value=b""):
+    with patch(f"{MOD}.multibase_decode", return_value=b""):
         with pytest.raises(ValueError, match="Invalid or empty metadata hash CID"):
             _fetch_metadata_hash("f0invalid")
 
 
 def test_fetch_metadata_hash_returns_bytes_for_valid_cid() -> None:
     """Return extracted hash bytes for a well-formed CID."""
-    # multicodec.remove_prefix returns 35 null bytes:
+    # multicodec_remove_prefix returns 35 null bytes:
     # hex is 70 chars; [6:] = 64 chars = 32 bytes
     with (
-        patch(f"{MOD}.multibase.decode", return_value=b"x" * 10),
-        patch(f"{MOD}.multicodec.remove_prefix", return_value=bytes(35)),
+        patch(f"{MOD}.multibase_decode", return_value=b"x" * 10),
+        patch(f"{MOD}.multicodec_remove_prefix", return_value=bytes(35)),
     ):
         result = _fetch_metadata_hash("f01701220")
 

@@ -1060,15 +1060,6 @@ wheels = [
 ]
 
 [[package]]
-name = "distro"
-version = "1.9.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fc/f8/98eea607f65de6527f8a2e8885fc8015d3e6f5775df186e443e0964a11c3/distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed", size = 60722, upload-time = "2023-12-24T09:54:32.31Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/b3/231ffd4ab1fc9d679809f356cebee130ac7daa00d6d6f3206dd4fd137e9e/distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2", size = 20277, upload-time = "2023-12-24T09:54:30.421Z" },
-]
-
-[[package]]
 name = "docker"
 version = "7.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1548,34 +1539,6 @@ wheels = [
 ]
 
 [[package]]
-name = "httpcore"
-version = "1.0.9"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "certifi" },
-    { name = "h11" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/06/94/82699a10bca87a5556c9c59b5963f2d039dbd239f25bc2a63907a05a14cb/httpcore-1.0.9.tar.gz", hash = "sha256:6e34463af53fd2ab5d807f399a9b45ea31c3dfa2276f15a2c3f00afff6e176e8", size = 85484, upload-time = "2025-04-24T22:06:22.219Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl", hash = "sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55", size = 78784, upload-time = "2025-04-24T22:06:20.566Z" },
-]
-
-[[package]]
-name = "httpx"
-version = "0.28.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "certifi" },
-    { name = "httpcore" },
-    { name = "idna" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/df/48c586a5fe32a0f01324ee087459e112ebb7224f646c0b5023f5e79e9956/httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc", size = 141406, upload-time = "2024-12-06T15:37:23.222Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad", size = 73517, upload-time = "2024-12-06T15:37:21.509Z" },
-]
-
-[[package]]
 name = "hypothesis"
 version = "6.21.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1604,19 +1567,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc35312d08ba8bf51fdd999c576889fc2c24cb97f4f10/iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730", size = 20503, upload-time = "2025-10-18T21:55:43.219Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
-]
-
-[[package]]
-name = "ipfshttpclient"
-version = "0.8.0a2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "multiaddr" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/82/06/afdf32558638f873ae1b63803729bb0fb15a8b6c805aed995c49b28db2e8/ipfshttpclient-0.8.0a2.tar.gz", hash = "sha256:0d80e95ee60b02c7d414e79bf81a36fc3c8fbab74265475c52f70b2620812135", size = 113509, upload-time = "2021-05-30T18:06:03.884Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a0/ba/053527fbf8b3d75df19c8a6309f1f839c8ee721e4e36cfd966a0c83f6394/ipfshttpclient-0.8.0a2-py3-none-any.whl", hash = "sha256:ce6bac0e3963c4ced74d7eb6978125362bb05bbe219088ca48f369ce14d3cc39", size = 82564, upload-time = "2021-05-30T18:01:09.001Z" },
 ]
 
 [[package]]
@@ -1974,18 +1924,12 @@ source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "asn1crypto" },
-    { name = "attrs" },
     { name = "certifi" },
     { name = "click" },
     { name = "ecdsa" },
-    { name = "eth-abi" },
-    { name = "eth-typing" },
-    { name = "eth-utils" },
+    { name = "flask" },
     { name = "grpcio" },
-    { name = "hexbytes" },
     { name = "hypothesis" },
-    { name = "ipfshttpclient" },
-    { name = "jsonschema" },
     { name = "mech-client" },
     { name = "mkdocs" },
     { name = "multidict" },
@@ -1996,30 +1940,20 @@ dependencies = [
     { name = "open-aea-ledger-ethereum" },
     { name = "open-aea-test-autonomy" },
     { name = "open-autonomy", extra = ["all"] },
-    { name = "openai" },
     { name = "openapi-core" },
     { name = "openapi-spec-validator" },
-    { name = "packaging" },
     { name = "pebble" },
     { name = "pip" },
     { name = "prometheus-client" },
-    { name = "protobuf" },
     { name = "py-ecc" },
-    { name = "py-eth-sig-utils" },
-    { name = "py-multibase" },
-    { name = "py-multicodec" },
-    { name = "pycryptodome" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
-    { name = "pytz" },
+    { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "safe-eth-py" },
-    { name = "toml" },
-    { name = "typing-extensions" },
     { name = "web3" },
     { name = "websocket-client" },
-    { name = "werkzeug" },
 ]
 
 [package.dev-dependencies]
@@ -2035,53 +1969,36 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.8.5,<4.0.0" },
     { name = "asn1crypto", specifier = ">=1.4.0,<1.5.0" },
-    { name = "attrs", specifier = "==25.4.0" },
-    { name = "certifi", specifier = "==2026.2.25" },
-    { name = "click", specifier = "==8.1.8" },
+    { name = "certifi" },
+    { name = "click", specifier = ">=8.1,<9" },
     { name = "ecdsa", specifier = ">=0.15" },
-    { name = "eth-abi", specifier = "==5.2.0" },
-    { name = "eth-typing", specifier = "==5.2.1" },
-    { name = "eth-utils", specifier = "==5.3.0" },
+    { name = "flask", specifier = ">=3.1,<4" },
     { name = "grpcio", specifier = "==1.78.0" },
-    { name = "hexbytes", specifier = "==1.3.1" },
-    { name = "hypothesis", specifier = "==6.21.6" },
-    { name = "ipfshttpclient", specifier = "==0.8.0a2" },
-    { name = "jsonschema", specifier = ">=4.23.0,<5.0.0" },
-    { name = "mech-client", specifier = "==0.20.0" },
+    { name = "hypothesis", specifier = ">=6" },
+    { name = "mech-client", specifier = ">=0.20,<0.21" },
     { name = "mkdocs", specifier = ">=1.6.1,<2" },
-    { name = "multidict", specifier = "==6.7.1" },
-    { name = "olas-operate-middleware", specifier = ">=0.15.2" },
+    { name = "multidict" },
+    { name = "olas-operate-middleware", specifier = ">=0.15.2,<0.16" },
     { name = "open-aea-cli-ipfs", specifier = "==2.2.1" },
-    { name = "open-aea-helpers", specifier = "==0.21.18" },
+    { name = "open-aea-helpers", specifier = "==0.21.19" },
     { name = "open-aea-ledger-cosmos", specifier = "==2.2.1" },
     { name = "open-aea-ledger-ethereum", specifier = "==2.2.1" },
-    { name = "open-aea-test-autonomy", specifier = "==0.21.18" },
-    { name = "open-autonomy", extras = ["all"], specifier = "==0.21.18" },
-    { name = "openai", specifier = "==1.30.2" },
-    { name = "openapi-core", specifier = "==0.22.0" },
+    { name = "open-aea-test-autonomy", specifier = "==0.21.19" },
+    { name = "open-autonomy", extras = ["all"], specifier = "==0.21.19" },
+    { name = "openapi-core", specifier = ">=0.22,<0.23" },
     { name = "openapi-spec-validator", specifier = ">=0.7.0,<0.8.0" },
-    { name = "packaging", specifier = "==26" },
-    { name = "pebble", specifier = "==5.1.3" },
+    { name = "pebble", specifier = ">=5.1,<5.2" },
     { name = "pip", specifier = ">=24.0" },
-    { name = "prometheus-client", specifier = "==0.23.1" },
-    { name = "protobuf", specifier = ">=5,<6" },
-    { name = "py-ecc", specifier = "==8.0.0" },
-    { name = "py-eth-sig-utils", specifier = "==0.4.0" },
-    { name = "py-multibase", specifier = "==1.0.3" },
-    { name = "py-multicodec", specifier = "==0.2.1" },
-    { name = "pycryptodome", specifier = "==3.20.0" },
-    { name = "pytest", specifier = "==8.4.2" },
-    { name = "pytest-asyncio", specifier = "==1.3.0" },
-    { name = "pytz", specifier = "==2022.2.1" },
-    { name = "pyyaml", specifier = "==6.0.1" },
-    { name = "pyyaml", specifier = ">=6.0.0,<7.0.0" },
-    { name = "requests", specifier = "==2.32.5" },
+    { name = "prometheus-client", specifier = ">=0.23.1,<0.24" },
+    { name = "py-ecc", specifier = ">=8,<10" },
+    { name = "pytest", specifier = ">=8,<10" },
+    { name = "pytest-asyncio", specifier = ">=1.3" },
+    { name = "python-dotenv" },
+    { name = "pyyaml", specifier = ">=6" },
+    { name = "requests", specifier = ">=2.32.5" },
     { name = "safe-eth-py", specifier = ">=7.18.0,<8" },
-    { name = "toml", specifier = "==0.10.2" },
-    { name = "typing-extensions", specifier = ">=3.10.0.2,<=4.15.0" },
     { name = "web3", specifier = ">=7.0.0,<8" },
     { name = "websocket-client", specifier = ">=0.32.0,<1" },
-    { name = "werkzeug", specifier = "==3.1.6" },
 ]
 
 [package.metadata.requires-dev]
@@ -2199,14 +2116,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ea/5d/38b681d3fce7a266dd9ab73c66959406d565b3e85f21d5e66e1181d93721/more_itertools-10.8.0.tar.gz", hash = "sha256:f638ddf8a1a0d134181275fb5d58b086ead7c6a72429ad725c67503f13ba30bd", size = 137431, upload-time = "2025-09-02T15:23:11.018Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a4/8e/469e5a4a2f5855992e425f3cb33804cc07bf18d48f2db061aec61ce50270/more_itertools-10.8.0-py3-none-any.whl", hash = "sha256:52d4362373dcf7c52546bc4af9a86ee7c4579df9a8dc268be0a2f949d376cc9b", size = 69667, upload-time = "2025-09-02T15:23:09.635Z" },
-]
-
-[[package]]
-name = "morphys"
-version = "1.0"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f9/4f/cb781d0ac5d079adabc77dc4f0bc99fc81c390029bd33c6e70552139e762/morphys-1.0-py2.py3-none-any.whl", hash = "sha256:76d6dbaa4d65f597e59d332c81da786d83e4669387b9b2a750cfec74e7beec20", size = 5618, upload-time = "2017-01-10T20:08:56.872Z" },
 ]
 
 [[package]]
@@ -2448,19 +2357,14 @@ wheels = [
 
 [[package]]
 name = "open-aea-helpers"
-version = "0.21.18"
+version = "0.21.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "click" },
     { name = "open-autonomy" },
-    { name = "python-dotenv" },
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "toml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bf/8f/dd492cfe6a15080c59e0454a038392d08386900d26b88c59df25519d0ebc/open_aea_helpers-0.21.18.tar.gz", hash = "sha256:2a55fe9b437471887dc3f1334496b63f365d2690e111cf42416c1c2c7b479fe2", size = 27126, upload-time = "2026-04-16T17:43:38.791Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d6/9c/d00ba8599f69f736db2ce3ceda88023c85955e2484a92ed8baf52370264c/open_aea_helpers-0.21.19.tar.gz", hash = "sha256:0e005b1be53a0f3305422996c6a30ebd597ad3b9406c5a6c62382924a86efc83", size = 28293, upload-time = "2026-04-21T10:53:34.036Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0d/a1/3d85e0df9bad3a2931a5e661b97d65bfc113efbf53bd3ed1daf699540fe9/open_aea_helpers-0.21.18-py3-none-any.whl", hash = "sha256:ef41562dafbfce310ce32f77ad31e183a536372c13a2a7b5e59307584e1b6564", size = 38188, upload-time = "2026-04-16T17:43:37.957Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/ce/0dc430faf05c1ead28338d1ca013ed1b9a0ebc673f58a91ee5462a8a37ed/open_aea_helpers-0.21.19-py3-none-any.whl", hash = "sha256:42bd0b54791664e1bcb873b6cae22ea1f900dfe80ca28402e07c21c7e409ed6c", size = 38704, upload-time = "2026-04-21T10:53:33.206Z" },
 ]
 
 [[package]]
@@ -2510,91 +2414,47 @@ wheels = [
 
 [[package]]
 name = "open-aea-test-autonomy"
-version = "0.21.18"
+version = "0.21.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "docker" },
-    { name = "open-aea", extra = ["all"] },
-    { name = "open-aea-ledger-ethereum" },
-    { name = "pytest" },
+    { name = "open-autonomy", extra = ["all", "docker"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/a2/2481e98fd1a34f1cfb0c5ffcb5e5446fc91a5b888ce0ffb897391901f47b/open_aea_test_autonomy-0.21.18.tar.gz", hash = "sha256:15f734d405d4e78e3ebac4da7b1c4f5d37e5fdc030c1f242b59d72d316372600", size = 32802, upload-time = "2026-04-16T17:43:34.786Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/22/f82aa7360ab3427422bf9f89ef7bf341fb2043f6dfb7e07566611941eca2/open_aea_test_autonomy-0.21.19.tar.gz", hash = "sha256:1bfe79577cc92a5afa609a53a89fefe994a2f688b5f40b88b6e5544d8f24fbe1", size = 33745, upload-time = "2026-04-21T10:53:30.195Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/6e/4b069b97fb66eda0cb3edc1eecc0c0381e9ddc46b833c6fc5e951702ca87/open_aea_test_autonomy-0.21.18-py3-none-any.whl", hash = "sha256:391d9a8fe05d8a1178b6cfeb366893a100f493e2b5f5be8a8427b6f7fdca3d1b", size = 49612, upload-time = "2026-04-16T17:43:33.618Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/d6/da912882b90b12b76aade97481fd858cab6ed4560bc319e2e75f352876f6/open_aea_test_autonomy-0.21.19-py3-none-any.whl", hash = "sha256:c30322e21ce9baf503fd116f1f565c2a9a5f3c90c020065ae0d6c1cd4cb11439", size = 50406, upload-time = "2026-04-21T10:53:29.265Z" },
 ]
 
 [[package]]
 name = "open-autonomy"
-version = "0.21.18"
+version = "0.21.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "asn1crypto" },
     { name = "certifi" },
-    { name = "docker" },
     { name = "ecdsa" },
-    { name = "eth-abi" },
-    { name = "eth-account" },
-    { name = "eth-typing" },
-    { name = "eth-utils" },
-    { name = "flask" },
-    { name = "gql" },
     { name = "grpcio" },
-    { name = "hexbytes" },
-    { name = "hypothesis" },
-    { name = "ipfshttpclient" },
-    { name = "jsonschema" },
-    { name = "multiaddr" },
     { name = "multidict" },
     { name = "open-aea", extra = ["all"] },
     { name = "open-aea-ledger-cosmos" },
-    { name = "open-aea-ledger-ethereum" },
-    { name = "packaging" },
     { name = "protobuf" },
     { name = "py-ecc" },
-    { name = "py-eth-sig-utils" },
-    { name = "pycryptodome" },
     { name = "pytest-asyncio" },
-    { name = "pytz" },
     { name = "requests" },
-    { name = "requests-toolbelt" },
-    { name = "toml" },
-    { name = "typing-extensions" },
-    { name = "watchdog" },
     { name = "web3" },
-    { name = "werkzeug" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/70/83/3bdcfae507efcc2df7809a3c2e2059575145c90fe632bdd3fc79abdb9f94/open_autonomy-0.21.18.tar.gz", hash = "sha256:cef49ce9866a05777fbdb6cfef1fa30bfb1e264a384112013f9e4ddbca0d4bd2", size = 907130, upload-time = "2026-04-16T17:43:30.139Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/d4/917f561cb345c629e86cd338f0a82a992a066366729ef44c668f080eddd6/open_autonomy-0.21.19.tar.gz", hash = "sha256:2c2df7e6d3858ff1efd72b397962ce6bd47bab8ccfdb6612f4c93b622987b323", size = 929525, upload-time = "2026-04-21T10:53:25.627Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/23/e138d01ff004577ca81e2b90ee4a7a9d2ba306fcf1a5bfe1daf0e7a962ec/open_autonomy-0.21.18-py3-none-any.whl", hash = "sha256:f84766bc4679ccf1123f38d985ef870cb7df32db3f14563794442dd19cd470c1", size = 1386503, upload-time = "2026-04-16T17:43:28.447Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/06/0d78bb0d853a3e20a9a3f882fa457a730e5fd3e98de4e7bccf46f4463d28/open_autonomy-0.21.19-py3-none-any.whl", hash = "sha256:aaf96296474cac52758c673721c866e8a952eba137a176f2f2098ad712343daa", size = 1411892, upload-time = "2026-04-21T10:53:23.995Z" },
 ]
 
 [package.optional-dependencies]
 all = [
-    { name = "click" },
-    { name = "coverage" },
     { name = "open-aea-cli-ipfs" },
-    { name = "pytest" },
-    { name = "python-dotenv" },
-    { name = "texttable" },
+    { name = "open-aea-ledger-ethereum" },
 ]
-
-[[package]]
-name = "openai"
-version = "1.30.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "distro" },
-    { name = "httpx" },
-    { name = "pydantic" },
-    { name = "sniffio" },
-    { name = "tqdm" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7f/6d/661d43a7c40d8d9713b255c7293915bba25724b4a512e51cc8d93f87a38e/openai-1.30.2.tar.gz", hash = "sha256:f86780f40505de60fa389993d9b7f5564f20acfbe5efcabd5c853a12453af2b0", size = 178127, upload-time = "2024-05-23T11:06:03.911Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ab/cb/5619f8275306c839c3e72552745c5ae7562e980e4a82ef10759d0c0e1052/openai-1.30.2-py3-none-any.whl", hash = "sha256:44316818fbff3845278e862a655c4c041e93d907b04eff64629c2835f29bd58e", size = 320653, upload-time = "2024-05-23T11:05:59.777Z" },
+docker = [
+    { name = "docker" },
 ]
 
 [[package]]
@@ -2912,21 +2772,6 @@ wheels = [
 ]
 
 [[package]]
-name = "py-eth-sig-utils"
-version = "0.4.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "eth-abi" },
-    { name = "py-ecc" },
-    { name = "pycryptodome" },
-    { name = "rlp" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/be/3a/39ccef3364026226cddb01ad201d2fee5a9591864fdb4ed6dc1077d6d9a0/py_eth_sig_utils-0.4.0.tar.gz", hash = "sha256:bdf76b06677a43eba42e29ddebe6832bfbdda4c09a6b171d0de318e5a06992ad", size = 10345, upload-time = "2020-01-13T14:44:15.672Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f3/5e/c8104c8fba709014af9fb230ed9d9e33665dc0a9248aa733a694bf421543/py_eth_sig_utils-0.4.0-py3-none-any.whl", hash = "sha256:8f2fe9b8d3c475bfca3b3bb901f6ef79e42b7b4abcd00ad5de5d483fff8359e9", size = 11637, upload-time = "2020-01-13T14:44:14.512Z" },
-]
-
-[[package]]
 name = "py-evm"
 version = "0.12.1b1"
 source = { registry = "https://pypi.org/simple" }
@@ -2945,34 +2790,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0a/57/a0a84d991bac43058200245d853de9e7e819d216b56e22f66654fdf596d5/py_evm-0.12.1b1.tar.gz", hash = "sha256:7bcd9935a3ac2989c8f068b2006f136189281ebc6e279663405cb2c5397ed890", size = 851927, upload-time = "2025-05-14T17:25:14.686Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9f/be/1e0de8a1f1dbe3911ccae2d598a2c60610e2f4984a918690b5469e8c8774/py_evm-0.12.1b1-py3-none-any.whl", hash = "sha256:015ebc8dd95925030be87ce4b3fd31e3c70df626c5ad8665fb06cd611c73eb68", size = 798589, upload-time = "2025-05-14T17:25:12.707Z" },
-]
-
-[[package]]
-name = "py-multibase"
-version = "1.0.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "morphys" },
-    { name = "python-baseconv" },
-    { name = "six" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/58/9c/8b1b78e900f5e94b1d48359efffcaa1ba9ddd0448e6aac94d4d27dbd67b7/py-multibase-1.0.3.tar.gz", hash = "sha256:d28a20efcbb61eec28f55827a0bf329c7cea80fffd933aecaea6ae8431267fe4", size = 23376, upload-time = "2020-10-26T13:55:23.399Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/21/7b6b3bba9c702daf6991f2bd89c92db6fa899a444fab24ba5b99f1f486f7/py_multibase-1.0.3-py2.py3-none-any.whl", hash = "sha256:2677c1fafcc0ae15ddb9c7f444c5becc2530b3889124fd4fa2959ddfefb8c15b", size = 6378, upload-time = "2020-10-26T13:55:26.5Z" },
-]
-
-[[package]]
-name = "py-multicodec"
-version = "0.2.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "morphys" },
-    { name = "six" },
-    { name = "varint" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/77/33/ff388b34002239c367f6544678667efff079d29aabf7e3c4a3ec392310be/py-multicodec-0.2.1.tar.gz", hash = "sha256:83021ffe8c0e272d19b5b86bc5b39efa67c8e9f4735ce6cafdbc1ace767ec647", size = 22542, upload-time = "2019-08-04T07:09:26.258Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6c/96/3ffb721c2fe100f6613a0d2db3b4b3229c6de52b279fd41aab0e84ea0725/py_multicodec-0.2.1-py2.py3-none-any.whl", hash = "sha256:55b6bb53088a63e56c434cb11b29795e8805652bac43d50a8f2a9bcf5ca84e1f", size = 8536, upload-time = "2019-08-04T07:09:32.504Z" },
 ]
 
 [[package]]
@@ -3286,12 +3103,6 @@ wheels = [
 ]
 
 [[package]]
-name = "python-baseconv"
-version = "1.2.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/33/d0/9297d7d8dd74767b4d5560d834b30b2fff17d39987c23ed8656f476e0d9b/python-baseconv-1.2.2.tar.gz", hash = "sha256:0539f8bd0464013b05ad62e0a1673f0ac9086c76b43ebf9f833053527cd9931b", size = 4929, upload-time = "2019-04-04T19:28:57.17Z" }
-
-[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -3318,20 +3129,11 @@ wheels = [
 
 [[package]]
 name = "python-dotenv"
-version = "0.21.1"
+version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f5/d7/d548e0d5a68b328a8d69af833a861be415a17cb15ce3d8f0cd850073d2e1/python-dotenv-0.21.1.tar.gz", hash = "sha256:1c93de8f636cde3ce377292818d0e440b6e45a82f215c3744979151fa8151c49", size = 35930, upload-time = "2023-01-21T10:22:47.277Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/ed/0301aeeac3e5353ef3d94b6ec08bbcabd04a72018415dcb29e588514bba8/python_dotenv-1.2.2.tar.gz", hash = "sha256:2c371a91fbd7ba082c2c1dc1f8bf89ca22564a087c2c287cd9b662adde799cf3", size = 50135, upload-time = "2026-03-01T16:00:26.196Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/64/62/f19d1e9023aacb47241de3ab5a5d5fedf32c78a71a9e365bb2153378c141/python_dotenv-0.21.1-py3-none-any.whl", hash = "sha256:41e12e0318bebc859fcc4d97d4db8d20ad21721a6aa5047dd59f090391cb549a", size = 19284, upload-time = "2023-01-21T10:22:45.958Z" },
-]
-
-[[package]]
-name = "pytz"
-version = "2022.2.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/24/0c/401283bb1499768e33ddd2e1a35817c775405c1f047a9dc088a29ce2ea5d/pytz-2022.2.1.tar.gz", hash = "sha256:cea221417204f2d1a2aa03ddae3e867921971d0d76f14d87abb4414415bbdcf5", size = 316105, upload-time = "2022-08-13T02:07:59.396Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/50/54451e88e3da4616286029a3a17fc377de817f66a0f50e1faaee90161724/pytz-2022.2.1-py2.py3-none-any.whl", hash = "sha256:220f481bdafa09c3955dfbdddb7b57780e9a94f5127e35456a48589b9e0c0197", size = 500564, upload-time = "2022-08-13T02:07:57.135Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/d7/1959b9648791274998a9c3526f6d0ec8fd2233e4d4acce81bbae76b44b2a/python_dotenv-1.2.2-py3-none-any.whl", hash = "sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a", size = 22101, upload-time = "2026-03-01T16:00:25.09Z" },
 ]
 
 [[package]]
@@ -3580,18 +3382,6 @@ wheels = [
 ]
 
 [[package]]
-name = "requests-toolbelt"
-version = "1.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481, upload-time = "2023-05-01T04:11:28.427Z" },
-]
-
-[[package]]
 name = "rfc3339-validator"
 version = "0.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -3788,15 +3578,6 @@ wheels = [
 ]
 
 [[package]]
-name = "sniffio"
-version = "1.3.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a2/87/a6771e1546d97e7e041b6ae58d80074f81b7d5121207425c964ddf5cfdbd/sniffio-1.3.1.tar.gz", hash = "sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc", size = 20372, upload-time = "2024-02-25T23:20:04.057Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl", hash = "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2", size = 10235, upload-time = "2024-02-25T23:20:01.196Z" },
-]
-
-[[package]]
 name = "sortedcontainers"
 version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3854,24 +3635,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/46/79/cf31d7a93a8fdc6aa0fbb665be84426a8c5a557d9240b6239e9e11e35fc5/termcolor-3.3.0.tar.gz", hash = "sha256:348871ca648ec6a9a983a13ab626c0acce02f515b9e1983332b17af7979521c5", size = 14434, upload-time = "2025-12-29T12:55:21.882Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/33/d1/8bb87d21e9aeb323cc03034f5eaf2c8f69841e40e4853c2627edf8111ed3/termcolor-3.3.0-py3-none-any.whl", hash = "sha256:cf642efadaf0a8ebbbf4bc7a31cec2f9b5f21a9f726f4ccbb08192c9c26f43a5", size = 7734, upload-time = "2025-12-29T12:55:20.718Z" },
-]
-
-[[package]]
-name = "texttable"
-version = "1.6.7"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e4/84/4686ee611bb020038375c5f11fe7b6b3bb94ee78614a1faba45effe51591/texttable-1.6.7.tar.gz", hash = "sha256:290348fb67f7746931bcdfd55ac7584ecd4e5b0846ab164333f0794b121760f2", size = 12891, upload-time = "2022-11-23T07:18:44.102Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ba/a7/2c12b543f853dae886286b824200eb9d7cd2466e3d14eff1799fbe8223b9/texttable-1.6.7-py2.py3-none-any.whl", hash = "sha256:b7b68139aa8a6339d2c320ca8b1dc42d13a7831a346b446cb9eb385f0c76310c", size = 10714, upload-time = "2022-11-23T07:18:42.04Z" },
-]
-
-[[package]]
-name = "toml"
-version = "0.10.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f", size = 22253, upload-time = "2020-11-01T01:40:22.204Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/44/6f/7120676b6d73228c96e17f1f794d8ab046fc910d781c8d151120c3f1569e/toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b", size = 16588, upload-time = "2020-11-01T01:40:20.672Z" },
 ]
 
 [[package]]
@@ -3944,18 +3707,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/11/d6/114b492226588d6ff54579d95847662fc69196bdeec318eb45393b24c192/toolz-1.1.0.tar.gz", hash = "sha256:27a5c770d068c110d9ed9323f24f1543e83b2f300a687b7891c1a6d56b697b5b", size = 52613, upload-time = "2025-10-17T04:03:21.661Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fb/12/5911ae3eeec47800503a238d971e51722ccea5feb8569b735184d5fcdbc0/toolz-1.1.0-py3-none-any.whl", hash = "sha256:15ccc861ac51c53696de0a5d6d4607f99c210739caf987b5d2054f3efed429d8", size = 58093, upload-time = "2025-10-17T04:03:20.435Z" },
-]
-
-[[package]]
-name = "tqdm"
-version = "4.67.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl", hash = "sha256:ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf", size = 78374, upload-time = "2026-02-03T17:35:50.982Z" },
 ]
 
 [[package]]

@@ -64,6 +64,8 @@ jobs:
       run: tox -e liccheck
     - name: Check dependencies
       run: tox -e check-dependencies
+    - name: Check third-party package hashes match upstream
+      run: tox -e check-third-party-hashes
     - name: Check doc links
       run: tomte check-doc-links -n https://1rpc.io/gnosis -n https://github.com/PyCQA/bandit
     - name: Check doc IPFS hashes
@@ -101,8 +103,11 @@ jobs:
       run: tox -e check-packages
     - name: Check hash
       run: tox -e check-hash
-    - name: Code checks
-      run: tomte check-code
+    # `tomte check-code` is intentionally NOT run for mech-server because its
+    # dev section contains only an AEA agent + service (YAML-only, no Python).
+    # Every skill/contract/connection comes from mech as third_party and must
+    # NOT be linted here — it's linted upstream in mech's own CI. The mtd code
+    # checks above cover the CLI Python that is actually owned by this repo.
     - name: Check spelling
       run: tomte check-spelling
     - name: AbciApp consistency checks
