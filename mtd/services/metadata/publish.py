@@ -24,9 +24,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from aea.helpers.cid import to_v1
+from aea.helpers.multiformat import multibase_decode, multicodec_remove_prefix
 from aea_cli_ipfs.ipfs_utils import IPFSTool
-from multibase import multibase
-from multicodec import multicodec
 
 PREFIX = "f01701220"
 IPFS_PREFIX_LENGTH = 6
@@ -249,7 +248,7 @@ def publish_metadata_to_ipfs(
     if RESPONSE_KEY not in response:
         raise RuntimeError(f"Key {RESPONSE_KEY!r} not found in ipfs response")
 
-    cid_bytes = multibase.decode(to_v1(response[RESPONSE_KEY]))
-    multihash_bytes = multicodec.remove_prefix(cid_bytes)
+    cid_bytes = multibase_decode(to_v1(response[RESPONSE_KEY]).encode("ascii"))
+    multihash_bytes = multicodec_remove_prefix(cid_bytes)
     hex_multihash = multihash_bytes.hex()
     return PREFIX + hex_multihash[IPFS_PREFIX_LENGTH:]

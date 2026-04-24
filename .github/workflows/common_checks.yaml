@@ -103,8 +103,11 @@ jobs:
       run: tox -e check-packages
     - name: Check hash
       run: tox -e check-hash
-    - name: Code checks
-      run: tomte check-code
+    # `tomte check-code` is intentionally NOT run for mech-server because its
+    # dev section contains only an AEA agent + service (YAML-only, no Python).
+    # Every skill/contract/connection comes from mech as third_party and must
+    # NOT be linted here — it's linted upstream in mech's own CI. The mtd code
+    # checks above cover the CLI Python that is actually owned by this repo.
     - name: Check spelling
       run: tomte check-spelling
     - name: AbciApp consistency checks

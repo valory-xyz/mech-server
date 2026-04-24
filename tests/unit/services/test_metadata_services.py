@@ -161,10 +161,10 @@ def test_import_module_from_path_raises_on_import_error(tmp_path: Path) -> None:
 
 
 @patch(
-    "mtd.services.metadata.publish.multicodec.remove_prefix",
+    "mtd.services.metadata.publish.multicodec_remove_prefix",
     return_value=bytes.fromhex("1220" + "ab" * 32),
 )
-@patch("mtd.services.metadata.publish.multibase.decode", return_value=b"dummy")
+@patch("mtd.services.metadata.publish.multibase_decode", return_value=b"dummy")
 @patch("mtd.services.metadata.publish.to_v1", return_value="cidv1")
 @patch("mtd.services.metadata.publish.IPFSTool")
 def test_publish_metadata_returns_hash(
