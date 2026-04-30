@@ -44,30 +44,32 @@ DEFAULT_TIMEOUT = 30
 #   mech_type         = value of MECH_TYPE ("Native", "Token", "Nevermined", etc.)
 #   factory_address   = MechFactory contract used to create the mech
 # Source: https://github.com/valory-xyz/mech-quickstart/tree/main/contracts
+# nosec B105 — public on-chain factory addresses, not secrets; bandit
+# pattern-matches "Token": "0x..." as hardcoded credentials.
 MECH_FACTORY_ADDRESS = {
     Chain.GNOSIS: {
         "0xad380C51cd5297FbAE43494dD5D407A2a3260b58": {
             "Native": "0x42f43be9E5E50df51b86C5c6427223ff565f40C6",
-            "Token": "0x161b862568E900Dd9d8c64364F3B83a43792e50f",
+            "Token": "0x161b862568E900Dd9d8c64364F3B83a43792e50f",  # nosec B105
             "Nevermined": "0xCB26B91B0E21ADb04FFB6e5f428f41858c64936A",
         },
         "0x735FAAb1c4Ec41128c367AFb5c3baC73509f70bB": {
             "Native": "0x8b299c20F87e3fcBfF0e1B86dC0acC06AB6993EF",
-            "Token": "0x31ffDC795FDF36696B8eDF7583A3D115995a45FA",
+            "Token": "0x31ffDC795FDF36696B8eDF7583A3D115995a45FA",  # nosec B105
             "Nevermined": "0x65fd74C29463afe08c879a3020323DD7DF02DA57",
         },
     },
     Chain.BASE: {
         "0xf24eE42edA0fc9b33B7D41B06Ee8ccD2Ef7C5020": {
             "Native": "0x2E008211f34b25A7d7c102403c6C2C3B665a1abe",
-            "Token": "0x97371B1C0cDA1D04dFc43DFb50a04645b7Bc9BEe",
+            "Token": "0x97371B1C0cDA1D04dFc43DFb50a04645b7Bc9BEe",  # nosec B105
             "Nevermined": "0x847bBE8b474e0820215f818858e23F5f5591855A",
         },
     },
     Chain.POLYGON: {
         "0x343F2B005cF6D70bA610CD9F1F1927049414B582": {
             "Native": "0x87f89F94033305791B6269AE2F9cF4e09983E56e",
-            "Token": "0xa0DA53447C0f6C4987964d8463da7e6628B30f82",
+            "Token": "0xa0DA53447C0f6C4987964d8463da7e6628B30f82",  # nosec B105
             "TokenUSDC": "0x85899f9d8C058A5BBBaF344ea0f0b63c0CcBe851",
             "Nevermined": "0x43fB32f25dce34EB76c78C7A42C8F40F84BCD237",
         },
@@ -75,7 +77,7 @@ MECH_FACTORY_ADDRESS = {
     Chain.OPTIMISM: {
         "0x46C0D07F55d4F9B5Eed2Fc9680B5953e5fd7b461": {
             "Native": "0xf76953444C35F1FcE2F6CA1b167173357d3F5C17",
-            "Token": "0x26Ea2dC7ce1b41d0AD0E0521535655d7a94b684c",
+            "Token": "0x26Ea2dC7ce1b41d0AD0E0521535655d7a94b684c",  # nosec B105
             "Nevermined": "0x02C26437B292D86c5F4F21bbCcE0771948274f84",
         },
     },

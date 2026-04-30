@@ -73,7 +73,10 @@ prerelease = "allow"
 # click==8.3.1. Both work fine with 8.1.x at runtime, so override the
 # tomte side here. Drop once mech-client is bumped to a version that
 # uses tomte 0.7.0 (i.e. once mech-client itself goes through wave-2a).
-override-dependencies = ["click==8.1.8"]
+# typer<0.16 needed alongside: typer 0.16+ uses `click.Choice[X]`
+# generic-subscript syntax that requires click 8.2+; pin to a version
+# that works with click 8.1.x.
+override-dependencies = ["click==8.1.8", "typer<0.16"]
 
 [tool.tomte]
 # mech-server's first-party Python lives outside packages/ — `mtd/` is

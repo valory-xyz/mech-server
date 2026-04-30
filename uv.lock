@@ -12,7 +12,10 @@ resolution-markers = [
 prerelease-mode = "allow"
 
 [manifest]
-overrides = [{ name = "click", specifier = "==8.1.8" }]
+overrides = [
+    { name = "click", specifier = "==8.1.8" },
+    { name = "typer", specifier = "<0.16" },
+]
 
 [[package]]
 name = "aea-helpers"
@@ -2025,7 +2028,7 @@ dev = [
     { name = "mkdocs-material", specifier = ">=9.6.17,<10" },
     { name = "pytest-cov", specifier = ">=7.0.0,<8" },
     { name = "setuptools", specifier = ">=77.0.3,<78" },
-    { name = "tomte", extras = ["cli", "tests"], git = "https://github.com/valory-xyz/tomte.git?rev=13731593dd93cdaeab419c7c334d6b2e33173033" },
+    { name = "tomte", extras = ["cli", "tests"], git = "https://github.com/valory-xyz/tomte.git?rev=92cb14f4696bf3eba3ceec36e1a915961d5c7992" },
 ]
 
 [[package]]
@@ -3812,7 +3815,7 @@ wheels = [
 [[package]]
 name = "tomte"
 version = "0.7.0"
-source = { git = "https://github.com/valory-xyz/tomte.git?rev=13731593dd93cdaeab419c7c334d6b2e33173033#13731593dd93cdaeab419c7c334d6b2e33173033" }
+source = { git = "https://github.com/valory-xyz/tomte.git?rev=92cb14f4696bf3eba3ceec36e1a915961d5c7992#92cb14f4696bf3eba3ceec36e1a915961d5c7992" }
 dependencies = [
     { name = "click" },
 ]

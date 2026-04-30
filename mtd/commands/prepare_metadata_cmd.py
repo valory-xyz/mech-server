@@ -86,7 +86,7 @@ def _push_all_packages(workspace_path: Path, packages_dir: Path) -> None:
         )
         return
     click.echo("Pushing packages to IPFS...")
-    subprocess.run(
+    subprocess.run(  # nosec B607 — `autonomy` resolves via PATH inside the workspace venv
         ["autonomy", "push-all"],
         check=True,
         cwd=str(workspace_path),

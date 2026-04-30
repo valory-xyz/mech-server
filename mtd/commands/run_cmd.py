@@ -44,7 +44,7 @@ def _push_all_packages(context: MtdContext) -> None:
         )
 
     click.echo("Pushing local packages...")
-    subprocess.run(
+    subprocess.run(  # nosec B607 — `autonomy` resolves via PATH inside the workspace venv
         ["autonomy", "push-all"],
         check=True,
         cwd=str(context.workspace_path),
@@ -53,7 +53,7 @@ def _push_all_packages(context: MtdContext) -> None:
 
 def _get_latest_service_hash(context: MtdContext) -> str:
     """Get the latest service hash from autonomy packages."""
-    subprocess.run(
+    subprocess.run(  # nosec B607 — `autonomy` resolves via PATH inside the workspace venv
         ["autonomy", "packages", "lock", "--check"],
         check=False,
         capture_output=True,
