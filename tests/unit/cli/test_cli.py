@@ -19,7 +19,6 @@
 """Tests for the CLI entry point."""
 
 from click.testing import CliRunner
-
 from mtd.cli import cli
 
 

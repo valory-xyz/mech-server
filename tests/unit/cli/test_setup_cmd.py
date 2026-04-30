@@ -21,7 +21,6 @@
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
-
 from mtd.commands.setup_cmd import setup as setup_command
 
 MOD = "mtd.commands.setup_cmd"

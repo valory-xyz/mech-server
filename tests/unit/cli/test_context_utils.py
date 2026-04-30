@@ -24,7 +24,6 @@ from unittest.mock import MagicMock
 
 import click
 import pytest
-
 from mtd.commands.context_utils import get_mtd_context, require_initialized
 from mtd.context import MtdContext, build_context, workspace_cwd
 

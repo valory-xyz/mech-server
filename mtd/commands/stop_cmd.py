@@ -20,15 +20,14 @@
 """Stop command for stopping the mech agent service."""
 
 import click
-from operate.cli import OperateApp
-from operate.quickstart.stop_service import stop_service
-
 from mtd.commands.context_utils import (
     SUPPORTED_CHAINS,
     _workspace_cwd,
     get_mtd_context,
     require_initialized,
 )
+from operate.cli import OperateApp
+from operate.quickstart.stop_service import stop_service
 
 
 @click.command()
@@ -44,6 +43,9 @@ def stop(ctx: click.Context, chain_config: str) -> None:
     """Stop a running mech AI agent.
 
     Example: mech stop -c gnosis
+
+    :param ctx: click context carrying the resolved MtdContext.
+    :param chain_config: target chain name (e.g. ``gnosis``) for the running agent.
     """
     context = get_mtd_context(ctx)
     require_initialized(context)

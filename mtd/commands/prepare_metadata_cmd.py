@@ -28,8 +28,6 @@ from typing import Optional
 import click
 from aea.cli.packages import package_type_selector_prompt
 from dotenv import dotenv_values, set_key
-
-from autonomy.cli.packages import get_package_manager
 from mtd.commands.context_utils import (
     SUPPORTED_CHAINS,
     get_mtd_context,
@@ -42,6 +40,8 @@ from mtd.services.metadata import (
     publish_metadata_to_ipfs,
 )
 
+from autonomy.cli.packages import get_package_manager
+
 
 def _clean_packages_dir(packages_dir: Path) -> None:
     """Remove __pycache__ dirs and .DS_Store files before locking/pushing.
@@ -51,6 +51,8 @@ def _clean_packages_dir(packages_dir: Path) -> None:
     If these are present when ``autonomy push-all`` runs they get uploaded
     to IPFS, and the mech's IPFS connection fails with a
     ``UnicodeDecodeError`` when it tries to decode them as UTF-8.
+
+    :param packages_dir: workspace ``packages/`` root to scrub in-place.
     """
     for pycache in packages_dir.rglob("__pycache__"):
         shutil.rmtree(pycache, ignore_errors=True)
@@ -100,6 +102,12 @@ def _compute_tools_to_package_hash(  # pylint: disable=too-many-return-statement
     Each model name from ALLOWED_TOOLS (e.g. ``openai-gpt-3.5-turbo-instruct``)
     is mapped to the IPFS hash of its parent tool package, rather than mapping
     the tool package name itself.
+
+    :param packages_dir: workspace ``packages/`` root containing ``packages.json``.
+    :param metadata_path: path to the generated ``metadata.json`` whose
+        ``toolMetadata`` is read to map model names to tool packages.
+    :return: JSON-encoded mapping (compact form), or empty string when
+        prerequisites are missing or yield no mapping.
     """
     packages_json_path = packages_dir / "packages.json"
     if not packages_json_path.exists():
@@ -164,6 +172,10 @@ def _update_chain_config(
     ``run_service()`` which re-applies its values to the service.  Keeping
     the template in sync prevents ``mech run`` from overwriting values
     that ``_sync_service_env_vars`` wrote to the service ``config.json``.
+
+    :param context: resolved MtdContext used to locate the chain config template.
+    :param chain: chain name (e.g. ``gnosis``) selecting the template file.
+    :param updates: mapping of env-var name to new value to apply.
     """
     config_path = context.config_dir / f"config_mech_{chain}.json"
     if not config_path.exists():
@@ -237,6 +249,12 @@ def prepare_metadata(
     Examples:
         mech prepare-metadata
         mech prepare-metadata -c gnosis
+
+    :param ctx: click context carrying the resolved MtdContext.
+    :param chain_config: target chain whose .env to update (None = all chains).
+    :param ipfs_node: IPFS node multiaddr to publish to.
+    :param offchain_url: public off-chain URL to embed in metadata; falls back
+        to ``MECH_OFFCHAIN_URL`` from the chain .env when omitted.
         mech prepare-metadata -c gnosis --offchain-url <url>
     """
     context = get_mtd_context(ctx)

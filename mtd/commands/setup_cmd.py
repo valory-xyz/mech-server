@@ -20,7 +20,6 @@
 """Setup command for mech agent service configuration and metadata deployment."""
 
 import click
-
 from mtd.commands.context_utils import SUPPORTED_CHAINS, get_mtd_context
 from mtd.setup_flow import run_setup
 from mtd.workspace import initialize_workspace
@@ -43,6 +42,9 @@ def setup(ctx: click.Context, chain_config: str) -> None:
     publish, and on-chain metadata hash update.
 
     Example: mech setup -c gnosis
+
+    :param ctx: click context carrying the resolved MtdContext.
+    :param chain_config: target chain name (e.g. ``gnosis``) to set up the agent on.
     """
     context = get_mtd_context(ctx)
     if not context.is_initialized():

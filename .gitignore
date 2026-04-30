@@ -38,4 +38,6 @@ mech_service/
 
 metadata.json
 
-.operate*/
+.operate*/.tomte-tox.ini
+.darglint
+.gitleaks-merged.toml

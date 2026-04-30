@@ -18,12 +18,16 @@
 # ------------------------------------------------------------------------------
 """Tests for prepare-metadata command."""
 
+# Stacked `@patch` decorators inject MagicMocks as positional args; not every
+# patch is directly asserted on, but each is required to neutralize a side
+# effect during the test.
+# pylint: disable=unused-argument
+
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
-
 from mtd.commands.prepare_metadata_cmd import (
     _clean_packages_dir,
     _compute_tools_to_package_hash,
@@ -406,7 +410,7 @@ class TestUpdateChainConfig:
 class TestResolveOffchainUrl:
     """Tests for _resolve_offchain_url."""
 
-    def test_explicit_url_takes_precedence(self, tmp_path: Path) -> None:
+    def test_explicit_url_takes_precedence(self) -> None:
         """Return explicit URL when provided."""
         context = MagicMock()
         result = _resolve_offchain_url("https://explicit.com/", context, "gnosis")

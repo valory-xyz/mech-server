@@ -85,7 +85,9 @@ MECH_FACTORY_ADDRESS = {
 def deploy_mech(sftxb: EthSafeTxBuilder, service: Service) -> Tuple[str, str]:
     """Deploy a new Mech on-chain via the MechMarketplace contract.
 
-    Returns (mech_address, agent_id).
+    :param sftxb: configured Safe-tx builder used to broadcast the marketplace call.
+    :param service: operate service whose chain/marketplace settings drive the deploy.
+    :return: tuple of (mech_address, agent_id) parsed from the CreateMech event.
     """
     try:
         chain = Chain.from_string(service.home_chain)

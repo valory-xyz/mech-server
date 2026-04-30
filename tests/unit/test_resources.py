@@ -21,7 +21,6 @@
 from pathlib import Path
 
 import pytest
-
 from mtd.context import build_context
 from mtd.resources import (
     copy_runtime_templates_to_workspace,
