@@ -26,13 +26,12 @@ from pathlib import Path
 
 import click
 from dotenv import dotenv_values, set_key
-from operate.cli import OperateApp
-from operate.keys import KeysManager
-from operate.quickstart.run_service import ask_password_if_needed, run_service
-
 from mtd.context import MtdContext, SUPPORTED_CHAINS
 from mtd.context import workspace_cwd as _workspace_cwd
 from mtd.resources import read_text_resource
+from operate.cli import OperateApp
+from operate.keys import KeysManager
+from operate.quickstart.run_service import ask_password_if_needed, run_service
 
 OPERATE_CONFIG_PATH = "services/sc-*/config.json"
 AGENT_KEY = "ethereum_private_key.txt"

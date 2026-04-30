@@ -23,7 +23,6 @@ import shutil
 from pathlib import Path
 
 import click
-
 from mtd.context import MtdContext
 from mtd.resources import copy_runtime_templates_to_workspace, read_text_resource
 

@@ -23,7 +23,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
 from mtd.services.metadata.publish import (
     _validate_metadata_file,
     publish_metadata_to_ipfs,

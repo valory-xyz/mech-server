@@ -20,7 +20,6 @@
 """The mech tools dev CLI's entry point."""
 
 import click
-
 from mtd.commands import add_tool, prepare_metadata, run, setup, stop, update_metadata
 from mtd.context import build_context
 

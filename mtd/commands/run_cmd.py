@@ -24,9 +24,6 @@ import subprocess
 from pathlib import Path
 
 import click
-from operate.cli import OperateApp
-from operate.quickstart.run_service import run_service
-
 from mtd.commands.context_utils import (
     SUPPORTED_CHAINS,
     _workspace_cwd,
@@ -34,6 +31,8 @@ from mtd.commands.context_utils import (
     require_initialized,
 )
 from mtd.context import MtdContext
+from operate.cli import OperateApp
+from operate.quickstart.run_service import run_service
 
 
 def _push_all_packages(context: MtdContext) -> None:
@@ -45,7 +44,7 @@ def _push_all_packages(context: MtdContext) -> None:
         )
 
     click.echo("Pushing local packages...")
-    subprocess.run(
+    subprocess.run(  # nosec B607 — `autonomy` resolves via PATH inside the workspace venv
         ["autonomy", "push-all"],
         check=True,
         cwd=str(context.workspace_path),
@@ -54,7 +53,7 @@ def _push_all_packages(context: MtdContext) -> None:
 
 def _get_latest_service_hash(context: MtdContext) -> str:
     """Get the latest service hash from autonomy packages."""
-    subprocess.run(
+    subprocess.run(  # nosec B607 — `autonomy` resolves via PATH inside the workspace venv
         ["autonomy", "packages", "lock", "--check"],
         check=False,
         capture_output=True,
@@ -123,6 +122,10 @@ def run(ctx: click.Context, chain_config: str, dev: bool) -> None:
     Examples:
         mech run -c gnosis
         mech run -c gnosis --dev
+
+    :param ctx: click context carrying the resolved MtdContext.
+    :param chain_config: target chain name (e.g. ``gnosis``) for the agent run.
+    :param dev: if True, push local packages to IPFS and run on host instead of Docker.
     """
     context = get_mtd_context(ctx)
     require_initialized(context)

@@ -18,6 +18,11 @@
 # ------------------------------------------------------------------------------
 """Tests for setup flow behavior."""
 
+# Stacked `@patch` decorators inject MagicMocks as positional args; not every
+# patch is directly asserted on, but each is required to neutralize a side
+# effect during the test.
+# pylint: disable=unused-argument
+
 import json
 import os
 from pathlib import Path
@@ -25,7 +30,6 @@ from unittest.mock import MagicMock, patch
 
 import click
 import pytest
-
 from mtd.context import build_context
 from mtd.setup_flow import (
     AGENT_KEY,
