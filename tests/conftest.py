@@ -26,9 +26,7 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _redirect_home_to_tmp(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def _redirect_home_to_tmp(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Redirect every home-style env var to ``tmp_path`` for each test.
 
     `Path("~/...").expanduser()` consults `HOME` on POSIX and
