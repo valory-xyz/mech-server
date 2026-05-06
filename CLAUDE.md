@@ -87,13 +87,13 @@ make security        # bandit, safety, gitleaks
 Always run the `mtd`/`tests` linters before committing any changes to `mtd/` or `tests/`:
 
 ```bash
-tox -e black-check-mtd,isort-check-mtd,flake8-mtd,mypy-mtd,pylint-mtd
+tomte tox -p -e black-check -e isort-check -e flake8 -e mypy -e pylint -e darglint
 ```
 
 To auto-fix formatting first:
 
 ```bash
-tox -e black-mtd,isort-mtd   # format, then re-run the checks above
+tomte tox -p -e black -e isort   # format, then re-run the checks above
 ```
 
 Common lint pitfalls to watch for:

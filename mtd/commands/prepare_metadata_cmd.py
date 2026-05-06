@@ -249,13 +249,13 @@ def prepare_metadata(
     Examples:
         mech prepare-metadata
         mech prepare-metadata -c gnosis
+        mech prepare-metadata -c gnosis --offchain-url <url>
 
     :param ctx: click context carrying the resolved MtdContext.
     :param chain_config: target chain whose .env to update (None = all chains).
     :param ipfs_node: IPFS node multiaddr to publish to.
     :param offchain_url: public off-chain URL to embed in metadata; falls back
         to ``MECH_OFFCHAIN_URL`` from the chain .env when omitted.
-        mech prepare-metadata -c gnosis --offchain-url <url>
     """
     context = get_mtd_context(ctx)
     require_initialized(context)
