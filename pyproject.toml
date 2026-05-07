@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "mech-server"
-version = "0.8.1"
+version = "0.8.2"
 description = ""
 requires-python = ">=3.10,<3.15"
 readme = "README.md"
