@@ -24,14 +24,13 @@ from unittest.mock import MagicMock, patch
 
 import click
 import pytest
-from operate.operate_types import Chain
-
 from mtd.deploy_mech import (
     MECH_FACTORY_ADDRESS,
     deploy_mech,
     needs_mech_deployment,
     update_service_after_deploy,
 )
+from operate.operate_types import Chain
 
 MOD = "mtd.deploy_mech"
 

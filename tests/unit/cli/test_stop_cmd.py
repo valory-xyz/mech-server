@@ -18,11 +18,15 @@
 # ------------------------------------------------------------------------------
 """Tests for stop command."""
 
+# Stacked `@patch` decorators inject MagicMocks as positional args; not every
+# patch is directly asserted on, but each is required to neutralize a side
+# effect during the test.
+# pylint: disable=unused-argument
+
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
-
 from mtd.commands.stop_cmd import stop
 
 MOCK_PATH = "mtd.commands.stop_cmd"

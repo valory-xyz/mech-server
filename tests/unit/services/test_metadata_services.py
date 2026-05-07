@@ -24,7 +24,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from mtd.services.metadata.generate import _import_module_from_path, generate_metadata
 from mtd.services.metadata.publish import publish_metadata_to_ipfs
 from mtd.services.metadata.update_onchain import update_metadata_onchain

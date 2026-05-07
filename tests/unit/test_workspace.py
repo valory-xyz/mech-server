@@ -23,7 +23,6 @@ from unittest.mock import patch
 
 import click
 import pytest
-
 from mtd.context import build_context
 from mtd.workspace import initialize_workspace
 

@@ -23,7 +23,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
-
 from mtd.commands.add_tool_cmd import (
     INIT_FILENAME,
     _read_template,

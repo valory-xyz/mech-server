@@ -24,7 +24,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from mtd.services.metadata.update_onchain import (
     _fetch_metadata_hash,
     _load_contract,

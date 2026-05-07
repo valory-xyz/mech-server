@@ -19,7 +19,6 @@
 """Tests for the CLI entry point."""
 
 from click.testing import CliRunner
-
 from mtd.cli import cli
 
 
@@ -61,7 +60,9 @@ class TestCli:
         runner = CliRunner()
         result = runner.invoke(cli, [])
 
-        assert result.exit_code == 0
+        # click >= 8.2 exits with 2 (was 0) when a Group with
+        # no_args_is_help is invoked bare — help still prints.
+        assert result.exit_code == 2
         assert "Usage" in result.output
 
     def test_invalid_command(self) -> None:

@@ -20,7 +20,6 @@
 """Update-metadata command for updating the metadata hash on-chain."""
 
 import click
-
 from mtd.commands.context_utils import (
     SUPPORTED_CHAINS,
     get_mtd_context,
@@ -42,6 +41,9 @@ def update_metadata(ctx: click.Context, chain_config: str) -> None:
     """Update the metadata hash on-chain via Safe transaction.
 
     Example: mech update-metadata -c gnosis
+
+    :param ctx: click context carrying the resolved MtdContext.
+    :param chain_config: target chain name (e.g. ``gnosis``) for the metadata update.
     """
     context = get_mtd_context(ctx)
     require_initialized(context)

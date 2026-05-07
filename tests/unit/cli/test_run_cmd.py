@@ -18,6 +18,11 @@
 # ------------------------------------------------------------------------------
 """Tests for run command."""
 
+# Stacked `@patch` decorators inject MagicMocks as positional args; not every
+# patch is directly asserted on, but each is required to neutralize a side
+# effect during the test.
+# pylint: disable=unused-argument
+
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -25,7 +30,6 @@ from unittest.mock import MagicMock, patch
 import click
 import pytest
 from click.testing import CliRunner
-
 from mtd.commands.run_cmd import (
     _get_latest_service_hash,
     _push_all_packages,
