@@ -4,19 +4,19 @@ build-backend = "uv_build"
 
 [project]
 name = "mech-server"
-version = "0.8.3"
+version = "0.8.4"
 description = ""
 requires-python = ">=3.10,<3.15"
 readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
     # OA / open-aea / plugins — pinned exactly (framework contract).
-    "open-autonomy[all]==0.21.22",
-    "open-aea-ledger-ethereum==2.2.6",
-    "open-aea-ledger-cosmos==2.2.6",
-    "open-aea-test-autonomy==0.21.22",
-    "open-aea-cli-ipfs==2.2.6",
-    "open-aea-helpers==0.21.22",
+    "open-autonomy[all]==0.21.23",
+    "open-aea-ledger-ethereum==2.2.7",
+    "open-aea-ledger-cosmos==2.2.7",
+    "open-aea-test-autonomy==0.21.23",
+    "open-aea-cli-ipfs==2.2.7",
+    "open-aea-helpers==0.21.23",
     # Framework/lib deps — ranges (mech-family = "mech repos", not apps).
     "requests>=2.32.5",
     "grpcio==1.78.0",
@@ -81,7 +81,7 @@ pytest_targets = ["tests"]
 # auto-prepends valory-xyz/open-autonomy@... and valory-xyz/open-aea@...
 # from pyproject pins, so only the non-PyPI mech upstream needs to be
 # listed here.
-upstream_pins = ["valory-xyz/mech@v0.33.0"]
+upstream_pins = ["valory-xyz/mech@v0.33.1"]
 tomte_dep_pin = " @ git+https://github.com/valory-xyz/tomte.git@v0.7.0"
 
 [tool.uv.build-backend]
