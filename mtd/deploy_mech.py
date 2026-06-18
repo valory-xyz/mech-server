@@ -63,6 +63,7 @@ MECH_FACTORY_ADDRESS = {
         "0xf24eE42edA0fc9b33B7D41B06Ee8ccD2Ef7C5020": {
             "Native": "0x2E008211f34b25A7d7c102403c6C2C3B665a1abe",
             "Token": "0x97371B1C0cDA1D04dFc43DFb50a04645b7Bc9BEe",  # nosec B105
+            "TokenUSDC": "0x5B70A66fe68c4c86FFd724B58cc56049c70e9D3D",
             "Nevermined": "0x847bBE8b474e0820215f818858e23F5f5591855A",
         },
     },

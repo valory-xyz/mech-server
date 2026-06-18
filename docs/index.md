@@ -52,7 +52,7 @@ When creating a Mech, deployers can select between the following payment models:
 | Chain | Native | OLAS Token | USDC Token | Nevermined |
 |-------|--------|------------|------------|------------|
 | Gnosis | ✅ | ✅ | ❌ | ✅ |
-| Base | ✅ | ✅ | ❌ | ✅ |
+| Base | ✅ | ✅ | ✅ | ✅ |
 | Polygon | ✅ | ✅ | ✅ | ✅ |
 | Optimism | ✅ | ✅ | ✅ | ✅ |
 
