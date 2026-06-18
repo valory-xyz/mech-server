@@ -59,7 +59,7 @@ mech run -c <chain>
 | Gnosis | ✅ | ✅ | ❌ | ✅ |
 | Base | ✅ | ✅ | ❌ | ✅ |
 | Polygon | ✅ | ✅ | ✅ | ✅ |
-| Optimism | ✅ | ✅ | ❌ | ✅ |
+| Optimism | ✅ | ✅ | ✅ | ✅ |
 
 ## Requirements
 

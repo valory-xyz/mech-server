@@ -54,7 +54,7 @@ When creating a Mech, deployers can select between the following payment models:
 | Gnosis | ✅ | ✅ | ❌ | ✅ |
 | Base | ✅ | ✅ | ❌ | ✅ |
 | Polygon | ✅ | ✅ | ✅ | ✅ |
-| Optimism | ✅ | ✅ | ❌ | ✅ |
+| Optimism | ✅ | ✅ | ✅ | ✅ |
 
 
 ## How the request-response flow works
