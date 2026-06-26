@@ -250,18 +250,16 @@ class TestMechFactoryAddress:
                 assert "Native" in factories, f"Missing Native for {chain} / {mp_addr}"
                 assert "Token" in factories, f"Missing Token for {chain} / {mp_addr}"
 
-    def test_polygon_has_token_usdc(self) -> None:
-        """Polygon supports TokenUSDC mech type."""
-        for factories in MECH_FACTORY_ADDRESS[Chain.POLYGON].values():
-            assert "TokenUSDC" in factories
-
-    def test_token_usdc_not_on_other_chains(self) -> None:
-        """Test that TokenUSDC is only on Polygon, not other chains."""
-        for chain in (Chain.GNOSIS, Chain.BASE, Chain.OPTIMISM):
+    def test_token_usdc_supported_chains(self) -> None:
+        """Polygon, Optimism and Base support the TokenUSDC mech type."""
+        for chain in (Chain.POLYGON, Chain.OPTIMISM, Chain.BASE):
             for factories in MECH_FACTORY_ADDRESS[chain].values():
-                assert (
-                    "TokenUSDC" not in factories
-                ), f"TokenUSDC should not be on {chain}"
+                assert "TokenUSDC" in factories, f"TokenUSDC missing on {chain}"
+
+    def test_token_usdc_not_on_gnosis(self) -> None:
+        """Gnosis does not offer the TokenUSDC mech type."""
+        for factories in MECH_FACTORY_ADDRESS[Chain.GNOSIS].values():
+            assert "TokenUSDC" not in factories
 
 
 class TestNeedsMechDeployment:
