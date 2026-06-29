@@ -68,7 +68,6 @@ dev = [
 
 [tool.uv]
 default-groups = "all"
-prerelease = "allow"
 
 [tool.tomte]
 # mech-server's first-party Python lives outside packages/ — `mtd/` is

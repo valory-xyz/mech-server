@@ -57,9 +57,9 @@ mech run -c <chain>
 | Chain | Native | OLAS Token | USDC Token | Nevermined |
 |-------|--------|------------|------------|------------|
 | Gnosis | ✅ | ✅ | ❌ | ✅ |
-| Base | ✅ | ✅ | ❌ | ✅ |
+| Base | ✅ | ✅ | ✅ | ✅ |
 | Polygon | ✅ | ✅ | ✅ | ✅ |
-| Optimism | ✅ | ✅ | ❌ | ✅ |
+| Optimism | ✅ | ✅ | ✅ | ✅ |
 
 ## Requirements
 
