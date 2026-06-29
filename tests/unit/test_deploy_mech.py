@@ -44,6 +44,7 @@ def _make_mock_sftxb(
     mock_sftxb.new_tx.return_value.add.return_value.settle.return_value = mock_receipt
 
     mock_contract = MagicMock()
+    mock_contract.encode_abi.return_value = "0xdeadbeef"
     mock_sftxb.ledger_api.api.eth.contract.return_value = mock_contract
 
     mock_event = {"args": {"mech": mech_address, "serviceId": 1}}
