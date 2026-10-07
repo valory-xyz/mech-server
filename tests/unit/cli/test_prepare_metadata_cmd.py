@@ -24,11 +24,17 @@
 # pylint: disable=unused-argument
 
 import json
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Iterator, List
 from unittest.mock import MagicMock, patch
 
+import pytest
 from click.testing import CliRunner
 from mtd.commands.prepare_metadata_cmd import (
+    _build_benchmarks,
+    _build_operator,
     _clean_packages_dir,
     _compute_tools_to_package_hash,
     _lock_packages,
@@ -37,8 +43,63 @@ from mtd.commands.prepare_metadata_cmd import (
     _update_chain_config,
     prepare_metadata,
 )
+from mtd.services.metadata import Benchmark, Operator
 
 MOCK_PATH = "mtd.commands.prepare_metadata_cmd"
+MECH_NAME = "Test Mech"
+NAME_ARGS = ["--name", MECH_NAME]
+BENCHMARK_URL = "https://analytics.example/v1/metrics/mech/100/0xabc"
+OPERATOR_ARGS = ["--operator-name", "Valory", "--operator-domain", "valory.xyz"]
+BENCHMARK_ARGS = [
+    "--benchmark-url",
+    BENCHMARK_URL,
+    "--benchmark",
+    "openai-gpt-4",
+    "accuracy",
+    "0.83",
+    "30d",
+]
+# Pipeline steps that touch the filesystem, IPFS or the chain; stubbed in
+# every command-level test so only argument handling runs for real.
+PIPELINE_STEPS = (
+    "get_mtd_context",
+    "require_initialized",
+    "_lock_packages",
+    "_push_all_packages",
+    "generate_metadata",
+    "publish_metadata_to_ipfs",
+    "set_key",
+    "_compute_tools_to_package_hash",
+    "_update_chain_config",
+)
+
+
+@contextmanager
+def _patched_pipeline(tmp_path: Path) -> Iterator[SimpleNamespace]:
+    """Stub every pipeline step and yield the mocks by name, without the leading underscore."""
+    with ExitStack() as stack:
+        mocks = SimpleNamespace(
+            **{
+                step.lstrip("_"): stack.enter_context(patch(f"{MOCK_PATH}.{step}"))
+                for step in PIPELINE_STEPS
+            }
+        )
+        mocks.publish_metadata_to_ipfs.return_value = "f0170abc"
+        mocks.compute_tools_to_package_hash.return_value = ""
+        context = MagicMock()
+        context.packages_dir = tmp_path / "packages"
+        context.workspace_path = tmp_path
+        context.metadata_path = tmp_path / "metadata.json"
+        context.chain_env_path.return_value = tmp_path / ".env.gnosis"
+        mocks.get_mtd_context.return_value = context
+        mocks.context = context
+        yield mocks
+
+
+def _generate_kwargs(mocks: SimpleNamespace) -> dict:
+    """Return the keyword arguments the command passed to generate_metadata."""
+    mocks.generate_metadata.assert_called_once()
+    return mocks.generate_metadata.call_args.kwargs
 
 
 class TestPrepareMetadataCommand:
@@ -76,7 +137,7 @@ class TestPrepareMetadataCommand:
         mock_get_context.return_value = context
 
         runner = CliRunner()
-        result = runner.invoke(prepare_metadata, ["-c", "gnosis"])
+        result = runner.invoke(prepare_metadata, [*NAME_ARGS, "-c", "gnosis"])
 
         assert result.exit_code == 0
         mock_require_initialized.assert_called_once_with(context)
@@ -87,7 +148,10 @@ class TestPrepareMetadataCommand:
         mock_generate.assert_called_once_with(
             packages_dir=context.packages_dir,
             metadata_path=context.metadata_path,
+            name=MECH_NAME,
             offchain_url="",
+            operator=None,
+            benchmarks={},
         )
         mock_publish.assert_called_once()
         mock_set_key.assert_called_once_with(str(env_path), "METADATA_HASH", "f0170abc")
@@ -131,7 +195,7 @@ class TestPrepareMetadataCommand:
         mock_get_context.return_value = context
 
         runner = CliRunner()
-        result = runner.invoke(prepare_metadata, ["-c", "gnosis"])
+        result = runner.invoke(prepare_metadata, [*NAME_ARGS, "-c", "gnosis"])
 
         assert result.exit_code == 0
         mock_set_key.assert_any_call(
@@ -191,7 +255,7 @@ class TestPrepareMetadataCommand:
         mock_get_context.return_value = context
 
         runner = CliRunner()
-        result = runner.invoke(prepare_metadata, [])
+        result = runner.invoke(prepare_metadata, NAME_ARGS)
 
         assert result.exit_code == 0
         mock_set_key.assert_any_call(str(gnosis_env), "METADATA_HASH", "f0170abc")
@@ -230,7 +294,7 @@ class TestPrepareMetadataCommand:
         mock_get_context.return_value = context
 
         runner = CliRunner()
-        result = runner.invoke(prepare_metadata, [])
+        result = runner.invoke(prepare_metadata, NAME_ARGS)
 
         assert result.exit_code == 0
         mock_set_key.assert_not_called()
@@ -269,14 +333,17 @@ class TestPrepareMetadataCommand:
         runner = CliRunner()
         result = runner.invoke(
             prepare_metadata,
-            ["-c", "gnosis", "--offchain-url", "https://mech.example.com/"],
+            [*NAME_ARGS, "-c", "gnosis", "--offchain-url", "https://mech.example.com/"],
         )
 
         assert result.exit_code == 0
         mock_generate.assert_called_once_with(
             packages_dir=context.packages_dir,
             metadata_path=context.metadata_path,
+            name=MECH_NAME,
             offchain_url="https://mech.example.com/",
+            operator=None,
+            benchmarks={},
         )
         mock_set_key.assert_any_call(
             str(env_path), "MECH_OFFCHAIN_URL", "https://mech.example.com/"
@@ -326,13 +393,257 @@ class TestPrepareMetadataCommand:
         mock_get_context.return_value = context
 
         runner = CliRunner()
-        result = runner.invoke(prepare_metadata, ["-c", "gnosis"])
+        result = runner.invoke(prepare_metadata, [*NAME_ARGS, "-c", "gnosis"])
 
         assert result.exit_code == 0
         mock_generate.assert_called_once_with(
             packages_dir=context.packages_dir,
             metadata_path=context.metadata_path,
+            name=MECH_NAME,
             offchain_url="https://stored.example.com/",
+            operator=None,
+            benchmarks={},
+        )
+
+
+class TestPrepareMetadataNameFlag:
+    """``--name`` is required and is what the manifest gets."""
+
+    def test_missing_name_is_a_usage_error_before_any_work(
+        self, tmp_path: Path
+    ) -> None:
+        """Without --name click exits with usage error 2 and nothing runs."""
+        with _patched_pipeline(tmp_path) as mocks:
+            result = CliRunner().invoke(prepare_metadata, ["-c", "gnosis"])
+
+        assert result.exit_code == 2
+        assert "--name" in result.output
+        mocks.lock_packages.assert_not_called()
+        mocks.generate_metadata.assert_not_called()
+
+    def test_name_is_passed_to_generate(self, tmp_path: Path) -> None:
+        """The --name value reaches generate_metadata unchanged."""
+        with _patched_pipeline(tmp_path) as mocks:
+            result = CliRunner().invoke(prepare_metadata, ["--name", "Olas Mech II"])
+
+        assert result.exit_code == 0
+        assert _generate_kwargs(mocks)["name"] == "Olas Mech II"
+
+    def test_blank_name_from_generate_becomes_click_error(self, tmp_path: Path) -> None:
+        """A ValueError raised by generate_metadata is shown as a CLI error, exit 1."""
+        with _patched_pipeline(tmp_path) as mocks:
+            mocks.generate_metadata.side_effect = ValueError(
+                "Mech name must not be empty"
+            )
+            result = CliRunner().invoke(prepare_metadata, ["--name", "  "])
+
+        assert result.exit_code == 1
+        assert "Mech name must not be empty" in result.output
+        mocks.publish_metadata_to_ipfs.assert_not_called()
+
+
+class TestPrepareMetadataOperatorFlags:
+    """``--operator-*`` flags build the operator block."""
+
+    def test_operator_flags_build_operator(self, tmp_path: Path) -> None:
+        """Name, domain and contact reach generate_metadata as one Operator."""
+        args = [*NAME_ARGS, *OPERATOR_ARGS, "--operator-contact", "mechs@valory.xyz"]
+        with _patched_pipeline(tmp_path) as mocks:
+            result = CliRunner().invoke(prepare_metadata, args)
+
+        assert result.exit_code == 0
+        assert _generate_kwargs(mocks)["operator"] == Operator(
+            name="Valory", domain="valory.xyz", contact="mechs@valory.xyz"
+        )
+
+    def test_operator_without_contact(self, tmp_path: Path) -> None:
+        """Contact stays None when the flag is not given."""
+        with _patched_pipeline(tmp_path) as mocks:
+            result = CliRunner().invoke(prepare_metadata, [*NAME_ARGS, *OPERATOR_ARGS])
+
+        assert result.exit_code == 0
+        assert _generate_kwargs(mocks)["operator"] == Operator(
+            name="Valory", domain="valory.xyz"
+        )
+
+    @pytest.mark.parametrize(
+        "args, reason",
+        [
+            (["--operator-name", "Valory"], "must be given together"),
+            (["--operator-domain", "valory.xyz"], "must be given together"),
+            (["--operator-contact", "x@valory.xyz"], "requires --operator-name"),
+            (
+                [
+                    "--operator-name",
+                    "Valory",
+                    "--operator-domain",
+                    "https://valory.xyz",
+                ],
+                "not a bare hostname: it must not include a scheme",
+            ),
+            (
+                ["--operator-name", "Valory", "--operator-domain", "valory.xyz/"],
+                "must not include a path",
+            ),
+        ],
+    )
+    def test_invalid_operator_flags_fail_before_locking(
+        self, tmp_path: Path, args: List[str], reason: str
+    ) -> None:
+        """Incomplete or invalid operator flags exit 1 with the reason, before any IPFS work."""
+        with _patched_pipeline(tmp_path) as mocks:
+            result = CliRunner().invoke(prepare_metadata, [*NAME_ARGS, *args])
+
+        assert result.exit_code == 1
+        assert reason in result.output
+        mocks.lock_packages.assert_not_called()
+        mocks.generate_metadata.assert_not_called()
+
+
+class TestPrepareMetadataBenchmarkFlags:
+    """``--benchmark`` and ``--benchmark-url`` build per-tool benchmarks."""
+
+    def test_benchmark_flags_build_benchmarks(self, tmp_path: Path) -> None:
+        """Each --benchmark becomes a Benchmark keyed by tool, all sharing --benchmark-url."""
+        args = [
+            *NAME_ARGS,
+            *BENCHMARK_ARGS,
+            "--benchmark",
+            "claude",
+            "accuracy",
+            "0.5",
+            "all",
+        ]
+        with _patched_pipeline(tmp_path) as mocks:
+            result = CliRunner().invoke(prepare_metadata, args)
+
+        assert result.exit_code == 0
+        assert _generate_kwargs(mocks)["benchmarks"] == {
+            "openai-gpt-4": Benchmark(
+                metric="accuracy", value=0.83, window="30d", url=BENCHMARK_URL
+            ),
+            "claude": Benchmark(
+                metric="accuracy", value=0.5, window="all", url=BENCHMARK_URL
+            ),
+        }
+
+    @pytest.mark.parametrize(
+        "args, reason",
+        [
+            (BENCHMARK_ARGS[2:], "--benchmark requires --benchmark-url"),
+            (BENCHMARK_ARGS[:2], "--benchmark-url requires at least one --benchmark"),
+            (
+                [
+                    *BENCHMARK_ARGS[:2],
+                    "--benchmark",
+                    "openai-gpt-4",
+                    "accuracy",
+                    "1.01",
+                    "30d",
+                ],
+                "Invalid --benchmark for 'openai-gpt-4': Benchmark value must be between 0 and 1, got 1.01",
+            ),
+            (
+                [
+                    *BENCHMARK_ARGS[:2],
+                    "--benchmark",
+                    "openai-gpt-4",
+                    "accuracy",
+                    "0.5",
+                    "60d",
+                ],
+                "window must be one of 7d, 30d, 90d, all",
+            ),
+            (
+                [
+                    *BENCHMARK_ARGS,
+                    "--benchmark",
+                    "openai-gpt-4",
+                    "accuracy",
+                    "0.5",
+                    "7d",
+                ],
+                "given more than once",
+            ),
+        ],
+    )
+    def test_invalid_benchmark_flags_fail_before_locking(
+        self, tmp_path: Path, args: List[str], reason: str
+    ) -> None:
+        """Incomplete or invalid benchmark flags exit 1 with the reason, before any IPFS work."""
+        with _patched_pipeline(tmp_path) as mocks:
+            result = CliRunner().invoke(prepare_metadata, [*NAME_ARGS, *args])
+
+        assert result.exit_code == 1
+        assert reason in result.output
+        mocks.lock_packages.assert_not_called()
+        mocks.generate_metadata.assert_not_called()
+
+    def test_non_numeric_benchmark_value_is_a_usage_error(self, tmp_path: Path) -> None:
+        """Click rejects a VALUE that is not a float with usage error 2."""
+        args = [
+            *NAME_ARGS,
+            *BENCHMARK_ARGS[:2],
+            "--benchmark",
+            "openai-gpt-4",
+            "accuracy",
+            "high",
+            "30d",
+        ]
+        with _patched_pipeline(tmp_path):
+            result = CliRunner().invoke(prepare_metadata, args)
+
+        assert result.exit_code == 2
+        assert "high" in result.output
+
+    def test_unknown_tool_from_generate_becomes_click_error(
+        self, tmp_path: Path
+    ) -> None:
+        """generate_metadata's unknown-tool ValueError surfaces as a CLI error and stops publishing."""
+        with _patched_pipeline(tmp_path) as mocks:
+            mocks.generate_metadata.side_effect = ValueError(
+                "Benchmark given for unknown tool 'openai-gpt-4'. Tools in this manifest: echo"
+            )
+            result = CliRunner().invoke(prepare_metadata, [*NAME_ARGS, *BENCHMARK_ARGS])
+
+        assert result.exit_code == 1
+        assert "unknown tool 'openai-gpt-4'" in result.output
+        mocks.publish_metadata_to_ipfs.assert_not_called()
+
+
+class TestBuildOperator:
+    """Tests for _build_operator."""
+
+    def test_returns_none_when_no_flag_given(self) -> None:
+        """No operator flags means no operator block."""
+        assert _build_operator(None, None, None) is None
+
+    def test_builds_operator_with_contact(self) -> None:
+        """All three flags populate the Operator."""
+        assert _build_operator("Valory", "valory.xyz", "x@valory.xyz") == Operator(
+            name="Valory", domain="valory.xyz", contact="x@valory.xyz"
+        )
+
+
+class TestBuildBenchmarks:
+    """Tests for _build_benchmarks."""
+
+    def test_returns_empty_when_no_flag_given(self) -> None:
+        """No benchmark flags means no benchmarks."""
+        assert len(_build_benchmarks((), None)) == 0
+
+    def test_shares_url_across_tools(self) -> None:
+        """Every entry gets the single --benchmark-url."""
+        result = _build_benchmarks(
+            (("a", "accuracy", 0.1, "7d"), ("b", "brier", 1.0, "90d")), BENCHMARK_URL
+        )
+
+        assert {tool: b.url for tool, b in result.items()} == {
+            "a": BENCHMARK_URL,
+            "b": BENCHMARK_URL,
+        }
+        assert result["b"] == Benchmark(
+            metric="brier", value=1.0, window="90d", url=BENCHMARK_URL
         )
 
 

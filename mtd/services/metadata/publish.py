@@ -23,11 +23,13 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from aea.helpers.cid import to_v1
+from aea.helpers.cid import CID, to_v1
 from aea.helpers.multiformat import multibase_decode, multicodec_remove_prefix
 from aea_cli_ipfs.ipfs_utils import IPFSTool
+from mtd.services.metadata.generate import Benchmark, Operator
 
 PREFIX = "f01701220"
+DAG_PB_CODEC = "dag-pb"
 IPFS_PREFIX_LENGTH = 6
 RESPONSE_KEY = "Hash"
 DEFAULT_IPFS_NODE = "/dns/registry.autonolas.tech/tcp/443/https"
@@ -43,6 +45,7 @@ metadata_schema = {
 }
 optional_metadata_fields = {
     "url": str,
+    "operator": Dict,
 }
 
 tool_schema = {
@@ -91,6 +94,11 @@ def _validate_metadata_structure(metadata: Dict) -> Optional[str]:
                 f"Invalid type for optional key {key!r} in metadata json. "
                 f"Expected {expected!r}, but got {actual!r}"
             )
+    if "operator" in metadata:
+        try:
+            Operator.from_dict(metadata["operator"])
+        except ValueError as exc:
+            return f"Invalid 'operator' in metadata json: {exc}"
     tools = metadata["tools"]
     tools_metadata = metadata["toolMetadata"]
     if len(tools) != len(tools_metadata):
@@ -203,6 +211,11 @@ def _validate_tool_entry(tool: str, data: Dict) -> Optional[str]:
             error = _validate_tool_output(tool, data[key])
             if error:
                 return error
+    if "benchmark" in data:
+        try:
+            Benchmark.from_dict(data["benchmark"])
+        except ValueError as exc:
+            return f"Invalid benchmark for {tool}: {exc}"
     return None
 
 
@@ -247,6 +260,14 @@ def publish_metadata_to_ipfs(
 
     if RESPONSE_KEY not in response:
         raise RuntimeError(f"Key {RESPONSE_KEY!r} not found in ipfs response")
+
+    codec = CID.from_string(response[RESPONSE_KEY]).codec
+    if codec != DAG_PB_CODEC:
+        raise ValueError(
+            f"IPFS returned a {codec!r} content id for the metadata. Only "
+            f"{DAG_PB_CODEC!r} ids can be stored on-chain: the metadata contract "
+            "keeps the bare digest and clients rebuild the id as dag-pb."
+        )
 
     cid_bytes = multibase_decode(to_v1(response[RESPONSE_KEY]).encode("ascii"))
     multihash_bytes = multicodec_remove_prefix(cid_bytes)
