@@ -56,7 +56,6 @@ BENCHMARK_ARGS = [
     "--benchmark",
     "openai-gpt-4",
     "accuracy",
-    "0.83",
     "30d",
 ]
 # Pipeline steps that touch the filesystem, IPFS or the chain; stubbed in
@@ -429,17 +428,35 @@ class TestPrepareMetadataNameFlag:
         assert result.exit_code == 0
         assert _generate_kwargs(mocks)["name"] == "Olas Mech II"
 
-    def test_blank_name_from_generate_becomes_click_error(self, tmp_path: Path) -> None:
-        """A ValueError raised by generate_metadata is shown as a CLI error, exit 1."""
+    @pytest.mark.parametrize("name", ["", "  ", "\t"])
+    def test_blank_name_fails_before_any_work(self, tmp_path: Path, name: str) -> None:
+        """A blank --name exits 1 before generation, locking or pushing."""
         with _patched_pipeline(tmp_path) as mocks:
-            mocks.generate_metadata.side_effect = ValueError(
-                "Mech name must not be empty"
-            )
-            result = CliRunner().invoke(prepare_metadata, ["--name", "  "])
+            result = CliRunner().invoke(prepare_metadata, ["--name", name])
 
         assert result.exit_code == 1
-        assert "Mech name must not be empty" in result.output
-        mocks.publish_metadata_to_ipfs.assert_not_called()
+        assert "--name must not be blank" in result.output
+        mocks.generate_metadata.assert_not_called()
+        mocks.lock_packages.assert_not_called()
+        mocks.push_all_packages.assert_not_called()
+
+    def test_generate_runs_before_lock_and_push(self, tmp_path: Path) -> None:
+        """Metadata is generated, then packages are locked and pushed, then it is published."""
+        order = MagicMock()
+        with _patched_pipeline(tmp_path) as mocks:
+            for step in ("generate_metadata", "lock_packages", "push_all_packages"):
+                order.attach_mock(getattr(mocks, step), step)
+            order.attach_mock(mocks.publish_metadata_to_ipfs, "publish")
+            result = CliRunner().invoke(prepare_metadata, NAME_ARGS)
+
+        assert result.exit_code == 0
+        names = [call[0] for call in order.mock_calls if "." not in call[0]]
+        assert names == [
+            "generate_metadata",
+            "lock_packages",
+            "push_all_packages",
+            "publish",
+        ]
 
 
 class TestPrepareMetadataOperatorFlags:
@@ -503,28 +520,20 @@ class TestPrepareMetadataOperatorFlags:
 class TestPrepareMetadataBenchmarkFlags:
     """``--benchmark`` and ``--benchmark-url`` build per-tool benchmarks."""
 
-    def test_benchmark_flags_build_benchmarks(self, tmp_path: Path) -> None:
-        """Each --benchmark becomes a Benchmark keyed by tool, all sharing --benchmark-url."""
-        args = [
-            *NAME_ARGS,
-            *BENCHMARK_ARGS,
-            "--benchmark",
-            "claude",
-            "accuracy",
-            "0.5",
-            "all",
-        ]
+    def test_benchmark_flags_build_benchmarks_without_a_value(
+        self, tmp_path: Path
+    ) -> None:
+        """Each --benchmark becomes a value-less Benchmark keyed by tool, sharing --benchmark-url."""
+        args = [*NAME_ARGS, *BENCHMARK_ARGS, "--benchmark", "claude", "accuracy", "all"]
         with _patched_pipeline(tmp_path) as mocks:
             result = CliRunner().invoke(prepare_metadata, args)
 
         assert result.exit_code == 0
         assert _generate_kwargs(mocks)["benchmarks"] == {
             "openai-gpt-4": Benchmark(
-                metric="accuracy", value=0.83, window="30d", url=BENCHMARK_URL
+                metric="accuracy", window="30d", url=BENCHMARK_URL
             ),
-            "claude": Benchmark(
-                metric="accuracy", value=0.5, window="all", url=BENCHMARK_URL
-            ),
+            "claude": Benchmark(metric="accuracy", window="all", url=BENCHMARK_URL),
         }
 
     @pytest.mark.parametrize(
@@ -533,36 +542,15 @@ class TestPrepareMetadataBenchmarkFlags:
             (BENCHMARK_ARGS[2:], "--benchmark requires --benchmark-url"),
             (BENCHMARK_ARGS[:2], "--benchmark-url requires at least one --benchmark"),
             (
-                [
-                    *BENCHMARK_ARGS[:2],
-                    "--benchmark",
-                    "openai-gpt-4",
-                    "accuracy",
-                    "1.01",
-                    "30d",
-                ],
-                "Invalid --benchmark for 'openai-gpt-4': Benchmark value must be between 0 and 1, got 1.01",
+                [*BENCHMARK_ARGS[:2], "--benchmark", "openai-gpt-4", "accuracy", "60d"],
+                "Invalid --benchmark for 'openai-gpt-4': Benchmark window must be one of 7d, 30d, 90d, all",
             ),
             (
-                [
-                    *BENCHMARK_ARGS[:2],
-                    "--benchmark",
-                    "openai-gpt-4",
-                    "accuracy",
-                    "0.5",
-                    "60d",
-                ],
-                "window must be one of 7d, 30d, 90d, all",
+                ["--benchmark-url", "http://analytics.example/v1", *BENCHMARK_ARGS[2:]],
+                "must be an https URL with a host",
             ),
             (
-                [
-                    *BENCHMARK_ARGS,
-                    "--benchmark",
-                    "openai-gpt-4",
-                    "accuracy",
-                    "0.5",
-                    "7d",
-                ],
+                [*BENCHMARK_ARGS, "--benchmark", "openai-gpt-4", "accuracy", "7d"],
                 "given more than once",
             ),
         ],
@@ -579,27 +567,27 @@ class TestPrepareMetadataBenchmarkFlags:
         mocks.lock_packages.assert_not_called()
         mocks.generate_metadata.assert_not_called()
 
-    def test_non_numeric_benchmark_value_is_a_usage_error(self, tmp_path: Path) -> None:
-        """Click rejects a VALUE that is not a float with usage error 2."""
+    def test_benchmark_takes_exactly_three_words(self, tmp_path: Path) -> None:
+        """A fourth word after --benchmark (an old-style VALUE) is a usage error, exit 2."""
         args = [
             *NAME_ARGS,
             *BENCHMARK_ARGS[:2],
             "--benchmark",
             "openai-gpt-4",
             "accuracy",
-            "high",
+            "0.83",
             "30d",
         ]
-        with _patched_pipeline(tmp_path):
+        with _patched_pipeline(tmp_path) as mocks:
             result = CliRunner().invoke(prepare_metadata, args)
 
         assert result.exit_code == 2
-        assert "high" in result.output
+        mocks.generate_metadata.assert_not_called()
 
-    def test_unknown_tool_from_generate_becomes_click_error(
+    def test_unknown_tool_from_generate_stops_before_lock_and_push(
         self, tmp_path: Path
     ) -> None:
-        """generate_metadata's unknown-tool ValueError surfaces as a CLI error and stops publishing."""
+        """generate_metadata's unknown-tool ValueError exits 1 before locking, pushing or publishing."""
         with _patched_pipeline(tmp_path) as mocks:
             mocks.generate_metadata.side_effect = ValueError(
                 "Benchmark given for unknown tool 'openai-gpt-4'. Tools in this manifest: echo"
@@ -608,6 +596,8 @@ class TestPrepareMetadataBenchmarkFlags:
 
         assert result.exit_code == 1
         assert "unknown tool 'openai-gpt-4'" in result.output
+        mocks.lock_packages.assert_not_called()
+        mocks.push_all_packages.assert_not_called()
         mocks.publish_metadata_to_ipfs.assert_not_called()
 
 
@@ -633,18 +623,16 @@ class TestBuildBenchmarks:
         assert len(_build_benchmarks((), None)) == 0
 
     def test_shares_url_across_tools(self) -> None:
-        """Every entry gets the single --benchmark-url."""
+        """Every entry gets the single --benchmark-url and no value."""
         result = _build_benchmarks(
-            (("a", "accuracy", 0.1, "7d"), ("b", "brier", 1.0, "90d")), BENCHMARK_URL
+            (("a", "accuracy", "7d"), ("b", "brier", "90d")), BENCHMARK_URL
         )
 
         assert {tool: b.url for tool, b in result.items()} == {
             "a": BENCHMARK_URL,
             "b": BENCHMARK_URL,
         }
-        assert result["b"] == Benchmark(
-            metric="brier", value=1.0, window="90d", url=BENCHMARK_URL
-        )
+        assert result["b"] == Benchmark(metric="brier", window="90d", url=BENCHMARK_URL)
 
 
 class TestUpdateChainConfig:

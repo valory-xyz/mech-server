@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Dict, List, Mapping, Optional, Tuple
+from urllib.parse import urlparse
 
 import yaml
 
@@ -36,7 +37,6 @@ TOOLS_IDENTIFIERS = frozenset(["ALLOWED_TOOLS", "AVAILABLE_TOOLS"])
 BENCHMARK_WINDOWS = ("7d", "30d", "90d", "all")
 MAX_HOSTNAME_LENGTH = 253
 _HOSTNAME_LABEL = re.compile(r"^(?!-)[a-z0-9-]{1,63}(?<!-)$")
-_URL_SCHEMES = ("http://", "https://")
 METADATA_TEMPLATE: Dict[str, Any] = {
     "description": "The mech executes AI tasks requested on-chain and delivers the results to the requester.",
     "inputFormat": "ipfs-v0.1",
@@ -74,15 +74,7 @@ OUTPUT_SCHEMA = {
 
 
 def _hostname_error(domain: str) -> Optional[str]:
-    """Return why ``domain`` is not a bare hostname, or None when it is one.
-
-    The domain is fetched over public HTTPS for the ERC-8004 proof and compared
-    by string equality downstream, so it must be lowercase and carry a dot.
-    Nothing is normalised: a rejected value points at the manifest to fix.
-
-    :param domain: the candidate ``operator.domain`` value.
-    :return: a short reason the value is rejected, or None when it is valid.
-    """
+    """Return why ``domain`` is not a lowercase dotted bare hostname, or None."""
     if not domain:
         return "it is empty"
     if "://" in domain:
@@ -100,9 +92,17 @@ def _hostname_error(domain: str) -> Optional[str]:
     if "." not in domain:
         return "it must contain at least one dot"
     for label in domain.split("."):
-        if not _HOSTNAME_LABEL.match(label):
+        if not _HOSTNAME_LABEL.fullmatch(label):
             return f"label {label!r} is not a valid hostname label"
     return None
+
+
+def _is_https_url(url: str) -> bool:
+    """Return True for an ``https://`` URL with a host and no whitespace."""
+    if any(char.isspace() for char in url):
+        return False
+    parsed = urlparse(url)
+    return parsed.scheme == "https" and bool(parsed.netloc)
 
 
 FieldTypes = Mapping[str, Tuple[type, ...]]
@@ -141,7 +141,7 @@ class Operator:
     contact: Optional[str] = None
 
     def __post_init__(self) -> None:
-        """Reject blank names, non-hostname domains and blank contacts."""
+        """Validate the block."""
         if not self.name.strip():
             raise ValueError("Operator name must not be empty")
         error = _hostname_error(self.domain)
@@ -175,11 +175,7 @@ class Operator:
 
 @dataclass(frozen=True)
 class Benchmark:
-    """A tool's published score. ``url`` is the analytics endpoint covering the whole mech.
-
-    ``value`` is None when the mech has no figure for the window yet; a
-    measured zero is written as ``0``, never as an absent value.
-    """
+    """A tool's score link; ``value`` is None when no figure exists for the window yet."""
 
     metric: str
     window: str
@@ -187,7 +183,7 @@ class Benchmark:
     value: Optional[float] = None
 
     def __post_init__(self) -> None:
-        """Reject blank metrics, values outside 0..1, unknown windows and non-HTTP urls."""
+        """Validate the block."""
         if not self.metric.strip():
             raise ValueError("Benchmark metric must not be empty")
         if self.value is not None:
@@ -197,8 +193,10 @@ class Benchmark:
                 f"Benchmark window must be one of {', '.join(BENCHMARK_WINDOWS)}, "
                 f"got {self.window!r}"
             )
-        if not self.url.startswith(_URL_SCHEMES):
-            raise ValueError(f"Benchmark url must be an http(s) URL, got {self.url!r}")
+        if not _is_https_url(self.url):
+            raise ValueError(
+                f"Benchmark url must be an https URL with a host, got {self.url!r}"
+            )
 
     @staticmethod
     def _check_value(value: Any) -> None:

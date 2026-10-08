@@ -270,12 +270,12 @@ mech prepare-metadata --name <name> -c gnosis
 Two optional groups of flags add more to the metadata:
 
 - `--operator-name <op> --operator-domain <host>` records who operates the mech. `<host>` is a lowercase bare hostname with at least one dot, such as `valory.xyz` (no scheme, path, port or trailing dot), the one that serves `/.well-known/agent-registration.json`. `--operator-contact <contact>` is optional. The two flags must be given together.
-- `--benchmark-url <url> --benchmark <tool> <metric> <value> <window>` records a published score for a tool, written under `toolMetadata.<tool>.benchmark`. `<value>` is between 0 and 1 and `<window>` is one of `7d`, `30d`, `90d` or `all`. Repeat `--benchmark` once per tool; every entry shares the single `--benchmark-url`.
+- `--benchmark-url <url> --benchmark <tool> <metric> <window>` links a tool to its live score, written under `toolMetadata.<tool>.benchmark`. `<url>` is the `https://` analytics endpoint that serves the figure, so no number is baked into the manifest. `<window>` is one of `7d`, `30d`, `90d` or `all`. Repeat `--benchmark` once per tool; every entry shares the single `--benchmark-url`.
 
 ```bash
 mech prepare-metadata --name <name> -c gnosis \
     --operator-name Valory --operator-domain valory.xyz --operator-contact mechs@valory.xyz \
-    --benchmark-url <url> --benchmark openai-gpt-4 accuracy 0.83 30d
+    --benchmark-url <url> --benchmark openai-gpt-4 accuracy 30d
 ```
 
 This command handles the full publish pipeline:
@@ -369,7 +369,7 @@ mechx push-to-ipfs ./<file_name>
 | `mech prepare-metadata --name <name> -c <chain>` | Lock packages, push to IPFS, generate and publish metadata |
 | `mech prepare-metadata --name <name> -c <chain> --offchain-url <url>` | Same as above, also sets the public offchain URL in metadata and `.env` |
 | `mech prepare-metadata --name <name> -c <chain> --operator-name <op> --operator-domain <host>` | Same as above, also records who operates the mech |
-| `mech prepare-metadata --name <name> -c <chain> --benchmark-url <url> --benchmark <tool> <metric> <value> <window>` | Same as above, also records a published score per tool |
+| `mech prepare-metadata --name <name> -c <chain> --benchmark-url <url> --benchmark <tool> <metric> <window>` | Same as above, also links each tool to its live score |
 | `mech update-metadata -c <chain>` | Update the metadata hash on-chain via Safe transaction |
 | `mech run -c <chain>` | Run the mech AI agent via Docker |
 | `mech stop -c <chain>` | Stop a running mech AI agent |

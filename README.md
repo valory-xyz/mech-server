@@ -75,7 +75,7 @@ mech run -c <chain>
 | `mech prepare-metadata --name <name> -c <chain>` | Recompute package fingerprints, push packages and metadata to IPFS, and write `METADATA_HASH` and `TOOLS_TO_PACKAGE_HASH` to `.env` |
 | `mech prepare-metadata --name <name> -c <chain> --offchain-url <url>` | Same as above, also sets the offchain URL in metadata and `.env` |
 | `mech prepare-metadata --name <name> -c <chain> --operator-name <op> --operator-domain <host>` | Same as above, also records who operates the mech (`--operator-contact` is optional) |
-| `mech prepare-metadata --name <name> -c <chain> --benchmark-url <url> --benchmark <tool> <metric> <value> <window>` | Same as above, also records a published score per tool (`--benchmark` is repeatable) |
+| `mech prepare-metadata --name <name> -c <chain> --benchmark-url <url> --benchmark <tool> <metric> <window>` | Same as above, also links each tool to its live score (`--benchmark` is repeatable) |
 | `mech update-metadata -c <chain>` | Update the metadata hash on-chain via Safe transaction |
 | `mech run -c <chain>` | Run the mech AI agent via Docker |
 | `mech stop -c <chain>` | Stop a running mech AI agent |

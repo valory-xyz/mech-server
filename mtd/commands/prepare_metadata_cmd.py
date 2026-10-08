@@ -198,7 +198,7 @@ def _update_chain_config(
         click.echo(f"  Updated chain config template for {chain}")
 
 
-BenchmarkArg = Tuple[str, str, float, str]
+BenchmarkArg = Tuple[str, str, str]
 
 
 def _build_operator(
@@ -233,7 +233,7 @@ def _build_benchmarks(
 ) -> Dict[str, Benchmark]:
     """Turn repeated ``--benchmark`` flags plus ``--benchmark-url`` into per-tool benchmarks.
 
-    :param entries: ``(tool, metric, value, window)`` tuples from ``--benchmark``.
+    :param entries: ``(tool, metric, window)`` tuples from ``--benchmark``.
     :param url: value of ``--benchmark-url``, shared by every entry.
     :return: benchmarks keyed by tool name; empty when no flag was passed.
     :raises ClickException: when the flags are incomplete or invalid.
@@ -247,15 +247,13 @@ def _build_benchmarks(
     if url is None:
         raise click.ClickException("--benchmark requires --benchmark-url.")
     benchmarks: Dict[str, Benchmark] = {}
-    for tool, metric, value, window in entries:
+    for tool, metric, window in entries:
         if tool in benchmarks:
             raise click.ClickException(
                 f"Tool {tool!r} is given more than once in --benchmark."
             )
         try:
-            benchmarks[tool] = Benchmark(
-                metric=metric, value=value, window=window, url=url
-            )
+            benchmarks[tool] = Benchmark(metric=metric, window=window, url=url)
         except ValueError as exc:
             raise click.ClickException(
                 f"Invalid --benchmark for {tool!r}: {exc}"
@@ -337,12 +335,13 @@ def _resolve_offchain_url(
 @click.option(
     "--benchmark",
     "benchmarks",
-    type=(str, str, float, str),
+    type=(str, str, str),
     multiple=True,
-    metavar="TOOL METRIC VALUE WINDOW",
+    metavar="TOOL METRIC WINDOW",
     help=(
-        "Per-tool benchmark, e.g. --benchmark openai-gpt-4 accuracy 0.83 30d. "
-        "VALUE is 0..1, WINDOW is 7d, 30d, 90d or all. Repeatable; "
+        "Per-tool benchmark link, e.g. --benchmark openai-gpt-4 accuracy 30d. "
+        "WINDOW is 7d, 30d, 90d or all; the live figure is read from "
+        "--benchmark-url, so no value is written. Repeatable; "
         "requires --benchmark-url."
     ),
 )
@@ -361,16 +360,17 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
 ) -> None:
     """Generate metadata.json from packages and publish to IPFS.
 
-    Locks package hashes, pushes all packages to IPFS, generates
-    metadata, publishes it, and updates chain .env files with
-    METADATA_HASH and TOOLS_TO_PACKAGE_HASH.
+    Generates metadata from the local packages, locks package hashes,
+    pushes all packages to IPFS, publishes the metadata, and updates
+    chain .env files with METADATA_HASH and TOOLS_TO_PACKAGE_HASH.
+    Every input is validated before anything is pushed.
 
     Examples:
         mech prepare-metadata --name "My Mech"
         mech prepare-metadata --name "My Mech" -c gnosis
         mech prepare-metadata --name "My Mech" -c gnosis --offchain-url <url>
         mech prepare-metadata --name "My Mech" -c gnosis --operator-name Valory --operator-domain valory.xyz
-        mech prepare-metadata --name "My Mech" -c gnosis --benchmark-url <url> --benchmark openai-gpt-4 accuracy 0.83 30d
+        mech prepare-metadata --name "My Mech" -c gnosis --benchmark-url <url> --benchmark openai-gpt-4 accuracy 30d
 
     :param ctx: click context carrying the resolved MtdContext.
     :param chain_config: target chain whose .env to update (None = all chains).
@@ -382,17 +382,15 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
     :param operator_domain: bare hostname serving the operator's domain proof.
     :param operator_contact: optional operator contact.
     :param benchmark_url: analytics endpoint shared by every benchmark entry.
-    :param benchmarks: ``(tool, metric, value, window)`` tuples, one per tool.
+    :param benchmarks: ``(tool, metric, window)`` tuples, one per tool.
     """
     context = get_mtd_context(ctx)
     require_initialized(context)
 
+    if not mech_name.strip():
+        raise click.ClickException("--name must not be blank.")
     operator = _build_operator(operator_name, operator_domain, operator_contact)
     tool_benchmarks = _build_benchmarks(benchmarks, benchmark_url)
-
-    _clean_packages_dir(context.packages_dir)
-    _lock_packages(context.packages_dir)
-    _push_all_packages(context.workspace_path, context.packages_dir)
 
     resolved_url = _resolve_offchain_url(offchain_url, context, chain_config)
     if resolved_url:
@@ -411,6 +409,9 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc
     _clean_packages_dir(context.packages_dir)
+
+    _lock_packages(context.packages_dir)
+    _push_all_packages(context.workspace_path, context.packages_dir)
 
     click.echo("Publishing metadata to IPFS...")
     metadata_hash = publish_metadata_to_ipfs(

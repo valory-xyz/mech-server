@@ -94,6 +94,8 @@ def _validate_metadata_structure(metadata: Dict) -> Optional[str]:
                 f"Invalid type for optional key {key!r} in metadata json. "
                 f"Expected {expected!r}, but got {actual!r}"
             )
+    if not metadata["name"].strip():
+        return "Invalid 'name' in metadata json: it must not be blank"
     if "operator" in metadata:
         try:
             Operator.from_dict(metadata["operator"])

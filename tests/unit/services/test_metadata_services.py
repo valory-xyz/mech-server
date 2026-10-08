@@ -270,6 +270,9 @@ def test_operator_accepts_bare_hostnames(domain: str) -> None:
         ("valory.xyz:443", "must not include a port"),
         ("user@valory.xyz", "must not include a port or credentials"),
         ("valory .xyz", "not a valid hostname label"),
+        ("valory.xyz\n", "not a valid hostname label"),
+        ("valory\n.xyz", "not a valid hostname label"),
+        ("\tvalory.xyz", "not a valid hostname label"),
         ("-valory.xyz", "not a valid hostname label"),
         ("valory-.xyz", "not a valid hostname label"),
         ("valory..xyz", "not a valid hostname label"),
@@ -377,10 +380,36 @@ def test_benchmark_rejects_blank_metric(metric: str) -> None:
         Benchmark(metric=metric, value=0.5, window="30d", url=BENCHMARK_URL)
 
 
-@pytest.mark.parametrize("url", ["", "analytics.example/v1", "ftp://analytics.example"])
-def test_benchmark_rejects_non_http_url(url: str) -> None:
-    """The analytics endpoint must be an http(s) URL."""
-    with pytest.raises(ValueError, match="must be an http\\(s\\) URL"):
+@pytest.mark.parametrize(
+    "url",
+    [
+        BENCHMARK_URL,
+        "https://analytics.example",
+        "https://analytics.example:8443/v1/metrics/mech/100/0xabc?window=30d",
+    ],
+)
+def test_benchmark_accepts_https_urls_with_a_host(url: str) -> None:
+    """Any https URL with a host is accepted, with or without port, path or query."""
+    assert Benchmark(metric="accuracy", window="30d", url=url).url == url
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "",
+        "analytics.example/v1",
+        "ftp://analytics.example",
+        "http://analytics.example/v1/metrics/mech/100/0xabc",
+        "https://",
+        "https:///v1/metrics",
+        "https://x y",
+        "https://analytics.example/v1 ",
+        "https://analytics.example/v1\n",
+    ],
+)
+def test_benchmark_rejects_urls_that_are_not_https_with_a_host(url: str) -> None:
+    """Only https reaches buyers; a scheme alone, another scheme, or whitespace is refused."""
+    with pytest.raises(ValueError, match="must be an https URL with a host"):
         Benchmark(metric="accuracy", value=0.5, window="30d", url=url)
 
 

@@ -131,6 +131,7 @@ def test_validate_metadata_with_wrong_operator_type(tmp_path: Path) -> None:
         ({"name": "Valory", "domain": "https://valory.xyz"}, "not a bare hostname"),
         ({"name": "Valory", "domain": "valory.xyz."}, "must not end with a dot"),
         ({"name": "Valory", "domain": "Valory.xyz"}, "must be lowercase"),
+        ({"name": "Valory", "domain": "valory.xyz\n"}, "not a valid hostname label"),
         ({"name": "Valory"}, "Missing operator field 'domain'"),
         ({**VALID_OPERATOR, "email": "x"}, "Unknown operator field"),
     ],
@@ -173,6 +174,11 @@ def test_validate_tool_benchmark_without_value(tmp_path: Path) -> None:
         ({**VALID_BENCHMARK, "value": None}, "'value' must be int or float"),
         ({**VALID_BENCHMARK, "value": -0.5}, "between 0 and 1, got -0.5"),
         ({**VALID_BENCHMARK, "window": "60d"}, "window must be one of"),
+        (
+            {**VALID_BENCHMARK, "url": "http://analytics.example/v1"},
+            "must be an https URL with a host",
+        ),
+        ({**VALID_BENCHMARK, "url": "https://"}, "must be an https URL with a host"),
         (
             {k: v for k, v in VALID_BENCHMARK.items() if k != "url"},
             "Missing benchmark field 'url'",
@@ -236,6 +242,16 @@ def test_validate_wrong_top_level_type(tmp_path: Path) -> None:
     ok, msg = _validate_metadata_file(_write(tmp_path, data))
     assert ok is False
     assert "str" in msg
+
+
+@pytest.mark.parametrize("name", ["", "   ", "\n"])
+def test_validate_blank_name(tmp_path: Path, name: str) -> None:
+    """A hand-edited blank name is refused; there is no default to fall back to."""
+    data = {**VALID_METADATA, "name": name}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert "'name'" in msg
+    assert "blank" in msg
 
 
 def test_validate_tools_metadata_count_mismatch(tmp_path: Path) -> None:
