@@ -72,8 +72,10 @@ mech run -c <chain>
 |---|---|
 | `mech setup -c <chain>` | Full first-time setup: workspace, agent build, mech deployment, env config, key setup |
 | `mech add-tool <author> <name>` | Scaffold a new mech tool |
-| `mech prepare-metadata -c <chain>` | Recompute package fingerprints, push packages and metadata to IPFS, and write `METADATA_HASH` and `TOOLS_TO_PACKAGE_HASH` to `.env` |
-| `mech prepare-metadata -c <chain> --offchain-url <url>` | Same as above, also sets the offchain URL in metadata and `.env` |
+| `mech prepare-metadata --name <name> -c <chain>` | Recompute package fingerprints, push packages and metadata to IPFS, and write `METADATA_HASH` and `TOOLS_TO_PACKAGE_HASH` to `.env` |
+| `mech prepare-metadata --name <name> -c <chain> --offchain-url <url>` | Same as above, also sets the offchain URL in metadata and `.env` |
+| `mech prepare-metadata --name <name> -c <chain> --operator-name <op> --operator-domain <host>` | Same as above, also records who operates the mech (`--operator-contact` is optional) |
+| `mech prepare-metadata --name <name> -c <chain> --benchmark-url <url> --benchmark <tool> <metric> <window>` | Same as above, also links each tool to its live score (`--benchmark` is repeatable) |
 | `mech update-metadata -c <chain>` | Update the metadata hash on-chain via Safe transaction |
 | `mech run -c <chain>` | Run the mech AI agent via Docker |
 | `mech stop -c <chain>` | Stop a running mech AI agent |
@@ -111,13 +113,13 @@ mech run -c <chain>
 
 5. **(Optional)** If your mech should serve off-chain requests over HTTP, provide a URL that routes to the mech's HTTP server (`localhost:8000`). This URL is included in the mech's on-chain metadata so that clients can discover it:
     ```bash
-    mech prepare-metadata -c <chain> --offchain-url <url>
+    mech prepare-metadata --name <name> -c <chain> --offchain-url <url>
     ```
     Alternatively, set `MECH_OFFCHAIN_URL` in `~/.operate-mech/.env.<chain>` and run `prepare-metadata` without the flag.
 
-6. Generate and publish metadata (to IPFS), then update the on-chain registry:
+6. Generate and publish metadata (to IPFS), then update the on-chain registry. `--name` is the human-readable mech name and is required:
     ```bash
-    mech prepare-metadata -c <chain>
+    mech prepare-metadata --name <name> -c <chain>
     mech update-metadata -c <chain>
     ```
 
@@ -137,7 +139,7 @@ mech run -c <chain>
 
 3. Generate and publish metadata (to IPFS), then update:
     ```bash
-    mech prepare-metadata -c <chain>
+    mech prepare-metadata --name <name> -c <chain>
     mech update-metadata -c <chain>
     ```
 

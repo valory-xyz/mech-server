@@ -64,7 +64,7 @@ dev = [
     "mkdocs-material>=9.6.17,<10",
     "mkdocs-macros-plugin>=1.3.9,<2",
     "pytest-cov>=7.0.0,<8",
-    "tomte[cli, tests] @ git+https://github.com/valory-xyz/tomte.git@v0.7.0",
+    "tomte[cli, tests]==0.7.3",
 ]
 
 [tool.uv]
@@ -82,7 +82,9 @@ pytest_targets = ["tests"]
 # the valory/kv_store protocol + connection used by task_execution since
 # mech v0.34.x.
 upstream_pins = ["valory-xyz/mech@v0.34.3", "valory-xyz/kv-store@0.7.1"]
-tomte_dep_pin = " @ git+https://github.com/valory-xyz/tomte.git@v0.7.0"
+# Appended to the extras in the tox template render
+# (`tomte[<extras>]$TOMTE_DEP_PIN`), so it carries its own operator.
+tomte_dep_pin = "==0.7.3"
 
 [tool.uv.build-backend]
 module-name = ["mtd", "packages"]

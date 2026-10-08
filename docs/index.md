@@ -243,7 +243,7 @@ In addition to on-chain requests, a mech can serve off-chain requests over HTTP.
 Set the URL by passing `--offchain-url` to `prepare-metadata`:
 
 ```bash
-mech prepare-metadata -c gnosis --offchain-url <url>
+mech prepare-metadata --name <name> -c gnosis --offchain-url <url>
 ```
 
 Alternatively, set the `MECH_OFFCHAIN_URL` variable in the chain `.env` file and run `prepare-metadata` without the flag:
@@ -254,17 +254,28 @@ MECH_OFFCHAIN_URL=<url>
 ```
 
 ```bash
-mech prepare-metadata -c gnosis
+mech prepare-metadata --name <name> -c gnosis
 ```
 
 The CLI persists the URL to `MECH_OFFCHAIN_URL` in the chain `.env` file and includes it in the generated `metadata.json` under the `"url"` field. If no URL is configured, the field defaults to empty.
 
 ### 5. Publish metadata and update on-chain
 
-Once your tool is implemented, publish everything with a single command:
+Once your tool is implemented, publish everything with a single command. `--name` is the human-readable mech name written to the metadata; there is no default:
 
 ```bash
-mech prepare-metadata -c gnosis
+mech prepare-metadata --name <name> -c gnosis
+```
+
+Two optional groups of flags add more to the metadata:
+
+- `--operator-name <op> --operator-domain <host>` records who operates the mech. `<host>` is a lowercase bare hostname with at least one dot, such as `valory.xyz` (no scheme, path, port or trailing dot), the one that serves `/.well-known/agent-registration.json`. `--operator-contact <contact>` is optional. The two flags must be given together.
+- `--benchmark-url <url> --benchmark <tool> <metric> <window>` links a tool to its live score, written under `toolMetadata.<tool>.benchmark`. `<url>` is the `https://` analytics endpoint that serves the figure, so no number is baked into the manifest. `<window>` is one of `7d`, `30d`, `90d` or `all`. Repeat `--benchmark` once per tool; every entry shares the single `--benchmark-url`.
+
+```bash
+mech prepare-metadata --name <name> -c gnosis \
+    --operator-name Valory --operator-domain valory.xyz --operator-contact mechs@valory.xyz \
+    --benchmark-url <url> --benchmark openai-gpt-4 accuracy 30d
 ```
 
 This command handles the full publish pipeline:
@@ -321,7 +332,7 @@ If your Mech is already running and you want to add or update tools:
 
 3. Publish the updated metadata and update the on-chain registry:
     ```bash
-    mech prepare-metadata -c <chain>
+    mech prepare-metadata --name <name> -c <chain>
     mech update-metadata -c <chain>
     ```
 
@@ -355,8 +366,10 @@ mechx push-to-ipfs ./<file_name>
 |---|---|
 | `mech setup -c <chain>` | Full first-time setup: workspace, agent build, mech deployment, env config, key setup |
 | `mech add-tool <author> <name>` | Scaffold a new mech tool |
-| `mech prepare-metadata -c <chain>` | Lock packages, push to IPFS, generate and publish metadata |
-| `mech prepare-metadata -c <chain> --offchain-url <url>` | Same as above, also sets the public offchain URL in metadata and `.env` |
+| `mech prepare-metadata --name <name> -c <chain>` | Lock packages, push to IPFS, generate and publish metadata |
+| `mech prepare-metadata --name <name> -c <chain> --offchain-url <url>` | Same as above, also sets the public offchain URL in metadata and `.env` |
+| `mech prepare-metadata --name <name> -c <chain> --operator-name <op> --operator-domain <host>` | Same as above, also records who operates the mech |
+| `mech prepare-metadata --name <name> -c <chain> --benchmark-url <url> --benchmark <tool> <metric> <window>` | Same as above, also links each tool to its live score |
 | `mech update-metadata -c <chain>` | Update the metadata hash on-chain via Safe transaction |
 | `mech run -c <chain>` | Run the mech AI agent via Docker |
 | `mech stop -c <chain>` | Stop a running mech AI agent |

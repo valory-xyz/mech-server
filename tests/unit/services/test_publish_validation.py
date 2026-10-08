@@ -64,6 +64,19 @@ VALID_METADATA = {
     "toolMetadata": {"echo": VALID_TOOL},
 }
 
+VALID_OPERATOR = {
+    "name": "Valory",
+    "domain": "valory.xyz",
+    "contact": "mechs@valory.xyz",
+}
+
+VALID_BENCHMARK = {
+    "metric": "accuracy",
+    "value": 0.83,
+    "window": "30d",
+    "url": "https://analytics.example/v1/metrics/mech/100/0xabc",
+}
+
 
 def _write(tmp_path: Path, data: dict) -> Path:
     """Write dict as JSON and return path."""
@@ -93,6 +106,96 @@ def test_validate_metadata_with_wrong_url_type(tmp_path: Path) -> None:
     ok, msg = _validate_metadata_file(_write(tmp_path, data))
     assert ok is False
     assert "url" in msg
+
+
+def test_validate_valid_metadata_with_operator(tmp_path: Path) -> None:
+    """A well-formed optional operator block passes."""
+    data = {**VALID_METADATA, "operator": VALID_OPERATOR}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is True
+    assert msg == ""
+
+
+def test_validate_metadata_with_wrong_operator_type(tmp_path: Path) -> None:
+    """Return (False, error) when operator is not an object."""
+    data = {**VALID_METADATA, "operator": "Valory"}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert "operator" in msg
+    assert "Dict" in msg
+
+
+@pytest.mark.parametrize(
+    "operator, reason",
+    [
+        ({"name": "Valory", "domain": "https://valory.xyz"}, "not a bare hostname"),
+        ({"name": "Valory", "domain": "valory.xyz."}, "must not end with a dot"),
+        ({"name": "Valory", "domain": "Valory.xyz"}, "must be lowercase"),
+        ({"name": "Valory", "domain": "valory.xyz\n"}, "not a valid hostname label"),
+        ({"name": "Valory"}, "Missing operator field 'domain'"),
+        ({**VALID_OPERATOR, "email": "x"}, "Unknown operator field"),
+    ],
+)
+def test_validate_metadata_with_invalid_operator(
+    tmp_path: Path, operator: dict, reason: str
+) -> None:
+    """Return (False, error) naming the operator problem for malformed blocks."""
+    data = {**VALID_METADATA, "operator": operator}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert msg.startswith("Invalid 'operator' in metadata json")
+    assert reason in msg
+
+
+def test_validate_valid_tool_with_benchmark(tmp_path: Path) -> None:
+    """A well-formed optional benchmark inside toolMetadata.<tool> passes."""
+    tool = {**VALID_TOOL, "benchmark": VALID_BENCHMARK}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": tool}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is True
+    assert msg == ""
+
+
+def test_validate_tool_benchmark_without_value(tmp_path: Path) -> None:
+    """A benchmark with metric, window and url but no value means no figure yet; it passes."""
+    unmeasured = {k: v for k, v in VALID_BENCHMARK.items() if k != "value"}
+    tool = {**VALID_TOOL, "benchmark": unmeasured}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": tool}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is True
+    assert msg == ""
+
+
+@pytest.mark.parametrize(
+    "benchmark, reason",
+    [
+        ({**VALID_BENCHMARK, "value": 1.01}, "between 0 and 1, got 1.01"),
+        ({**VALID_BENCHMARK, "value": "0.83"}, "'value' must be int or float"),
+        ({**VALID_BENCHMARK, "value": None}, "'value' must be int or float"),
+        ({**VALID_BENCHMARK, "value": -0.5}, "between 0 and 1, got -0.5"),
+        ({**VALID_BENCHMARK, "window": "60d"}, "window must be one of"),
+        (
+            {**VALID_BENCHMARK, "url": "http://analytics.example/v1"},
+            "must be an https URL with a host",
+        ),
+        ({**VALID_BENCHMARK, "url": "https://"}, "must be an https URL with a host"),
+        (
+            {k: v for k, v in VALID_BENCHMARK.items() if k != "url"},
+            "Missing benchmark field 'url'",
+        ),
+        ("0.83", "must be an object"),
+    ],
+)
+def test_validate_tool_with_invalid_benchmark(
+    tmp_path: Path, benchmark: object, reason: str
+) -> None:
+    """Return (False, error) naming the tool and the benchmark problem."""
+    tool = {**VALID_TOOL, "benchmark": benchmark}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": tool}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert msg.startswith("Invalid benchmark for echo")
+    assert reason in msg
 
 
 def test_validate_valid_metadata_schema_without_required(tmp_path: Path) -> None:
@@ -139,6 +242,16 @@ def test_validate_wrong_top_level_type(tmp_path: Path) -> None:
     ok, msg = _validate_metadata_file(_write(tmp_path, data))
     assert ok is False
     assert "str" in msg
+
+
+@pytest.mark.parametrize("name", ["", "   ", "\n"])
+def test_validate_blank_name(tmp_path: Path, name: str) -> None:
+    """A hand-edited blank name is refused; there is no default to fall back to."""
+    data = {**VALID_METADATA, "name": name}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert "'name'" in msg
+    assert "blank" in msg
 
 
 def test_validate_tools_metadata_count_mismatch(tmp_path: Path) -> None:

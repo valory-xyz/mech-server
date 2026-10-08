@@ -65,7 +65,7 @@ mech run -c <chain>            # Run via Docker (production)
 mech run -c <chain> --dev      # Dev mode: push packages to IPFS, run on host
 mech stop -c <chain>           # Stop running service
 mech deploy-mech -c <chain>    # Deploy mech on marketplace for existing service
-mech prepare-metadata             # Generate metadata.json and publish to IPFS
+mech prepare-metadata --name <name>  # Generate metadata.json and publish to IPFS
 mech update-metadata           # Update on-chain metadata hash via Safe
 mech add-tool <author> <name>   # Scaffold a new tool
 ```

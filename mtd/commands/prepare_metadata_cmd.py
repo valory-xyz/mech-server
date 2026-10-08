@@ -23,7 +23,7 @@ import json
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
 import click
 from aea.cli.packages import package_type_selector_prompt
@@ -35,7 +35,9 @@ from mtd.commands.context_utils import (
 )
 from mtd.context import MtdContext
 from mtd.services.metadata import (
+    Benchmark,
     DEFAULT_IPFS_NODE,
+    Operator,
     generate_metadata,
     publish_metadata_to_ipfs,
 )
@@ -196,6 +198,69 @@ def _update_chain_config(
         click.echo(f"  Updated chain config template for {chain}")
 
 
+BenchmarkArg = Tuple[str, str, str]
+
+
+def _build_operator(
+    name: Optional[str], domain: Optional[str], contact: Optional[str]
+) -> Optional[Operator]:
+    """Turn the ``--operator-*`` flags into an Operator, or None when none were given.
+
+    :param name: value of ``--operator-name``.
+    :param domain: value of ``--operator-domain``.
+    :param contact: value of ``--operator-contact``.
+    :return: the operator block, or None when no operator flag was passed.
+    :raises ClickException: when the flags are incomplete or invalid.
+    """
+    if name is None and domain is None:
+        if contact is not None:
+            raise click.ClickException(
+                "--operator-contact requires --operator-name and --operator-domain."
+            )
+        return None
+    if name is None or domain is None:
+        raise click.ClickException(
+            "--operator-name and --operator-domain must be given together."
+        )
+    try:
+        return Operator(name=name, domain=domain, contact=contact)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
+def _build_benchmarks(
+    entries: Tuple[BenchmarkArg, ...], url: Optional[str]
+) -> Dict[str, Benchmark]:
+    """Turn repeated ``--benchmark`` flags plus ``--benchmark-url`` into per-tool benchmarks.
+
+    :param entries: ``(tool, metric, window)`` tuples from ``--benchmark``.
+    :param url: value of ``--benchmark-url``, shared by every entry.
+    :return: benchmarks keyed by tool name; empty when no flag was passed.
+    :raises ClickException: when the flags are incomplete or invalid.
+    """
+    if not entries:
+        if url is not None:
+            raise click.ClickException(
+                "--benchmark-url requires at least one --benchmark."
+            )
+        return {}
+    if url is None:
+        raise click.ClickException("--benchmark requires --benchmark-url.")
+    benchmarks: Dict[str, Benchmark] = {}
+    for tool, metric, window in entries:
+        if tool in benchmarks:
+            raise click.ClickException(
+                f"Tool {tool!r} is given more than once in --benchmark."
+            )
+        try:
+            benchmarks[tool] = Benchmark(metric=metric, window=window, url=url)
+        except ValueError as exc:
+            raise click.ClickException(
+                f"Invalid --benchmark for {tool!r}: {exc}"
+            ) from exc
+    return benchmarks
+
+
 def _resolve_offchain_url(
     explicit_url: Optional[str],
     context: MtdContext,
@@ -233,48 +298,120 @@ def _resolve_offchain_url(
     default=None,
     help="Public URL where the mech serves off-chain requests.",
 )
+@click.option(
+    "--name",
+    "mech_name",
+    type=str,
+    required=True,
+    help="Human-readable mech name written to the metadata.",
+)
+@click.option(
+    "--operator-name",
+    type=str,
+    default=None,
+    help="Operator running the mech. Requires --operator-domain.",
+)
+@click.option(
+    "--operator-domain",
+    type=str,
+    default=None,
+    help=(
+        "Lowercase bare hostname (no scheme or path) serving the operator's "
+        "/.well-known/agent-registration.json. Requires --operator-name."
+    ),
+)
+@click.option(
+    "--operator-contact",
+    type=str,
+    default=None,
+    help="Optional operator contact, such as an email address.",
+)
+@click.option(
+    "--benchmark-url",
+    type=str,
+    default=None,
+    help="Analytics endpoint shared by every --benchmark entry.",
+)
+@click.option(
+    "--benchmark",
+    "benchmarks",
+    type=(str, str, str),
+    multiple=True,
+    metavar="TOOL METRIC WINDOW",
+    help=(
+        "Per-tool benchmark link, e.g. --benchmark openai-gpt-4 accuracy 30d. "
+        "WINDOW is 7d, 30d, 90d or all; the live figure is read from "
+        "--benchmark-url, so no value is written. Repeatable; "
+        "requires --benchmark-url."
+    ),
+)
 @click.pass_context
-def prepare_metadata(
+def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
     ctx: click.Context,
     chain_config: Optional[str],
     ipfs_node: str,
     offchain_url: Optional[str],
+    mech_name: str,
+    operator_name: Optional[str],
+    operator_domain: Optional[str],
+    operator_contact: Optional[str],
+    benchmark_url: Optional[str],
+    benchmarks: Tuple[BenchmarkArg, ...],
 ) -> None:
     """Generate metadata.json from packages and publish to IPFS.
 
-    Locks package hashes, pushes all packages to IPFS, generates
-    metadata, publishes it, and updates chain .env files with
-    METADATA_HASH and TOOLS_TO_PACKAGE_HASH.
+    Generates metadata from the local packages, locks package hashes,
+    pushes all packages to IPFS, publishes the metadata, and updates
+    chain .env files with METADATA_HASH and TOOLS_TO_PACKAGE_HASH.
+    Every input is validated before anything is pushed.
 
     Examples:
-        mech prepare-metadata
-        mech prepare-metadata -c gnosis
-        mech prepare-metadata -c gnosis --offchain-url <url>
+        mech prepare-metadata --name "My Mech"
+        mech prepare-metadata --name "My Mech" -c gnosis
+        mech prepare-metadata --name "My Mech" -c gnosis --offchain-url <url>
+        mech prepare-metadata --name "My Mech" -c gnosis --operator-name Valory --operator-domain valory.xyz
+        mech prepare-metadata --name "My Mech" -c gnosis --benchmark-url <url> --benchmark openai-gpt-4 accuracy 30d
 
     :param ctx: click context carrying the resolved MtdContext.
     :param chain_config: target chain whose .env to update (None = all chains).
     :param ipfs_node: IPFS node multiaddr to publish to.
     :param offchain_url: public off-chain URL to embed in metadata; falls back
         to ``MECH_OFFCHAIN_URL`` from the chain .env when omitted.
+    :param mech_name: human-readable mech name written to the metadata.
+    :param operator_name: operator name; paired with ``operator_domain``.
+    :param operator_domain: bare hostname serving the operator's domain proof.
+    :param operator_contact: optional operator contact.
+    :param benchmark_url: analytics endpoint shared by every benchmark entry.
+    :param benchmarks: ``(tool, metric, window)`` tuples, one per tool.
     """
     context = get_mtd_context(ctx)
     require_initialized(context)
 
-    _clean_packages_dir(context.packages_dir)
-    _lock_packages(context.packages_dir)
-    _push_all_packages(context.workspace_path, context.packages_dir)
+    if not mech_name.strip():
+        raise click.ClickException("--name must not be blank.")
+    operator = _build_operator(operator_name, operator_domain, operator_contact)
+    tool_benchmarks = _build_benchmarks(benchmarks, benchmark_url)
 
     resolved_url = _resolve_offchain_url(offchain_url, context, chain_config)
     if resolved_url:
         click.echo(f"Including offchain URL in metadata: {resolved_url}")
 
     click.echo("Generating metadata...")
-    generate_metadata(
-        packages_dir=context.packages_dir,
-        metadata_path=context.metadata_path,
-        offchain_url=resolved_url,
-    )
+    try:
+        generate_metadata(
+            packages_dir=context.packages_dir,
+            metadata_path=context.metadata_path,
+            name=mech_name,
+            offchain_url=resolved_url,
+            operator=operator,
+            benchmarks=tool_benchmarks,
+        )
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
     _clean_packages_dir(context.packages_dir)
+
+    _lock_packages(context.packages_dir)
+    _push_all_packages(context.workspace_path, context.packages_dir)
 
     click.echo("Publishing metadata to IPFS...")
     metadata_hash = publish_metadata_to_ipfs(
