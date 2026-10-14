@@ -1960,7 +1960,7 @@ wheels = [
 
 [[package]]
 name = "mech-server"
-version = "0.8.5"
+version = "0.8.6"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
