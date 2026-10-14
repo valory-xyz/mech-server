@@ -42,7 +42,7 @@ Anyone can deploy a Mech, and Olas does not review them. KYA is how a Mech tells
 - **Offer**: the tools in the metadata, the payment model on the Mech contract, and a link to the operator's own terms.
 - **Record**: deliveries read from the chain, plus a link per tool to the operator's own accuracy figures.
 
-Buyers see this through [mech-client](https://stack.olas.network/mech-client/), and through two files the marketplace publishes for every service: an ERC-8004 registration file (ERC-8004 is the Ethereum standard for agent identity; every Olas service has an entry) and an A2A agent card (the Agent-to-Agent format other agent frameworks read). Both live under `https://marketplace.olas.network/api/erc8004/<network>/ai-agents/<serviceId>`, where `<network>` is `gnosis`, `base`, `polygon` or `op-mainnet`. Nothing in it is checked by Olas: a buyer's tools check the domain proof themselves, and the accuracy link is the operator's own claim. Publishing it is step 5 of [Creating and running a Mech](#creating-and-running-a-mech-with-custom-tools), and you can check your own result the way a buyer would, with `mechx mech info` from mech-client.
+Buyers see this through [mech-client](https://stack.olas.network/mech-client/), and through two files the marketplace publishes for every service: an ERC-8004 registration file (ERC-8004 is the Ethereum standard for agent identity; every Olas service has an entry) and an A2A agent card (the Agent-to-Agent format other agent frameworks read). Both live under `https://marketplace.olas.network/api/erc8004/<network>/ai-agents/<serviceId>`, where `<network>` is `gnosis`, `base`, `polygon` or `op-mainnet`. The marketplace checks the domain proof when it builds the card and sets the card's `provider` only when the file matches; buyers' tools such as mech-client check the file again themselves. The card is cached for up to six hours, so after you fix the file `mechx mech info` sees it at once, while the card, and Pearl agents that read it, can lag by up to six hours. Olas reviews nothing else: the accuracy link is the operator's own claim. Publishing it is step 5 of [Creating and running a Mech](#creating-and-running-a-mech-with-custom-tools), and you can check your own result the way a buyer would, with `mechx mech info` from mech-client.
 
 
 ## Payment models
@@ -136,6 +136,15 @@ mech stop -c <gnosis|base|polygon|optimism>
 ```
 
 `mech setup` auto-bootstraps the default workspace at `~/.operate-mech/` if it does not exist yet.
+
+### Upgrading
+
+```bash
+pip install -U mech-server
+mech run -c <gnosis|base|polygon|optimism>
+```
+
+Each release pins the Mech service it runs. `mech setup`, `mech run` and `mech prepare-metadata` bring your workspace copy of the chain config up to the installed release: the service hash follows the release and settings the release adds are appended with their defaults, while every value you set is kept. The command prints what it changed. To publish fields a newer release added to the metadata, such as the terms link, run step 5 of [Creating and running a Mech](#creating-and-running-a-mech-with-custom-tools) again before `mech run`.
 
 ### From source
 
@@ -331,7 +340,7 @@ The registry address is the same on every chain.
 
 Two ways to serve the file:
 
-- **Let the Mech serve it.** Once `ERC8004_AGENT_ID` is set (see the note above), the Mech answers the path itself. Name your Mech's own public hostname as the operator domain, the same hostname you used for `--offchain-url`. The Mech's HTTP server binds to `localhost:8000`, so put a reverse proxy with TLS in front of it. Needs mech-server 0.8.6 or later.
+- **Let the Mech serve it.** Once `ERC8004_AGENT_ID` is set (see the note above), the Mech answers the path itself. Name your Mech's own public hostname as the operator domain, the same hostname you used for `--offchain-url`. The Mech's HTTP server binds to `localhost:8000`, so put a reverse proxy with TLS in front of it. Needs mech-server 0.8.6 or later; a workspace set up by an earlier version is brought up to date on the next `mech run`, see [Upgrading](#upgrading).
 - **Serve a static file** on your own domain, and name that domain.
 
 Buyers' tools fetch the file from the exact host you named, over HTTPS only, follow no redirects, and give up after 5 seconds. A proof that cannot be fetched shows the domain as unverified, with the reason, and is tried again next time. The file and the on-chain metadata are independent, so publish in either order, then check the result as a buyer would:
