@@ -1,9 +1,9 @@
 {
   "name": "Mech on Base",
-  "hash": "bafybeicjlkkltnpt4m3pse74e4fgq4lwbmbg7mx4ecdvmtsouzslmjbrxy",
+  "hash": "bafybeidrlcm367sbqg46fzdctdt2smzf6tyvqnkgm75ercgph7wfw7ksty",
   "description": "The mech executes AI tasks requested on-chain and delivers the results to the requester.",
   "image": "https://gateway.autonolas.tech/ipfs/bafybeidzpenez565d7vp7jexfrwisa2wijzx6vwcffli57buznyyqkrceq",
-  "service_version": "v0.34.3",
+  "service_version": "v0.35.9",
   "home_chain": "base",
   "configurations": {
     "base": {

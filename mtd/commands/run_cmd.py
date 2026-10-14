@@ -31,6 +31,7 @@ from mtd.commands.context_utils import (
     require_initialized,
 )
 from mtd.context import MtdContext
+from mtd.resources import refresh_chain_config
 from operate.cli import OperateApp
 from operate.quickstart.run_service import run_service
 
@@ -133,6 +134,12 @@ def run(ctx: click.Context, chain_config: str, dev: bool) -> None:
     config_path = context.config_dir / f"config_mech_{chain_config}.json"
     if not config_path.exists():
         raise click.ClickException(f"Missing template config: {config_path}")
+
+    refreshed = refresh_chain_config(context=context, chain_config=chain_config)
+    if refreshed:
+        click.echo(
+            f"Updated {config_path.name} from this release: {', '.join(refreshed)}"
+        )
 
     if dev:
         _run_dev_mode(config_path=config_path, context=context)

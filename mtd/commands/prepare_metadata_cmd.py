@@ -35,6 +35,7 @@ from mtd.commands.context_utils import (
     require_initialized,
 )
 from mtd.context import MtdContext
+from mtd.resources import refresh_chain_config
 from mtd.services.metadata import (
     Benchmark,
     DEFAULT_IPFS_NODE,
@@ -184,6 +185,7 @@ def _update_chain_config(
     if not config_path.exists():
         return
 
+    refresh_chain_config(context=context, chain_config=chain)
     config = json.loads(config_path.read_text(encoding="utf-8"))
     env_vars = config.get("env_variables", {})
 

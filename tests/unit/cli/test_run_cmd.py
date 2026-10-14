@@ -102,6 +102,7 @@ class TestGetLatestServiceHash:
 class TestRunCommand:
     """Tests for run command."""
 
+    @patch(f"{MOCK_PATH}.refresh_chain_config", return_value=[])
     @patch(f"{MOCK_PATH}.run_service")
     @patch(f"{MOCK_PATH}.OperateApp")
     @patch(f"{MOCK_PATH}.require_initialized")
@@ -112,6 +113,7 @@ class TestRunCommand:
         mock_require_initialized: MagicMock,
         mock_operate: MagicMock,
         mock_run_service: MagicMock,
+        mock_refresh: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Test successful run in production mode."""
@@ -132,7 +134,40 @@ class TestRunCommand:
 
         assert result.exit_code == 0
         mock_require_initialized.assert_called_once_with(context)
+        mock_refresh.assert_called_once_with(context=context, chain_config="gnosis")
         mock_run_service.assert_called_once()
+
+    @patch(f"{MOCK_PATH}.refresh_chain_config", return_value=["hash", "MECH_TERMS_URL"])
+    @patch(f"{MOCK_PATH}.run_service")
+    @patch(f"{MOCK_PATH}.OperateApp")
+    @patch(f"{MOCK_PATH}.require_initialized")
+    @patch(f"{MOCK_PATH}.get_mtd_context")
+    def test_run_reports_what_the_release_changed_in_the_config(
+        self,
+        mock_get_context: MagicMock,
+        _require_initialized: MagicMock,
+        _operate: MagicMock,
+        _run_service: MagicMock,
+        _refresh: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """An upgraded workspace is told which config keys this release changed."""
+        context = MagicMock()
+        context.workspace_path = tmp_path
+        context.config_dir = tmp_path / "config"
+        context.config_dir.mkdir(parents=True)
+        (context.config_dir / "config_mech_gnosis.json").write_text(
+            "{}", encoding="utf-8"
+        )
+        mock_get_context.return_value = context
+
+        result = CliRunner().invoke(run, ["-c", "gnosis"])
+
+        assert result.exit_code == 0
+        assert (
+            "Updated config_mech_gnosis.json from this release: hash, MECH_TERMS_URL"
+            in result.output
+        )
 
     def test_run_missing_chain_config(self) -> None:
         """Test run without required chain-config option."""
@@ -140,6 +175,7 @@ class TestRunCommand:
         result = runner.invoke(run, [])
         assert result.exit_code != 0
 
+    @patch(f"{MOCK_PATH}.refresh_chain_config", return_value=[])
     @patch(f"{MOCK_PATH}._run_dev_mode")
     @patch(f"{MOCK_PATH}.require_initialized")
     @patch(f"{MOCK_PATH}.get_mtd_context")
@@ -148,6 +184,7 @@ class TestRunCommand:
         mock_get_context: MagicMock,
         mock_require_initialized: MagicMock,
         mock_dev_mode: MagicMock,
+        _refresh: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Test that --dev flag delegates to _run_dev_mode."""

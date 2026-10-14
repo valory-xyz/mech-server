@@ -51,6 +51,7 @@ from mtd.setup_flow import (
 MOD = "mtd.setup_flow"
 
 
+@patch(f"{MOD}.refresh_chain_config", return_value=[])
 @patch(f"{MOD}._setup_private_keys")
 @patch(f"{MOD}._setup_env")
 @patch(f"{MOD}._deploy_mech")
@@ -72,6 +73,7 @@ def test_run_setup_passes_explicit_operate_home(
     mock_deploy_mech: MagicMock,
     mock_setup_env: MagicMock,
     mock_setup_private_keys: MagicMock,
+    mock_refresh: MagicMock,
     tmp_path: Path,
     monkeypatch: MagicMock,
 ) -> None:
@@ -97,6 +99,7 @@ def test_run_setup_passes_explicit_operate_home(
     run_setup(chain_config="polygon", context=context)
 
     mock_operate_app.assert_called_once_with(home=context.operate_dir)
+    mock_refresh.assert_called_once_with(context=context, chain_config="polygon")
     mock_normalize_service_env_vars.assert_called_once_with(context=context)
     mock_get_password.assert_called_once_with(operate=mock_operate, context=context)
     mock_sanitize_quickstart.assert_called_once_with(

@@ -28,7 +28,7 @@ import click
 from dotenv import dotenv_values, set_key
 from mtd.context import MtdContext, SUPPORTED_CHAINS
 from mtd.context import workspace_cwd as _workspace_cwd
-from mtd.resources import read_text_resource
+from mtd.resources import read_text_resource, refresh_chain_config
 from operate.cli import OperateApp
 from operate.keys import KeysManager
 from operate.quickstart.run_service import ask_password_if_needed, run_service
@@ -323,6 +323,12 @@ def run_setup(chain_config: str, context: MtdContext) -> None:
     config_path = context.config_dir / f"config_mech_{chain_config}.json"
     if not config_path.exists():
         raise click.ClickException(f"Missing template config: {config_path}")
+
+    refreshed = refresh_chain_config(context=context, chain_config=chain_config)
+    if refreshed:
+        click.echo(
+            f"Updated {config_path.name} from this release: {', '.join(refreshed)}"
+        )
 
     with _workspace_cwd(context):
         operate = OperateApp(home=context.operate_dir)

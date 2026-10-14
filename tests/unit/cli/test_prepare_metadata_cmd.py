@@ -644,7 +644,15 @@ class TestBuildBenchmarks:
 class TestUpdateChainConfig:
     """Tests for _update_chain_config."""
 
-    def test_updates_env_vars_in_config_json(self, tmp_path: Path) -> None:
+    @pytest.fixture(autouse=True)
+    def refresh_mock(self) -> Iterator[MagicMock]:
+        """Stand in for the template refresh, which has its own tests."""
+        with patch(f"{MOCK_PATH}.refresh_chain_config", return_value=[]) as mock:
+            yield mock
+
+    def test_updates_env_vars_in_config_json(
+        self, tmp_path: Path, refresh_mock: MagicMock
+    ) -> None:
         """Write updated values into the chain config template JSON."""
         context = MagicMock()
         context.config_dir = tmp_path
@@ -666,13 +674,18 @@ class TestUpdateChainConfig:
         result = json.loads(config_path.read_text(encoding="utf-8"))
         assert result["env_variables"]["METADATA_HASH"]["value"] == "new_hash"
         assert result["env_variables"]["TOOLS_TO_PACKAGE_HASH"]["value"] == '{"a":"b"}'
+        refresh_mock.assert_called_once_with(context=context, chain_config="gnosis")
 
-    def test_skips_when_config_missing(self, tmp_path: Path) -> None:
-        """Do nothing when the chain config file does not exist."""
+    def test_skips_when_config_missing(
+        self, tmp_path: Path, refresh_mock: MagicMock
+    ) -> None:
+        """Do nothing, not even a refresh, when the chain config file does not exist."""
         context = MagicMock()
         context.config_dir = tmp_path
 
         _update_chain_config(context, "gnosis", {"METADATA_HASH": "new"})
+
+        refresh_mock.assert_not_called()
 
     def test_skips_unknown_keys(self, tmp_path: Path) -> None:
         """Ignore keys not present in the config."""
