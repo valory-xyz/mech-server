@@ -157,6 +157,24 @@
       "description": "Public base URL where the mech serves off-chain requests. Used by the HTTP handler to allowlist incoming request hostnames.",
       "value": "https://dummy_service.autonolas.tech/",
       "provision_type": "fixed"
+    },
+    "MECH_EVENTS_CHAIN_ID": {
+      "name": "Mech events chain id",
+      "description": "Chain id of the chain the mech serves; identifies the ERC-8004 registry in the domain proof.",
+      "value": 100,
+      "provision_type": "fixed"
+    },
+    "ERC8004_AGENT_ID": {
+      "name": "ERC-8004 agent id",
+      "description": "The service's ERC-8004 agent id, served in /.well-known/agent-registration.json. Not the Olas service id. Resolved by `mech prepare-metadata`.",
+      "value": "",
+      "provision_type": "fixed"
+    },
+    "MECH_TERMS_URL": {
+      "name": "Mech terms URL",
+      "description": "Link to the operator's terms, advertised on off-chain responses and in the metadata. Set by `mech prepare-metadata --terms-url`.",
+      "value": "",
+      "provision_type": "fixed"
     }
   },
   "agent_release": {

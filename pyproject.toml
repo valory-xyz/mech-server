@@ -37,6 +37,13 @@ dependencies = [
     "PyYAML>=6",
     "prometheus_client>=0.23.1,<0.24",
     "pebble>=5.1,<5.2",
+    # Declared by the vendored task_execution skill (mech v0.35.9) for
+    # off-chain request signatures; check-dependencies wants the same
+    # specifiers. Pinned individually: a global prerelease allowance would
+    # also pull hexbytes 2.0, which breaks on-chain tx building.
+    "eth-abi==6.0.0b1",
+    "eth-account==0.13.7",
+    "eth-keys==0.8.0b1",
     "peewee>=3.17,<4",
     "python-dotenv",
     # flask needed at runtime by operate.services.utils.tendermint; was
@@ -81,7 +88,7 @@ pytest_targets = ["tests"]
 # from pyproject pins, so only non-PyPI upstreams are listed. kv-store hosts
 # the valory/kv_store protocol + connection used by task_execution since
 # mech v0.34.x.
-upstream_pins = ["valory-xyz/mech@v0.34.3", "valory-xyz/kv-store@0.7.1"]
+upstream_pins = ["valory-xyz/mech@v0.35.9", "valory-xyz/kv-store@0.7.1"]
 # Appended to the extras in the tox template render
 # (`tomte[<extras>]$TOMTE_DEP_PIN`), so it carries its own operator.
 tomte_dep_pin = "==0.7.3"
