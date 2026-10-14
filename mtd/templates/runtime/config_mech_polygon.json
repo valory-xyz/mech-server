@@ -1,6 +1,6 @@
 {
   "name": "Mech on Polygon",
-  "hash": "bafybeidrlcm367sbqg46fzdctdt2smzf6tyvqnkgm75ercgph7wfw7ksty",
+  "hash": "bafybeihhpvu6nuy6ogq4uadm5rk4iayozh5qkd6r4t6w7k6fzwvwgddste",
   "description": "The mech executes AI tasks requested on-chain and delivers the results to the requester.",
   "image": "https://gateway.autonolas.tech/ipfs/bafybeidzpenez565d7vp7jexfrwisa2wijzx6vwcffli57buznyyqkrceq",
   "service_version": "v0.35.9",
@@ -163,12 +163,6 @@
       "name": "Mech events chain id",
       "description": "Chain id of the chain the mech serves; identifies the ERC-8004 registry in the domain proof.",
       "value": 137,
-      "provision_type": "fixed"
-    },
-    "ERC8004_AGENT_ID": {
-      "name": "ERC-8004 agent id",
-      "description": "The service's ERC-8004 agent id, served in /.well-known/agent-registration.json. Not the Olas service id. Resolved by `mech prepare-metadata`.",
-      "value": "",
       "provision_type": "fixed"
     },
     "MECH_TERMS_URL": {

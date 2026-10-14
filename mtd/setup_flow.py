@@ -36,7 +36,7 @@ from operate.quickstart.run_service import ask_password_if_needed, run_service
 OPERATE_CONFIG_PATH = "services/sc-*/config.json"
 AGENT_KEY = "ethereum_private_key.txt"
 SERVICE_KEY = "keys.json"
-NULLABLE_INT_ENV_DEFAULTS = {"ON_CHAIN_SERVICE_ID": "null", "ERC8004_AGENT_ID": "null"}
+NULLABLE_INT_ENV_DEFAULTS = {"ON_CHAIN_SERVICE_ID": "null"}
 NULLABLE_DICT_ENV_DEFAULTS = {
     "MECH_TO_CONFIG": "{}",
     "MECH_TO_MAX_DELIVERY_RATE": "{}",
