@@ -24,6 +24,7 @@
 # pylint: disable=unused-argument
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -102,7 +103,7 @@ class TestGetLatestServiceHash:
 class TestRunCommand:
     """Tests for run command."""
 
-    @patch(f"{MOCK_PATH}.refresh_chain_config", return_value=[])
+    @patch(f"{MOCK_PATH}.prepare_chain_config")
     @patch(f"{MOCK_PATH}.run_service")
     @patch(f"{MOCK_PATH}.OperateApp")
     @patch(f"{MOCK_PATH}.require_initialized")
@@ -113,7 +114,7 @@ class TestRunCommand:
         mock_require_initialized: MagicMock,
         mock_operate: MagicMock,
         mock_run_service: MagicMock,
-        mock_refresh: MagicMock,
+        mock_prepare: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Test successful run in production mode."""
@@ -121,10 +122,10 @@ class TestRunCommand:
         context.workspace_path = tmp_path
         context.config_dir = tmp_path / "config"
         context.config_dir.mkdir(parents=True)
-        (context.config_dir / "config_mech_gnosis.json").write_text(
-            "{}", encoding="utf-8"
-        )
+        config_path = context.config_dir / "config_mech_gnosis.json"
+        config_path.write_text("{}", encoding="utf-8")
         mock_get_context.return_value = context
+        mock_prepare.return_value = config_path
 
         mock_app = MagicMock()
         mock_operate.return_value = mock_app
@@ -134,40 +135,9 @@ class TestRunCommand:
 
         assert result.exit_code == 0
         mock_require_initialized.assert_called_once_with(context)
-        mock_refresh.assert_called_once_with(context=context, chain_config="gnosis")
+        mock_prepare.assert_called_once_with(context=context, chain_config="gnosis")
         mock_run_service.assert_called_once()
-
-    @patch(f"{MOCK_PATH}.refresh_chain_config", return_value=["hash", "MECH_TERMS_URL"])
-    @patch(f"{MOCK_PATH}.run_service")
-    @patch(f"{MOCK_PATH}.OperateApp")
-    @patch(f"{MOCK_PATH}.require_initialized")
-    @patch(f"{MOCK_PATH}.get_mtd_context")
-    def test_run_reports_what_the_release_changed_in_the_config(
-        self,
-        mock_get_context: MagicMock,
-        _require_initialized: MagicMock,
-        _operate: MagicMock,
-        _run_service: MagicMock,
-        _refresh: MagicMock,
-        tmp_path: Path,
-    ) -> None:
-        """An upgraded workspace is told which config keys this release changed."""
-        context = MagicMock()
-        context.workspace_path = tmp_path
-        context.config_dir = tmp_path / "config"
-        context.config_dir.mkdir(parents=True)
-        (context.config_dir / "config_mech_gnosis.json").write_text(
-            "{}", encoding="utf-8"
-        )
-        mock_get_context.return_value = context
-
-        result = CliRunner().invoke(run, ["-c", "gnosis"])
-
-        assert result.exit_code == 0
-        assert (
-            "Updated config_mech_gnosis.json from this release: hash, MECH_TERMS_URL"
-            in result.output
-        )
+        assert mock_run_service.call_args.kwargs["config_path"] == config_path
 
     def test_run_missing_chain_config(self) -> None:
         """Test run without required chain-config option."""
@@ -175,7 +145,7 @@ class TestRunCommand:
         result = runner.invoke(run, [])
         assert result.exit_code != 0
 
-    @patch(f"{MOCK_PATH}.refresh_chain_config", return_value=[])
+    @patch(f"{MOCK_PATH}.prepare_chain_config")
     @patch(f"{MOCK_PATH}._run_dev_mode")
     @patch(f"{MOCK_PATH}.require_initialized")
     @patch(f"{MOCK_PATH}.get_mtd_context")
@@ -184,7 +154,7 @@ class TestRunCommand:
         mock_get_context: MagicMock,
         mock_require_initialized: MagicMock,
         mock_dev_mode: MagicMock,
-        _refresh: MagicMock,
+        _prepare: MagicMock,
         tmp_path: Path,
     ) -> None:
         """Test that --dev flag delegates to _run_dev_mode."""
@@ -285,3 +255,60 @@ class TestRunDevMode:
         assert config["hash"] == "bafynew"
         mock_push.assert_called_once_with(context=context)
         mock_run_service.assert_called_once()
+
+    @patch(f"{MOCK_PATH}.run_service")
+    @patch(f"{MOCK_PATH}.OperateApp")
+    @patch(f"{MOCK_PATH}._workspace_cwd")
+    @patch(f"{MOCK_PATH}._get_latest_service_hash", return_value="bafynew")
+    @patch(f"{MOCK_PATH}._push_all_packages")
+    def test_host_run_keeps_the_preimage_store_in_the_workspace(
+        self,
+        _push: MagicMock,
+        _get_hash: MagicMock,
+        _cwd: MagicMock,
+        _operate: MagicMock,
+        _run_service: MagicMock,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A host run has no /data, so the store path points into the workspace."""
+        for key in ("STORE_PATH", "STORE_PATH_0"):
+            monkeypatch.delenv(key, raising=False)
+        config_path = tmp_path / "config.json"
+        config_path.write_text(json.dumps({"hash": "old"}), encoding="utf-8")
+        context = MagicMock()
+        context.workspace_path = tmp_path
+
+        _run_dev_mode(config_path=config_path, context=context)
+
+        expected = str(tmp_path / "mech_preimages")
+        assert os.environ["STORE_PATH"] == expected
+        assert os.environ["STORE_PATH_0"] == expected
+
+    @patch(f"{MOCK_PATH}.run_service")
+    @patch(f"{MOCK_PATH}.OperateApp")
+    @patch(f"{MOCK_PATH}._workspace_cwd")
+    @patch(f"{MOCK_PATH}._get_latest_service_hash", return_value="bafynew")
+    @patch(f"{MOCK_PATH}._push_all_packages")
+    def test_host_run_respects_a_store_path_the_operator_set(
+        self,
+        _push: MagicMock,
+        _get_hash: MagicMock,
+        _cwd: MagicMock,
+        _operate: MagicMock,
+        _run_service: MagicMock,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """An operator's own STORE_PATH_0 is not overridden."""
+        monkeypatch.setenv("STORE_PATH_0", "/srv/preimages")
+        monkeypatch.delenv("STORE_PATH", raising=False)
+        config_path = tmp_path / "config.json"
+        config_path.write_text(json.dumps({"hash": "old"}), encoding="utf-8")
+        context = MagicMock()
+        context.workspace_path = tmp_path
+
+        _run_dev_mode(config_path=config_path, context=context)
+
+        assert os.environ["STORE_PATH_0"] == "/srv/preimages"
+        assert os.environ["STORE_PATH"] == str(tmp_path / "mech_preimages")

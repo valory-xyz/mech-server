@@ -4,6 +4,7 @@
   "description": "The mech executes AI tasks requested on-chain and delivers the results to the requester.",
   "image": "https://gateway.autonolas.tech/ipfs/bafybeidzpenez565d7vp7jexfrwisa2wijzx6vwcffli57buznyyqkrceq",
   "service_version": "v0.35.9",
+  "allow_different_service_public_id": true,
   "home_chain": "optimism",
   "configurations": {
     "optimism": {

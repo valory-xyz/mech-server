@@ -20,6 +20,7 @@
 """Run command for starting the mech agent service."""
 
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -31,9 +32,15 @@ from mtd.commands.context_utils import (
     require_initialized,
 )
 from mtd.context import MtdContext
-from mtd.resources import refresh_chain_config
+from mtd.setup_flow import prepare_chain_config
 from operate.cli import OperateApp
 from operate.quickstart.run_service import run_service
+
+# A host run has no /data mount, so the off-chain preimage store the service
+# keeps under /data by default lives in the workspace instead. Both names are
+# set: the service override reads STORE_PATH_0, the agent default STORE_PATH.
+DEV_STORE_DIR = "mech_preimages"
+DEV_STORE_ENV_KEYS = ("STORE_PATH", "STORE_PATH_0")
 
 
 def _push_all_packages(context: MtdContext) -> None:
@@ -85,6 +92,10 @@ def _run_dev_mode(config_path: Path, context: MtdContext) -> None:
     config["hash"] = new_hash
     config_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
 
+    store_path = str(context.workspace_path / DEV_STORE_DIR)
+    for key in DEV_STORE_ENV_KEYS:
+        os.environ.setdefault(key, store_path)
+
     click.echo("Starting service in dev mode (host deployment)...")
     with _workspace_cwd(context):
         operate = OperateApp(home=context.operate_dir)
@@ -131,15 +142,7 @@ def run(ctx: click.Context, chain_config: str, dev: bool) -> None:
     context = get_mtd_context(ctx)
     require_initialized(context)
 
-    config_path = context.config_dir / f"config_mech_{chain_config}.json"
-    if not config_path.exists():
-        raise click.ClickException(f"Missing template config: {config_path}")
-
-    refreshed = refresh_chain_config(context=context, chain_config=chain_config)
-    if refreshed:
-        click.echo(
-            f"Updated {config_path.name} from this release: {', '.join(refreshed)}"
-        )
+    config_path = prepare_chain_config(context=context, chain_config=chain_config)
 
     if dev:
         _run_dev_mode(config_path=config_path, context=context)

@@ -117,7 +117,13 @@ def test_refresh_chain_config_moves_an_old_workspace_to_this_release(
         result["env_variables"]["MECH_TERMS_URL"]
         == packaged["env_variables"]["MECH_TERMS_URL"]
     )
-    assert changed[:3] == ["hash", "service_version", "agent_release"]
+    assert result["allow_different_service_public_id"] is True
+    assert changed[:4] == [
+        "hash",
+        "service_version",
+        "agent_release",
+        "allow_different_service_public_id",
+    ]
     assert "MECH_TERMS_URL" in changed
     assert "METADATA_HASH" not in changed
 

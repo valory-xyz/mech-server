@@ -31,6 +31,7 @@ from unittest.mock import MagicMock, patch
 import click
 import pytest
 from mtd.context import build_context
+from mtd.resources import copy_runtime_templates_to_workspace
 from mtd.setup_flow import (
     AGENT_KEY,
     SERVICE_KEY,
@@ -45,10 +46,67 @@ from mtd.setup_flow import (
     _sanitize_local_quickstart_user_args,
     _setup_env,
     _setup_private_keys,
+    prepare_chain_config,
     run_setup,
 )
 
 MOD = "mtd.setup_flow"
+
+
+def test_prepare_chain_config_makes_an_old_workspace_buildable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The release's keys are applied and empty nullable values get parseable defaults."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.config_dir.mkdir(parents=True)
+    config_path = context.config_dir / "config_mech_gnosis.json"
+    stale = {
+        "name": "Mech",
+        "hash": "bafybeiold",
+        "env_variables": {
+            "ON_CHAIN_SERVICE_ID": {"value": "", "provision_type": "computed"},
+            "MECH_TO_CONFIG": {"value": "", "provision_type": "computed"},
+        },
+    }
+    config_path.write_text(json.dumps(stale), encoding="utf-8")
+
+    assert prepare_chain_config(context=context, chain_config="gnosis") == config_path
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    assert config["hash"] != "bafybeiold"
+    assert config["env_variables"]["ON_CHAIN_SERVICE_ID"]["value"] == "null"
+    assert config["env_variables"]["MECH_TO_CONFIG"]["value"] == "{}"
+
+
+def test_prepare_chain_config_leaves_a_current_workspace_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A config that matches the release is not rewritten and nothing is reported."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    copy_runtime_templates_to_workspace(context)
+    config_path = context.config_dir / "config_mech_gnosis.json"
+    prepare_chain_config(context=context, chain_config="gnosis")
+    before = config_path.read_text(encoding="utf-8")
+
+    with patch(f"{MOD}.click.echo") as echo:
+        prepare_chain_config(context=context, chain_config="gnosis")
+
+    echo.assert_not_called()
+    assert config_path.read_text(encoding="utf-8") == before
+
+
+def test_prepare_chain_config_rejects_a_missing_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A workspace without the chain's config is an error, not a silent skip."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.config_dir.mkdir(parents=True)
+
+    with pytest.raises(click.ClickException, match="Missing template config"):
+        prepare_chain_config(context=context, chain_config="gnosis")
 
 
 @patch(f"{MOD}.refresh_chain_config", return_value=[])

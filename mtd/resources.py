@@ -29,8 +29,14 @@ from mtd.context import MtdContext
 RUNTIME_RESOURCE_PACKAGE = "mtd.templates.runtime"
 
 # Top-level keys of a chain config that the packaged template owns: they
-# name the service a release runs, so a workspace copy never keeps old ones.
-RELEASE_OWNED_CONFIG_KEYS = ("hash", "service_version", "agent_release")
+# name the service a release runs and whether operate may switch a deployed
+# service to it, so a workspace copy never keeps old ones.
+RELEASE_OWNED_CONFIG_KEYS = (
+    "hash",
+    "service_version",
+    "agent_release",
+    "allow_different_service_public_id",
+)
 
 
 def read_text_resource(package: str, name: str) -> str:

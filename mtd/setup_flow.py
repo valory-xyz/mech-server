@@ -318,8 +318,19 @@ def _setup_private_keys(context: MtdContext) -> None:
             _create_private_key_files(data=data, context=context)
 
 
-def run_setup(chain_config: str, context: MtdContext) -> None:
-    """Run the full setup flow for the given chain and workspace context."""
+def prepare_chain_config(context: MtdContext, chain_config: str) -> Path:
+    """Bring the workspace chain config up to this release and make it buildable.
+
+    Release-owned keys and newly added variables come from the packaged
+    template; values the operator set are kept. Nullable variables the
+    template leaves empty are then given their parseable defaults, since an
+    empty value stops the build.
+
+    :param context: resolved MtdContext locating the workspace config dir.
+    :param chain_config: chain whose config to prepare (e.g. ``gnosis``).
+    :return: the path of the chain config.
+    :raises ClickException: when the workspace has no config for the chain.
+    """
     config_path = context.config_dir / f"config_mech_{chain_config}.json"
     if not config_path.exists():
         raise click.ClickException(f"Missing template config: {config_path}")
@@ -329,6 +340,13 @@ def run_setup(chain_config: str, context: MtdContext) -> None:
         click.echo(
             f"Updated {config_path.name} from this release: {', '.join(refreshed)}"
         )
+    _normalize_template_nullable_env_vars(config_path=config_path)
+    return config_path
+
+
+def run_setup(chain_config: str, context: MtdContext) -> None:
+    """Run the full setup flow for the given chain and workspace context."""
+    config_path = prepare_chain_config(context=context, chain_config=chain_config)
 
     with _workspace_cwd(context):
         operate = OperateApp(home=context.operate_dir)
@@ -352,7 +370,6 @@ def run_setup(chain_config: str, context: MtdContext) -> None:
             _sanitize_local_quickstart_user_args(
                 context=context, config_path=config_path
             )
-            _normalize_template_nullable_env_vars(config_path=config_path)
             _configure_quickstart_env(operate=operate, context=context)
             run_service(
                 operate=operate,
