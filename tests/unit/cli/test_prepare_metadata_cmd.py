@@ -31,6 +31,7 @@ from typing import Iterator, List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from click.testing import CliRunner
 from mtd.commands.prepare_metadata_cmd import (
     _build_benchmarks,
@@ -39,6 +40,7 @@ from mtd.commands.prepare_metadata_cmd import (
     _compute_tools_to_package_hash,
     _lock_packages,
     _push_all_packages,
+    _resolve_erc8004_agent_id,
     _resolve_offchain_url,
     _resolve_terms_url,
     _update_chain_config,
@@ -1059,8 +1061,8 @@ class TestComputeToolsToPackageHash:
         assert result == ""
 
 
-class TestTermsUrl:
-    """``--terms-url`` reaches the metadata, the .env and the service config."""
+class TestTermsUrlAndAgentId:
+    """``--terms-url`` and the ERC-8004 agent id reach the metadata, the .env and the service config."""
 
     @staticmethod
     def _context(tmp_path: Path, env_text: str = "") -> MagicMock:
@@ -1116,6 +1118,7 @@ class TestTermsUrl:
         )
         updates = mock_update_cfg.call_args.args[2]
         assert updates["MECH_TERMS_URL"] == "https://acme.example/terms"
+        assert "ERC8004_AGENT_ID" not in updates
 
     @patch(f"{MOCK_PATH}._update_chain_config")
     @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
@@ -1157,6 +1160,45 @@ class TestTermsUrl:
         written = {call.args[1] for call in mock_set_key.call_args_list}
         assert "MECH_TERMS_URL" not in written
 
+    @patch(f"{MOCK_PATH}.requests.get")
+    @patch(f"{MOCK_PATH}._update_chain_config")
+    @patch(f"{MOCK_PATH}._compute_tools_to_package_hash", return_value="")
+    @patch(f"{MOCK_PATH}.set_key")
+    @patch(f"{MOCK_PATH}.publish_metadata_to_ipfs", return_value="f0170abc")
+    @patch(f"{MOCK_PATH}.generate_metadata")
+    @patch(f"{MOCK_PATH}._push_all_packages")
+    @patch(f"{MOCK_PATH}._lock_packages")
+    @patch(f"{MOCK_PATH}.require_initialized")
+    @patch(f"{MOCK_PATH}.get_mtd_context")
+    def test_explicit_agent_id_skips_the_lookup(
+        self,
+        mock_get_context: MagicMock,
+        _require: MagicMock,
+        _lock: MagicMock,
+        _push: MagicMock,
+        _generate: MagicMock,
+        _publish: MagicMock,
+        mock_set_key: MagicMock,
+        _tools: MagicMock,
+        mock_update_cfg: MagicMock,
+        mock_get: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """An id given on the command line is written as-is and nothing is fetched."""
+        context = self._context(tmp_path, "ON_CHAIN_SERVICE_ID=2182\n")
+        mock_get_context.return_value = context
+
+        result = CliRunner().invoke(
+            prepare_metadata, [*NAME_ARGS, "-c", "gnosis", "--erc8004-agent-id", "2699"]
+        )
+
+        assert result.exit_code == 0, result.output
+        mock_get.assert_not_called()
+        mock_set_key.assert_any_call(
+            str(context.chain_env_path("gnosis")), "ERC8004_AGENT_ID", "2699"
+        )
+        assert mock_update_cfg.call_args.args[2]["ERC8004_AGENT_ID"] == "2699"
+
 
 class TestResolveTermsUrl:
     """``_resolve_terms_url`` mirrors the off-chain URL fallback."""
@@ -1185,3 +1227,80 @@ class TestResolveTermsUrl:
         context = MagicMock()
         context.chain_env_path.return_value = tmp_path / ".env.gnosis"
         assert _resolve_terms_url(None, context, chain) == ""
+
+
+class TestResolveErc8004AgentId:
+    """The agent id comes from the marketplace's registration file, never the service id."""
+
+    @staticmethod
+    def _context(tmp_path: Path, env_text: str) -> MagicMock:
+        """Build a context whose chain .env holds ``env_text``."""
+        context = MagicMock()
+        env_path = tmp_path / ".env.optimism"
+        env_path.write_text(env_text, encoding="utf-8")
+        context.chain_env_path.return_value = env_path
+        return context
+
+    def test_explicit_id_wins(self) -> None:
+        """The command-line value is returned without a lookup."""
+        with patch(f"{MOCK_PATH}.requests.get") as mock_get:
+            assert _resolve_erc8004_agent_id(516, MagicMock(), "optimism") == 516
+        mock_get.assert_not_called()
+
+    def test_resolves_from_the_marketplace_under_the_chain_slug(
+        self, tmp_path: Path
+    ) -> None:
+        """Optimism is ``op-mainnet`` there, and the id differs from the service id."""
+        context = self._context(tmp_path, "ON_CHAIN_SERVICE_ID=195\n")
+        with patch(f"{MOCK_PATH}.requests.get") as mock_get:
+            mock_get.return_value.json.return_value = {
+                "registrations": [{"agentId": 516, "agentRegistry": "eip155:10:0x8004"}]
+            }
+            assert _resolve_erc8004_agent_id(None, context, "optimism") == 516
+        mock_get.assert_called_once_with(
+            "https://marketplace.olas.network/api/erc8004/op-mainnet/ai-agents/195",
+            timeout=10,
+        )
+
+    def test_no_service_id_means_no_lookup(self, tmp_path: Path) -> None:
+        """Without ON_CHAIN_SERVICE_ID there is nothing to look up."""
+        context = self._context(tmp_path, "")
+        with patch(f"{MOCK_PATH}.requests.get") as mock_get:
+            assert _resolve_erc8004_agent_id(None, context, "optimism") is None
+        mock_get.assert_not_called()
+
+    def test_a_failed_lookup_leaves_the_id_unset(self, tmp_path: Path) -> None:
+        """A network error is reported, not raised, and the id stays unset."""
+        context = self._context(tmp_path, "ON_CHAIN_SERVICE_ID=195\n")
+        with (
+            patch(
+                f"{MOCK_PATH}.requests.get",
+                side_effect=requests.ConnectionError("boom"),
+            ),
+            patch(f"{MOCK_PATH}.click.echo") as echo,
+        ):
+            assert _resolve_erc8004_agent_id(None, context, "optimism") is None
+        assert "Pass --erc8004-agent-id" in echo.call_args.args[0]
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {},
+            {"registrations": []},
+            {"registrations": [{"agentId": "516"}]},
+            {"registrations": [{"agentId": -1}]},
+            {"registrations": [{"agentId": True}]},
+        ],
+        ids=["no_key", "empty", "string", "negative", "bool"],
+    )
+    def test_an_unusable_registration_file_leaves_the_id_unset(
+        self, tmp_path: Path, payload: dict
+    ) -> None:
+        """Only a non-negative integer id is accepted."""
+        context = self._context(tmp_path, "ON_CHAIN_SERVICE_ID=195\n")
+        with (
+            patch(f"{MOCK_PATH}.requests.get") as mock_get,
+            patch(f"{MOCK_PATH}.click.echo"),
+        ):
+            mock_get.return_value.json.return_value = payload
+            assert _resolve_erc8004_agent_id(None, context, "optimism") is None
