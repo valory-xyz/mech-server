@@ -304,10 +304,9 @@ This command handles the full publish pipeline:
 
 1. Locks package hashes (re-computes fingerprints after your edits)
 2. Pushes all packages to IPFS
-3. Resolves your ERC-8004 agent id from the marketplace (see [Prove your operator domain](#prove-your-operator-domain); `--erc8004-agent-id <id>` sets it by hand)
-4. Generates `metadata.json` from your tool definitions
-5. Publishes metadata to IPFS
-6. Writes `METADATA_HASH`, `TOOLS_TO_PACKAGE_HASH` and `ERC8004_AGENT_ID` to `.env`
+3. Generates `metadata.json` from your tool definitions
+4. Publishes metadata to IPFS
+5. Writes `METADATA_HASH` and `TOOLS_TO_PACKAGE_HASH` to `.env`
 
 Then update the on-chain metadata hash:
 
@@ -329,7 +328,7 @@ The domain you passed to `--operator-domain` must serve this file over HTTPS, at
 
 The registry address is the same on every chain.
 
-> **Note:** Your ERC-8004 agent id is not your Olas service id, except by coincidence on Gnosis. `mech prepare-metadata` reads it from the registration file the marketplace serves for your service, prints it, and stores it as `ERC8004_AGENT_ID` in `~/.operate-mech/.env.<chain>`. If that lookup fails, read the id yourself under `registrations` at `https://marketplace.olas.network/api/erc8004/<network>/ai-agents/<serviceId>`, where `<serviceId>` is `ON_CHAIN_SERVICE_ID` in the same `.env` file, and pass it with `--erc8004-agent-id <id>`.
+> **Note:** Your ERC-8004 agent id is not your Olas service id, except by coincidence on Gnosis. Read it under `registrations` in the registration file the marketplace serves for your service, at `https://marketplace.olas.network/api/erc8004/<network>/ai-agents/<serviceId>`, where `<serviceId>` is `ON_CHAIN_SERVICE_ID` in `~/.operate-mech/.env.<chain>`.
 
 | Chain | `<network>` | `<chainId>` |
 |-------|-------------|-------------|
@@ -338,10 +337,7 @@ The registry address is the same on every chain.
 | Polygon | `polygon` | 137 |
 | Optimism | `op-mainnet` | 10 |
 
-Two ways to serve the file:
-
-- **Let the Mech serve it.** Once `ERC8004_AGENT_ID` is set (see the note above), the Mech answers the path itself. Name your Mech's own public hostname as the operator domain, the same hostname you used for `--offchain-url`. The Mech's HTTP server binds to `localhost:8000`, so put a reverse proxy with TLS in front of it. Needs mech-server 0.8.6 or later; a workspace set up by an earlier version is brought up to date on the next `mech run`, see [Upgrading](#upgrading).
-- **Serve a static file** on your own domain, and name that domain.
+Serve it as a static file on the domain you named.
 
 Buyers' tools fetch the file from the exact host you named, over HTTPS only, follow no redirects, and give up after 5 seconds. A proof that cannot be fetched shows the domain as unverified, with the reason, and is tried again next time. The file and the on-chain metadata are independent, so publish in either order, then check the result as a buyer would:
 
@@ -378,7 +374,7 @@ mech stop -c <gnosis|base|polygon|optimism>
 
 ## Adding tools to an existing Mech
 
-> **Note:** `prepare-metadata` rebuilds `metadata.json` from scratch on every run. Repeat your `--operator-*` and `--benchmark` flags each time, or those fields are dropped from the new file. The off-chain URL, the terms link and the ERC-8004 agent id are kept in the chain `.env` and reused.
+> **Note:** `prepare-metadata` rebuilds `metadata.json` from scratch on every run. Repeat your `--operator-*` and `--benchmark` flags each time, or those fields are dropped from the new file. The off-chain URL and the terms link are kept in the chain `.env` and reused.
 
 If your Mech is already running and you want to add or update tools:
 
@@ -430,7 +426,6 @@ mechx push-to-ipfs ./<file_name>
 | `mech prepare-metadata --name <name> -c <chain> --operator-name <op> --operator-domain <host>` | Same as above, also records who operates the mech |
 | `mech prepare-metadata --name <name> -c <chain> --benchmark-url <url> --benchmark <tool> <metric> <window>` | Same as above, also links each tool to its live score |
 | `mech prepare-metadata --name <name> -c <chain> --terms-url <url>` | Same as above, also publishes your terms link in the metadata and on off-chain responses |
-| `mech prepare-metadata --name <name> -c <chain> --erc8004-agent-id <id>` | Same as above, with the ERC-8004 agent id set by hand instead of resolved from the marketplace |
 | `mech update-metadata -c <chain>` | Update the metadata hash on-chain via Safe transaction |
 | `mech run -c <chain>` | Run the mech AI agent via Docker |
 | `mech stop -c <chain>` | Stop a running mech AI agent |
