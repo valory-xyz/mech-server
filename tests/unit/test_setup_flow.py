@@ -79,6 +79,25 @@ def test_prepare_chain_config_makes_an_old_workspace_buildable(
     assert config["env_variables"]["MECH_TO_CONFIG"]["value"] == "{}"
 
 
+def test_prepare_chain_config_gives_an_appended_agent_id_the_null_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """ERC8004_AGENT_ID added from the template is null, not the empty string that stops the build."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.config_dir.mkdir(parents=True)
+    config_path = context.config_dir / "config_mech_gnosis.json"
+    config_path.write_text(
+        json.dumps({"name": "Mech", "hash": "bafybeiold", "env_variables": {}}),
+        encoding="utf-8",
+    )
+
+    prepare_chain_config(context=context, chain_config="gnosis")
+
+    env_variables = json.loads(config_path.read_text(encoding="utf-8"))["env_variables"]
+    assert env_variables["ERC8004_AGENT_ID"]["value"] == "null"
+
+
 def test_prepare_chain_config_leaves_a_current_workspace_alone(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
