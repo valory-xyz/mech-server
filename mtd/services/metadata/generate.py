@@ -346,6 +346,7 @@ def generate_metadata(  # pylint: disable=too-many-arguments
     offchain_url: str = "",
     operator: Optional[Operator] = None,
     benchmarks: Optional[Mapping[str, Benchmark]] = None,
+    terms_url: str = "",
 ) -> Path:
     """Generate metadata from package customs and write to path.
 
@@ -355,12 +356,18 @@ def generate_metadata(  # pylint: disable=too-many-arguments
     :param offchain_url: public URL serving off-chain requests, or empty.
     :param operator: optional operator block.
     :param benchmarks: optional per-tool benchmarks keyed by tool name.
+    :param terms_url: link to the operator's terms, written as ``termsUrl``, or empty.
     :return: ``metadata_path``.
     :raises FileNotFoundError: when ``packages_dir`` does not exist.
-    :raises ValueError: when ``name`` is blank or a benchmark names an unknown tool.
+    :raises ValueError: when ``name`` is blank, a benchmark names an unknown
+        tool, or ``terms_url`` is not an https URL with a host.
     """
     if not name.strip():
         raise ValueError("Mech name must not be empty")
+    if terms_url and not _is_https_url(terms_url):
+        raise ValueError(
+            f"Terms url must be an https URL with a host, got {terms_url!r}"
+        )
     if not packages_dir.exists():
         raise FileNotFoundError(
             f"Packages directory not found: {packages_dir}. "
@@ -373,5 +380,7 @@ def generate_metadata(  # pylint: disable=too-many-arguments
     )
     if offchain_url:
         metadata["url"] = offchain_url
+    if terms_url:
+        metadata["termsUrl"] = terms_url
     metadata_path.write_text(json.dumps(metadata, indent=4), encoding="utf-8")
     return metadata_path

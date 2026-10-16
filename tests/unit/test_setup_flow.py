@@ -31,6 +31,7 @@ from unittest.mock import MagicMock, patch
 import click
 import pytest
 from mtd.context import build_context
+from mtd.resources import copy_runtime_templates_to_workspace
 from mtd.setup_flow import (
     AGENT_KEY,
     SERVICE_KEY,
@@ -45,12 +46,89 @@ from mtd.setup_flow import (
     _sanitize_local_quickstart_user_args,
     _setup_env,
     _setup_private_keys,
+    prepare_chain_config,
     run_setup,
 )
 
 MOD = "mtd.setup_flow"
 
 
+def test_prepare_chain_config_makes_an_old_workspace_buildable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The release's keys are applied and empty nullable values get parseable defaults."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.config_dir.mkdir(parents=True)
+    config_path = context.config_dir / "config_mech_gnosis.json"
+    stale = {
+        "name": "Mech",
+        "hash": "bafybeiold",
+        "env_variables": {
+            "ON_CHAIN_SERVICE_ID": {"value": "", "provision_type": "computed"},
+            "MECH_TO_CONFIG": {"value": "", "provision_type": "computed"},
+        },
+    }
+    config_path.write_text(json.dumps(stale), encoding="utf-8")
+
+    assert prepare_chain_config(context=context, chain_config="gnosis") == config_path
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    assert config["hash"] != "bafybeiold"
+    assert config["env_variables"]["ON_CHAIN_SERVICE_ID"]["value"] == "null"
+    assert config["env_variables"]["MECH_TO_CONFIG"]["value"] == "{}"
+
+
+def test_prepare_chain_config_gives_an_appended_agent_id_the_null_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """ERC8004_AGENT_ID added from the template is null, not the empty string that stops the build."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.config_dir.mkdir(parents=True)
+    config_path = context.config_dir / "config_mech_gnosis.json"
+    config_path.write_text(
+        json.dumps({"name": "Mech", "hash": "bafybeiold", "env_variables": {}}),
+        encoding="utf-8",
+    )
+
+    prepare_chain_config(context=context, chain_config="gnosis")
+
+    env_variables = json.loads(config_path.read_text(encoding="utf-8"))["env_variables"]
+    assert env_variables["ERC8004_AGENT_ID"]["value"] == "null"
+
+
+def test_prepare_chain_config_leaves_a_current_workspace_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A config that matches the release is not rewritten and nothing is reported."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    copy_runtime_templates_to_workspace(context)
+    config_path = context.config_dir / "config_mech_gnosis.json"
+    prepare_chain_config(context=context, chain_config="gnosis")
+    before = config_path.read_text(encoding="utf-8")
+
+    with patch(f"{MOD}.click.echo") as echo:
+        prepare_chain_config(context=context, chain_config="gnosis")
+
+    echo.assert_not_called()
+    assert config_path.read_text(encoding="utf-8") == before
+
+
+def test_prepare_chain_config_rejects_a_missing_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A workspace without the chain's config is an error, not a silent skip."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    context = build_context()
+    context.config_dir.mkdir(parents=True)
+
+    with pytest.raises(click.ClickException, match="Missing template config"):
+        prepare_chain_config(context=context, chain_config="gnosis")
+
+
+@patch(f"{MOD}.refresh_chain_config", return_value=[])
 @patch(f"{MOD}._setup_private_keys")
 @patch(f"{MOD}._setup_env")
 @patch(f"{MOD}._deploy_mech")
@@ -72,6 +150,7 @@ def test_run_setup_passes_explicit_operate_home(
     mock_deploy_mech: MagicMock,
     mock_setup_env: MagicMock,
     mock_setup_private_keys: MagicMock,
+    mock_refresh: MagicMock,
     tmp_path: Path,
     monkeypatch: MagicMock,
 ) -> None:
@@ -97,6 +176,7 @@ def test_run_setup_passes_explicit_operate_home(
     run_setup(chain_config="polygon", context=context)
 
     mock_operate_app.assert_called_once_with(home=context.operate_dir)
+    mock_refresh.assert_called_once_with(context=context, chain_config="polygon")
     mock_normalize_service_env_vars.assert_called_once_with(context=context)
     mock_get_password.assert_called_once_with(operate=mock_operate, context=context)
     mock_sanitize_quickstart.assert_called_once_with(

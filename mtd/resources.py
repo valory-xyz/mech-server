@@ -19,13 +19,24 @@
 
 """Package resource utilities for runtime templates."""
 
+import json
 from importlib import resources
 from pathlib import Path
-from typing import Iterable, Tuple
+from typing import Iterable, List, Tuple
 
 from mtd.context import MtdContext
 
 RUNTIME_RESOURCE_PACKAGE = "mtd.templates.runtime"
+
+# Top-level keys of a chain config that the packaged template owns: they
+# name the service a release runs and whether operate may switch a deployed
+# service to it, so a workspace copy never keeps old ones.
+RELEASE_OWNED_CONFIG_KEYS = (
+    "hash",
+    "service_version",
+    "agent_release",
+    "allow_different_service_public_id",
+)
 
 
 def read_text_resource(package: str, name: str) -> str:
@@ -64,3 +75,36 @@ def copy_runtime_templates_to_workspace(
         if target.exists() and not force:
             continue
         target.write_text(content, encoding="utf-8")
+
+
+def refresh_chain_config(context: MtdContext, chain_config: str) -> List[str]:
+    """Bring a workspace chain config up to the packaged template.
+
+    The workspace copy belongs to the operator, so every value it already
+    holds is kept. The packaged template decides which service runs and which
+    variables exist: the release-owned keys are taken from it and variables it
+    adds are appended with their template defaults.
+
+    :param context: resolved MtdContext locating the workspace config dir.
+    :param chain_config: chain whose config to refresh (e.g. ``gnosis``).
+    :return: the keys that changed, empty when the copy was already current.
+    """
+    name = f"config_mech_{chain_config}.json"
+    target = context.config_dir / name
+    packaged = json.loads(read_text_resource(RUNTIME_RESOURCE_PACKAGE, name))
+    current = json.loads(target.read_text(encoding="utf-8"))
+
+    changed: List[str] = []
+    for key in RELEASE_OWNED_CONFIG_KEYS:
+        if key in packaged and current.get(key) != packaged[key]:
+            current[key] = packaged[key]
+            changed.append(key)
+    env_variables = current.setdefault("env_variables", {})
+    for var_name, var_data in packaged.get("env_variables", {}).items():
+        if var_name not in env_variables:
+            env_variables[var_name] = var_data
+            changed.append(var_name)
+
+    if changed:
+        target.write_text(json.dumps(current, indent=2) + "\n", encoding="utf-8")
+    return changed

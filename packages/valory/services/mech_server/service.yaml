@@ -7,7 +7,7 @@ license: Apache-2.0
 fingerprint:
   README.md: bafybeifm54s6e37mjdcjtfubkyiyusykxbyza5m3njlquokq2zupfottzm
 fingerprint_ignore_patterns: []
-agent: valory/mech_server:0.1.0:bafybeic2tq7gglpxig4eqckln6kjrx7uze5nxyslhasgimuf5syoxu5gne
+agent: valory/mech_server:0.1.0:bafybeieplt2cv2qwg2ue64fdhcgzvkhxad5sochegd7qudsfn4lbfpev6y
 number_of_agents: 4
 deployment:
   agent:
@@ -34,6 +34,8 @@ type: skill
         gas_params: ${GAS_PARAMS:dict:{"gas_price":null, "max_fee_per_gas":null, "max_priority_fee_per_gas":null}}
         multisend_address: ${MULTISEND_ADDRESS:str:0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761}
         on_chain_service_id: ${ON_CHAIN_SERVICE_ID:int:null}
+        erc8004_agent_id: ${ERC8004_AGENT_ID:int:null}
+        mech_events_chain_id: ${MECH_EVENTS_CHAIN_ID:int:0}
         reset_pause_duration: ${RESET_PAUSE_DURATION:int:10}
         round_timeout_seconds: ${ROUND_TIMEOUT:float:150.0}
         use_polling: ${USE_POLLING:bool:false}
@@ -76,6 +78,8 @@ type: skill
         gas_params: ${GAS_PARAMS:dict:{"gas_price":null, "max_fee_per_gas":null, "max_priority_fee_per_gas":null}}
         multisend_address: ${MULTISEND_ADDRESS:str:0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761}
         on_chain_service_id: ${ON_CHAIN_SERVICE_ID:int:null}
+        erc8004_agent_id: ${ERC8004_AGENT_ID:int:null}
+        mech_events_chain_id: ${MECH_EVENTS_CHAIN_ID:int:0}
         reset_pause_duration: ${RESET_PAUSE_DURATION:int:10}
         manual_gas_limit: ${MANUAL_GAS_LIMIT:int:1000000}
         round_timeout_seconds: ${ROUND_TIMEOUT:float:150.0}
@@ -115,6 +119,8 @@ type: skill
         gas_params: ${GAS_PARAMS:dict:{"gas_price":null, "max_fee_per_gas":null, "max_priority_fee_per_gas":null}}
         multisend_address: ${MULTISEND_ADDRESS:str:0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761}
         on_chain_service_id: ${ON_CHAIN_SERVICE_ID:int:null}
+        erc8004_agent_id: ${ERC8004_AGENT_ID:int:null}
+        mech_events_chain_id: ${MECH_EVENTS_CHAIN_ID:int:0}
         reset_pause_duration: ${RESET_PAUSE_DURATION:int:10}
         round_timeout_seconds: ${ROUND_TIMEOUT:float:150.0}
         use_polling: ${USE_POLLING:bool:false}
@@ -154,6 +160,8 @@ type: skill
         gas_params: ${GAS_PARAMS:dict:{"gas_price":null, "max_fee_per_gas":null, "max_priority_fee_per_gas":null}}
         multisend_address: ${MULTISEND_ADDRESS:str:0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761}
         on_chain_service_id: ${ON_CHAIN_SERVICE_ID:int:null}
+        erc8004_agent_id: ${ERC8004_AGENT_ID:int:null}
+        mech_events_chain_id: ${MECH_EVENTS_CHAIN_ID:int:0}
         reset_pause_duration: ${RESET_PAUSE_DURATION:int:10}
         round_timeout_seconds: ${ROUND_TIMEOUT:float:150.0}
         use_polling: ${USE_POLLING:bool:false}
@@ -212,6 +220,8 @@ type: skill
         polygon_ledger_rpc: ${POLYGON_LEDGER_RPC_0:str:http://host.docker.internal:8545}
         base_ledger_rpc: ${BASE_LEDGER_RPC_0:str:http://host.docker.internal:8545}
         optimism_ledger_rpc: ${OPTIMISM_LEDGER_RPC_0:str:http://host.docker.internal:8545}
+        mech_events_chain_id: ${MECH_EVENTS_CHAIN_ID:int:0}
+        mech_terms_url: ${MECH_TERMS_URL:str:null}
 1:
   models:
     params:
@@ -235,6 +245,8 @@ type: skill
         polygon_ledger_rpc: ${POLYGON_LEDGER_RPC_0:str:http://host.docker.internal:8545}
         base_ledger_rpc: ${BASE_LEDGER_RPC_0:str:http://host.docker.internal:8545}
         optimism_ledger_rpc: ${OPTIMISM_LEDGER_RPC_0:str:http://host.docker.internal:8545}
+        mech_events_chain_id: ${MECH_EVENTS_CHAIN_ID:int:0}
+        mech_terms_url: ${MECH_TERMS_URL:str:null}
 2:
   models:
     params:
@@ -258,6 +270,8 @@ type: skill
         polygon_ledger_rpc: ${POLYGON_LEDGER_RPC_0:str:http://host.docker.internal:8545}
         base_ledger_rpc: ${BASE_LEDGER_RPC_0:str:http://host.docker.internal:8545}
         optimism_ledger_rpc: ${OPTIMISM_LEDGER_RPC_0:str:http://host.docker.internal:8545}
+        mech_events_chain_id: ${MECH_EVENTS_CHAIN_ID:int:0}
+        mech_terms_url: ${MECH_TERMS_URL:str:null}
 3:
   models:
     params:
@@ -281,6 +295,8 @@ type: skill
         polygon_ledger_rpc: ${POLYGON_LEDGER_RPC_0:str:http://host.docker.internal:8545}
         base_ledger_rpc: ${BASE_LEDGER_RPC_0:str:http://host.docker.internal:8545}
         optimism_ledger_rpc: ${OPTIMISM_LEDGER_RPC_0:str:http://host.docker.internal:8545}
+        mech_events_chain_id: ${MECH_EVENTS_CHAIN_ID:int:0}
+        mech_terms_url: ${MECH_TERMS_URL:str:null}
 ---
 public_id: valory/ledger:0.19.0
 type: connection
@@ -466,3 +482,18 @@ type: skill
     params:
       args:
         use_polling: ${USE_POLLING:str:false}
+---
+public_id: valory/kv_store:0.1.0
+type: connection
+0:
+  config:
+    store_path: ${STORE_PATH_0:str:/data/mech_preimages/agent_0}
+1:
+  config:
+    store_path: ${STORE_PATH_1:str:/data/mech_preimages/agent_1}
+2:
+  config:
+    store_path: ${STORE_PATH_2:str:/data/mech_preimages/agent_2}
+3:
+  config:
+    store_path: ${STORE_PATH_3:str:/data/mech_preimages/agent_3}

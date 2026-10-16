@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 import click
+import requests
 from aea.cli.packages import package_type_selector_prompt
 from dotenv import dotenv_values, set_key
 from mtd.commands.context_utils import (
@@ -34,6 +35,7 @@ from mtd.commands.context_utils import (
     require_initialized,
 )
 from mtd.context import MtdContext
+from mtd.resources import refresh_chain_config
 from mtd.services.metadata import (
     Benchmark,
     DEFAULT_IPFS_NODE,
@@ -183,6 +185,7 @@ def _update_chain_config(
     if not config_path.exists():
         return
 
+    refresh_chain_config(context=context, chain_config=chain)
     config = json.loads(config_path.read_text(encoding="utf-8"))
     env_vars = config.get("env_variables", {})
 
@@ -199,6 +202,19 @@ def _update_chain_config(
 
 
 BenchmarkArg = Tuple[str, str, str]
+
+# The marketplace serves every service's ERC-8004 registration file, which
+# carries the agent id under ``registrations``. Keyed by chain config name.
+ERC8004_REGISTRATION_URL = (
+    "https://marketplace.olas.network/api/erc8004/{network}/ai-agents/{service_id}"
+)
+ERC8004_NETWORK_SLUGS = {
+    "gnosis": "gnosis",
+    "base": "base",
+    "polygon": "polygon",
+    "optimism": "op-mainnet",
+}
+ERC8004_LOOKUP_TIMEOUT = 10
 
 
 def _build_operator(
@@ -261,6 +277,16 @@ def _build_benchmarks(
     return benchmarks
 
 
+def _read_chain_env(context: MtdContext, chain_config: Optional[str], key: str) -> str:
+    """Read ``key`` from the chain .env file, or empty when there is none."""
+    if not chain_config:
+        return ""
+    env_path = context.chain_env_path(chain_config)
+    if not env_path.exists():
+        return ""
+    return (dotenv_values(str(env_path)).get(key) or "").strip()
+
+
 def _resolve_offchain_url(
     explicit_url: Optional[str],
     context: MtdContext,
@@ -269,12 +295,58 @@ def _resolve_offchain_url(
     """Resolve the offchain URL from CLI option or chain .env file."""
     if explicit_url:
         return explicit_url
-    if chain_config:
-        env_path = context.chain_env_path(chain_config)
-        if env_path.exists():
-            env_values = dotenv_values(str(env_path))
-            return (env_values.get("MECH_OFFCHAIN_URL") or "").strip()
-    return ""
+    return _read_chain_env(context, chain_config, "MECH_OFFCHAIN_URL")
+
+
+def _resolve_terms_url(
+    explicit_url: Optional[str],
+    context: MtdContext,
+    chain_config: Optional[str],
+) -> str:
+    """Resolve the terms URL from CLI option or chain .env file."""
+    if explicit_url:
+        return explicit_url
+    return _read_chain_env(context, chain_config, "MECH_TERMS_URL")
+
+
+def _resolve_erc8004_agent_id(
+    explicit_id: Optional[int],
+    context: MtdContext,
+    chain_config: Optional[str],
+) -> Optional[int]:
+    """Resolve the service's ERC-8004 agent id, which is not the service id.
+
+    Reads it from the marketplace's registration file for the service when
+    not given. Best effort: a lookup that fails leaves the id unset and says
+    so, since the mech serves its domain proof only once the id is known.
+
+    :param explicit_id: the id passed on the command line, if any.
+    :param context: resolved MtdContext used to locate the chain .env.
+    :param chain_config: target chain, or None.
+    :return: the agent id, or None when it could not be resolved.
+    """
+    if explicit_id is not None:
+        return explicit_id
+    network = ERC8004_NETWORK_SLUGS.get(chain_config or "")
+    service_id = _read_chain_env(context, chain_config, "ON_CHAIN_SERVICE_ID")
+    if network is None or not service_id.isdigit():
+        return None
+    url = ERC8004_REGISTRATION_URL.format(network=network, service_id=service_id)
+    try:
+        response = requests.get(url, timeout=ERC8004_LOOKUP_TIMEOUT)
+        response.raise_for_status()
+        registrations = response.json().get("registrations") or []
+        agent_id = registrations[0]["agentId"]
+    except (requests.RequestException, ValueError, LookupError, TypeError) as exc:
+        click.echo(
+            f"Could not resolve the ERC-8004 agent id for service {service_id} "
+            f"from {url}: {exc}. Pass --erc8004-agent-id to set it."
+        )
+        return None
+    if isinstance(agent_id, bool) or not isinstance(agent_id, int) or agent_id < 0:
+        click.echo(f"Unexpected ERC-8004 agent id {agent_id!r} at {url}; ignoring.")
+        return None
+    return agent_id
 
 
 @click.command(name="prepare-metadata")
@@ -297,6 +369,24 @@ def _resolve_offchain_url(
     type=str,
     default=None,
     help="Public URL where the mech serves off-chain requests.",
+)
+@click.option(
+    "--terms-url",
+    type=str,
+    default=None,
+    help=(
+        "https link to the operator's terms, written to the metadata and "
+        "advertised on off-chain responses. Falls back to MECH_TERMS_URL."
+    ),
+)
+@click.option(
+    "--erc8004-agent-id",
+    type=int,
+    default=None,
+    help=(
+        "The service's ERC-8004 agent id, served in the domain proof. Not the "
+        "Olas service id. Resolved from the marketplace when omitted."
+    ),
 )
 @click.option(
     "--name",
@@ -351,6 +441,8 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
     chain_config: Optional[str],
     ipfs_node: str,
     offchain_url: Optional[str],
+    terms_url: Optional[str],
+    erc8004_agent_id: Optional[int],
     mech_name: str,
     operator_name: Optional[str],
     operator_domain: Optional[str],
@@ -377,6 +469,10 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
     :param ipfs_node: IPFS node multiaddr to publish to.
     :param offchain_url: public off-chain URL to embed in metadata; falls back
         to ``MECH_OFFCHAIN_URL`` from the chain .env when omitted.
+    :param terms_url: link to the operator's terms; falls back to
+        ``MECH_TERMS_URL`` from the chain .env when omitted.
+    :param erc8004_agent_id: the service's ERC-8004 agent id; resolved from
+        the marketplace's registration file when omitted.
     :param mech_name: human-readable mech name written to the metadata.
     :param operator_name: operator name; paired with ``operator_domain``.
     :param operator_domain: bare hostname serving the operator's domain proof.
@@ -395,6 +491,14 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
     resolved_url = _resolve_offchain_url(offchain_url, context, chain_config)
     if resolved_url:
         click.echo(f"Including offchain URL in metadata: {resolved_url}")
+    resolved_terms_url = _resolve_terms_url(terms_url, context, chain_config)
+    if resolved_terms_url:
+        click.echo(f"Including terms URL in metadata: {resolved_terms_url}")
+    resolved_agent_id = _resolve_erc8004_agent_id(
+        erc8004_agent_id, context, chain_config
+    )
+    if resolved_agent_id is not None:
+        click.echo(f"ERC-8004 agent id: {resolved_agent_id}")
 
     click.echo("Generating metadata...")
     try:
@@ -405,6 +509,7 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
             offchain_url=resolved_url,
             operator=operator,
             benchmarks=tool_benchmarks,
+            terms_url=resolved_terms_url,
         )
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc
@@ -432,6 +537,14 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
                 "MECH_OFFCHAIN_URL",
                 offchain_url,
             )
+        if terms_url:
+            set_key(str(context.chain_env_path(chain)), "MECH_TERMS_URL", terms_url)
+        if resolved_agent_id is not None:
+            set_key(
+                str(context.chain_env_path(chain)),
+                "ERC8004_AGENT_ID",
+                str(resolved_agent_id),
+            )
     click.echo(f"Metadata hash: {metadata_hash}")
 
     click.echo("Computing tools-to-package-hash mapping...")
@@ -454,5 +567,9 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
             svc_updates["TOOLS_TO_PACKAGE_HASH"] = tools_hash_value
         if resolved_url:
             svc_updates["SERVICE_ENDPOINT_BASE"] = resolved_url
+        if resolved_terms_url:
+            svc_updates["MECH_TERMS_URL"] = resolved_terms_url
+        if resolved_agent_id is not None:
+            svc_updates["ERC8004_AGENT_ID"] = str(resolved_agent_id)
         _update_chain_config(context, chain_config, svc_updates)
     click.echo("Done.")

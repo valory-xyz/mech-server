@@ -120,6 +120,29 @@ def test_generate_metadata_includes_url_when_provided(tmp_path: Path) -> None:
     assert metadata["url"] == "https://mech.example.com/"
 
 
+def test_generate_metadata_writes_terms_url_when_provided(tmp_path: Path) -> None:
+    """An https terms link is written under ``termsUrl``."""
+    metadata = _generate(tmp_path, terms_url="https://acme.example/terms")
+    assert metadata["termsUrl"] == "https://acme.example/terms"
+
+
+def test_generate_metadata_omits_terms_url_by_default(tmp_path: Path) -> None:
+    """No link means no ``termsUrl`` key, not an empty one."""
+    assert "termsUrl" not in _generate(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["http://acme.example/terms", "acme.example/terms", "https://", "https://x y"],
+)
+def test_generate_metadata_rejects_a_terms_url_that_is_not_https(
+    tmp_path: Path, url: str
+) -> None:
+    """Readers only pass on https links, so anything else is refused up front."""
+    with pytest.raises(ValueError, match="Terms url must be an https URL with a host"):
+        _generate(tmp_path, terms_url=url)
+
+
 def test_generate_metadata_default_url_empty(tmp_path: Path) -> None:
     """Generate metadata should have empty URL when none provided."""
     metadata = _generate(tmp_path)

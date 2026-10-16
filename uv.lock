@@ -1106,16 +1106,15 @@ wheels = [
 
 [[package]]
 name = "eth-abi"
-version = "5.2.0"
+version = "6.0.0b1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eth-typing" },
     { name = "eth-utils" },
     { name = "parsimonious" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/00/71/d9e1380bd77fd22f98b534699af564f189b56d539cc2b9dab908d4e4c242/eth_abi-5.2.0.tar.gz", hash = "sha256:178703fa98c07d8eecd5ae569e7e8d159e493ebb6eeb534a8fe973fbc4e40ef0", size = 49797, upload-time = "2025-01-14T16:29:34.629Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7a/b4/2f3982c4cbcbf5eeb6aec62df1533c0e63c653b3021ff338d44944405676/eth_abi-5.2.0-py3-none-any.whl", hash = "sha256:17abe47560ad753f18054f5b3089fcb588f3e3a092136a416b6c1502cb7e8877", size = 28511, upload-time = "2025-01-14T16:29:31.862Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/cc/58c8ef55351ff1d0ca7ca69f0714913ef9b2bf6960ffda2db8250bd7266d/eth_abi-6.0.0b1-py3-none-any.whl", hash = "sha256:b399cf9d431efa16df2ffa0be6e8615d31fe2e0b40a7c95b49dfcc1b18f41d29", size = 28631, upload-time = "2025-12-17T21:23:12.04Z" },
 ]
 
 [[package]]
@@ -1961,7 +1960,7 @@ wheels = [
 
 [[package]]
 name = "mech-server"
-version = "0.8.5"
+version = "0.8.6"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1969,6 +1968,9 @@ dependencies = [
     { name = "certifi" },
     { name = "click" },
     { name = "ecdsa" },
+    { name = "eth-abi" },
+    { name = "eth-account" },
+    { name = "eth-keys" },
     { name = "flask" },
     { name = "grpcio" },
     { name = "hypothesis" },
@@ -2015,6 +2017,9 @@ requires-dist = [
     { name = "certifi" },
     { name = "click", specifier = ">=8.1,<9" },
     { name = "ecdsa", specifier = ">=0.15" },
+    { name = "eth-abi", specifier = "==6.0.0b1" },
+    { name = "eth-account", specifier = "==0.13.7" },
+    { name = "eth-keys", specifier = "==0.8.0b1" },
     { name = "flask", specifier = ">=3.1,<4" },
     { name = "grpcio", specifier = "==1.78.0" },
     { name = "hypothesis", specifier = ">=6" },
