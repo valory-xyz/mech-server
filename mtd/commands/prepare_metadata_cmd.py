@@ -39,7 +39,9 @@ from mtd.resources import refresh_chain_config
 from mtd.services.metadata import (
     Benchmark,
     DEFAULT_IPFS_NODE,
+    ExpectedCost,
     Operator,
+    PAYMENT_ASSETS,
     generate_metadata,
     publish_metadata_to_ipfs,
 )
@@ -202,6 +204,16 @@ def _update_chain_config(
 
 
 BenchmarkArg = Tuple[str, str, str]
+ExpectedCostArg = Tuple[str, str]
+
+# The asset a mech of each MECH_TYPE is paid in, as readers of the manifest
+# name it. Nevermined mechs are not listed: the type does not say whether
+# the subscription is settled in the native token or in USDC.
+PAYMENT_ASSET_BY_MECH_TYPE = {
+    "Native": "native",
+    "Token": "olas",  # nosec B105
+    "TokenUSDC": "usdc",
+}
 
 # The marketplace serves every service's ERC-8004 registration file, which
 # carries the agent id under ``registrations``. Keyed by chain config name.
@@ -285,6 +297,134 @@ def _read_chain_env(context: MtdContext, chain_config: Optional[str], key: str) 
     if not env_path.exists():
         return ""
     return (dotenv_values(str(env_path)).get(key) or "").strip()
+
+
+def _read_mech_type(context: MtdContext, chain_config: Optional[str]) -> str:
+    """Read ``MECH_TYPE`` from the chain config template, or empty when unknown."""
+    if not chain_config:
+        return ""
+    config_path = context.config_dir / f"config_mech_{chain_config}.json"
+    if not config_path.exists():
+        return ""
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    entry = config.get("env_variables", {}).get("MECH_TYPE")
+    if not isinstance(entry, dict):
+        return ""
+    return str(entry.get("value") or "").strip()
+
+
+def _resolve_payment_asset(
+    explicit_asset: Optional[str],
+    context: MtdContext,
+    chain_config: Optional[str],
+) -> str:
+    """Name the asset the expected costs are stated in: the flag, else the mech's type.
+
+    :param explicit_asset: value of ``--expected-cost-asset``.
+    :param context: resolved MtdContext used to locate the chain config.
+    :param chain_config: target chain, or None.
+    :return: one of ``PAYMENT_ASSETS``.
+    :raises ClickException: when neither the flag nor ``MECH_TYPE`` names an asset.
+    """
+    if explicit_asset:
+        return explicit_asset
+    mech_type = _read_mech_type(context, chain_config)
+    asset = PAYMENT_ASSET_BY_MECH_TYPE.get(mech_type)
+    if asset is None:
+        if mech_type:
+            why = f"MECH_TYPE {mech_type!r} in the {chain_config} config does not name one"
+        else:
+            why = "no chain config with MECH_TYPE was found (pass -c)"
+        raise click.ClickException(
+            f"Cannot tell the payment asset for --expected-cost: {why}. "
+            f"Pass --expected-cost-asset {', '.join(PAYMENT_ASSETS)}."
+        )
+    return asset
+
+
+def _read_tool_floors(
+    context: MtdContext, chain_config: Optional[str]
+) -> Dict[str, int]:
+    """Read the per-tool price floors from ``TOOLS_TO_PRICING`` in the chain .env.
+
+    :param context: resolved MtdContext used to locate the chain .env.
+    :param chain_config: target chain, or None.
+    :return: price by tool name in base units; empty when the variable is unset.
+    :raises ClickException: when the variable is not a JSON object of tool to integer.
+    """
+    raw = _read_chain_env(context, chain_config, "TOOLS_TO_PRICING")
+    if not raw:
+        return {}
+    try:
+        return {str(tool): int(price) for tool, price in json.loads(raw).items()}
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise click.ClickException(
+            f"TOOLS_TO_PRICING in the {chain_config} .env is not a JSON object "
+            f"of tool name to integer price: {exc}"
+        ) from exc
+
+
+def _build_expected_costs(
+    entries: Tuple[ExpectedCostArg, ...], asset: str, floors: Dict[str, int]
+) -> Dict[str, ExpectedCost]:
+    """Turn repeated ``--expected-cost`` flags into per-tool expected costs.
+
+    :param entries: ``(tool, amount)`` tuples from ``--expected-cost``.
+    :param asset: the asset every amount is stated in.
+    :param floors: the tools' configured prices, from ``TOOLS_TO_PRICING``.
+    :return: expected costs keyed by tool name; empty when no flag was passed.
+    :raises ClickException: when an entry is repeated, malformed, or below
+        the tool's configured price.
+    """
+    costs: Dict[str, ExpectedCost] = {}
+    for tool, amount in entries:
+        if tool in costs:
+            raise click.ClickException(
+                f"Tool {tool!r} is given more than once in --expected-cost."
+            )
+        try:
+            costs[tool] = ExpectedCost(asset=asset, amount=amount)
+        except ValueError as exc:
+            raise click.ClickException(
+                f"Invalid --expected-cost for {tool!r}: {exc}"
+            ) from exc
+        floor = floors.get(tool)
+        if floor is not None and int(amount) < floor:
+            raise click.ClickException(
+                f"--expected-cost for {tool!r} is {amount}, below the tool's "
+                f"configured price {floor} in TOOLS_TO_PRICING. Clients size "
+                f"their cap from the expected cost and the mech refuses a cap "
+                f"below the price, so publish at least {floor}."
+            )
+    return costs
+
+
+def _resolve_expected_costs(
+    entries: Tuple[ExpectedCostArg, ...],
+    explicit_asset: Optional[str],
+    context: MtdContext,
+    chain_config: Optional[str],
+) -> Dict[str, ExpectedCost]:
+    """Resolve the asset and floors for ``--expected-cost`` and build the entries.
+
+    :param entries: ``(tool, amount)`` tuples from ``--expected-cost``.
+    :param explicit_asset: value of ``--expected-cost-asset``.
+    :param context: resolved MtdContext.
+    :param chain_config: target chain, or None.
+    :return: expected costs keyed by tool name; empty when no flag was passed.
+    :raises ClickException: when the flags are incomplete or invalid.
+    """
+    if not entries:
+        if explicit_asset is not None:
+            raise click.ClickException(
+                "--expected-cost-asset requires at least one --expected-cost."
+            )
+        return {}
+    asset = _resolve_payment_asset(explicit_asset, context, chain_config)
+    floors = _read_tool_floors(context, chain_config)
+    costs = _build_expected_costs(entries, asset, floors)
+    click.echo(f"Expected cost asset: {asset}")
+    return costs
 
 
 def _resolve_offchain_url(
@@ -435,8 +575,31 @@ def _resolve_erc8004_agent_id(
         "requires --benchmark-url."
     ),
 )
+@click.option(
+    "--expected-cost",
+    "expected_costs",
+    type=(str, str),
+    multiple=True,
+    metavar="TOOL AMOUNT",
+    help=(
+        "What a tool usually costs, as guidance for requesters choosing a "
+        "cap, e.g. --expected-cost openai-gpt-4 12000000000000000. AMOUNT is "
+        "a decimal integer in the base units of the mech's payment asset (wei "
+        "for native and OLAS, 6-decimal units for USDC), at or above the "
+        "tool's price in TOOLS_TO_PRICING. Repeatable."
+    ),
+)
+@click.option(
+    "--expected-cost-asset",
+    type=click.Choice(PAYMENT_ASSETS),
+    default=None,
+    help=(
+        "Asset the --expected-cost amounts are stated in. Read from MECH_TYPE "
+        "in the chain config when omitted."
+    ),
+)
 @click.pass_context
-def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
+def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals,too-many-statements
     ctx: click.Context,
     chain_config: Optional[str],
     ipfs_node: str,
@@ -449,6 +612,8 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
     operator_contact: Optional[str],
     benchmark_url: Optional[str],
     benchmarks: Tuple[BenchmarkArg, ...],
+    expected_costs: Tuple[ExpectedCostArg, ...],
+    expected_cost_asset: Optional[str],
 ) -> None:
     """Generate metadata.json from packages and publish to IPFS.
 
@@ -463,6 +628,7 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
         mech prepare-metadata --name "My Mech" -c gnosis --offchain-url <url>
         mech prepare-metadata --name "My Mech" -c gnosis --operator-name Valory --operator-domain valory.xyz
         mech prepare-metadata --name "My Mech" -c gnosis --benchmark-url <url> --benchmark openai-gpt-4 accuracy 30d
+        mech prepare-metadata --name "My Mech" -c gnosis --expected-cost openai-gpt-4 12000000000000000
 
     :param ctx: click context carrying the resolved MtdContext.
     :param chain_config: target chain whose .env to update (None = all chains).
@@ -479,6 +645,9 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
     :param operator_contact: optional operator contact.
     :param benchmark_url: analytics endpoint shared by every benchmark entry.
     :param benchmarks: ``(tool, metric, window)`` tuples, one per tool.
+    :param expected_costs: ``(tool, amount)`` tuples, one per tool.
+    :param expected_cost_asset: asset the amounts are stated in; read from
+        ``MECH_TYPE`` in the chain config when omitted.
     """
     context = get_mtd_context(ctx)
     require_initialized(context)
@@ -487,6 +656,9 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
         raise click.ClickException("--name must not be blank.")
     operator = _build_operator(operator_name, operator_domain, operator_contact)
     tool_benchmarks = _build_benchmarks(benchmarks, benchmark_url)
+    tool_expected_costs = _resolve_expected_costs(
+        expected_costs, expected_cost_asset, context, chain_config
+    )
 
     resolved_url = _resolve_offchain_url(offchain_url, context, chain_config)
     if resolved_url:
@@ -510,6 +682,7 @@ def prepare_metadata(  # pylint: disable=too-many-arguments,too-many-locals
             operator=operator,
             benchmarks=tool_benchmarks,
             terms_url=resolved_terms_url,
+            expected_costs=tool_expected_costs,
         )
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc

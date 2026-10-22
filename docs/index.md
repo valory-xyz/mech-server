@@ -287,17 +287,19 @@ Once your tool is implemented, publish everything with a single command. `--name
 mech prepare-metadata --name <name> -c gnosis
 ```
 
-Three optional groups of flags add more to the metadata:
+Four optional groups of flags add more to the metadata:
 
 - `--terms-url <url>` publishes a link to your own terms. It is written as `termsUrl` in the metadata and sent back with every off-chain response, so buyers can read your terms before and after they pay. It must be an `https://` link. The CLI also stores it as `MECH_TERMS_URL` in the chain `.env`, so later runs reuse it without the flag. Without it, the Mech sends no terms link.
 - `--operator-name <op> --operator-domain <host>` records who operates the mech. `<host>` is a lowercase bare hostname with at least one dot, such as `www.valory.xyz` (no scheme, path, port or trailing dot): the exact host that serves `/.well-known/agent-registration.json`. Readers follow no redirects, so `valory.xyz`, which redirects to `www.valory.xyz`, would stay unverified. `--operator-contact <contact>` is optional. The two flags must be given together.
 - `--benchmark-url <url> --benchmark <tool> <metric> <window>` links a tool to its live score, written under `toolMetadata.<tool>.benchmark`. `<url>` is an `https://` page or endpoint where buyers can read the figure, so no number is baked into the manifest; no response format is required, since buyers' tools show the link and never parse it. `<metric>` is free text, usually `accuracy`. `<window>` is one of `7d`, `30d`, `90d` or `all`, and is your choice. Repeat `--benchmark` once per tool; every entry shares the single `--benchmark-url`.
+- `--expected-cost <tool> <amount>` publishes what a tool usually costs, written under `toolMetadata.<tool>.expectedCost` as `{"asset": "<asset>", "amount": "<amount>"}`. It is guidance for requesters choosing a cap, never a charge: the Mech charges its actual cost, at or below the cap the requester signs. `<amount>` is a decimal integer in the base units of the asset your Mech is paid in: wei for native and OLAS payments (18 decimals), 6-decimal units for USDC. Use the mean of what your Mech has charged for the tool, not a worst case: buyers' tools such as mech-client default their cap to twice the published figure. It must be at or above the tool's price in `TOOLS_TO_PRICING` in the chain `.env`, because the Mech refuses a cap below that price; the command checks this when the variable is set. The asset is read from `MECH_TYPE` in the chain config: `Native` is written as `native`, `Token` as `olas` and `TokenUSDC` as `usdc`. `--expected-cost-asset <native|olas|usdc>` sets it by hand, and is required without `-c` or for a Nevermined Mech. The label must name the asset the Mech is paid in: a reader that finds another label ignores the field with a warning and signs the Mech's advertised maximum instead, so a wrong label makes the field useless, not harmful. Repeat `--expected-cost` once per tool.
 
 ```bash
 mech prepare-metadata --name <name> -c gnosis \
     --terms-url https://www.example.com/mech-terms \
     --operator-name Valory --operator-domain www.valory.xyz --operator-contact mechs@valory.xyz \
-    --benchmark-url <url> --benchmark openai-gpt-4 accuracy 30d
+    --benchmark-url <url> --benchmark openai-gpt-4 accuracy 30d \
+    --expected-cost openai-gpt-4 12000000000000000
 ```
 
 This command handles the full publish pipeline:
@@ -378,7 +380,7 @@ mech stop -c <gnosis|base|polygon|optimism>
 
 ## Adding tools to an existing Mech
 
-> **Note:** `prepare-metadata` rebuilds `metadata.json` from scratch on every run. Repeat your `--operator-*` and `--benchmark` flags each time, or those fields are dropped from the new file. The off-chain URL, the terms link and the ERC-8004 agent id are kept in the chain `.env` and reused.
+> **Note:** `prepare-metadata` rebuilds `metadata.json` from scratch on every run. Repeat your `--operator-*`, `--benchmark` and `--expected-cost` flags each time, or those fields are dropped from the new file. The off-chain URL, the terms link and the ERC-8004 agent id are kept in the chain `.env` and reused.
 
 If your Mech is already running and you want to add or update tools:
 
@@ -429,6 +431,7 @@ mechx push-to-ipfs ./<file_name>
 | `mech prepare-metadata --name <name> -c <chain> --offchain-url <url>` | Same as above, also sets the public offchain URL in metadata and `.env` |
 | `mech prepare-metadata --name <name> -c <chain> --operator-name <op> --operator-domain <host>` | Same as above, also records who operates the mech |
 | `mech prepare-metadata --name <name> -c <chain> --benchmark-url <url> --benchmark <tool> <metric> <window>` | Same as above, also links each tool to its live score |
+| `mech prepare-metadata --name <name> -c <chain> --expected-cost <tool> <amount>` | Same as above, also publishes what each tool usually costs, as guidance for requesters' caps |
 | `mech prepare-metadata --name <name> -c <chain> --terms-url <url>` | Same as above, also publishes your terms link in the metadata and on off-chain responses |
 | `mech prepare-metadata --name <name> -c <chain> --erc8004-agent-id <id>` | Same as above, with the ERC-8004 agent id set by hand instead of resolved from the marketplace |
 | `mech update-metadata -c <chain>` | Update the metadata hash on-chain via Safe transaction |
