@@ -76,6 +76,7 @@ mech run -c <chain>
 | `mech prepare-metadata --name <name> -c <chain> --offchain-url <url>` | Same as above, also sets the offchain URL in metadata and `.env` |
 | `mech prepare-metadata --name <name> -c <chain> --operator-name <op> --operator-domain <host>` | Same as above, also records who operates the mech (`--operator-contact` is optional) |
 | `mech prepare-metadata --name <name> -c <chain> --benchmark-url <url> --benchmark <tool> <metric> <window>` | Same as above, also links each tool to its live score (`--benchmark` is repeatable) |
+| `mech prepare-metadata --name <name> -c <chain> --expected-cost <tool> <amount>` | Same as above, also publishes what each tool usually costs in base units, as guidance for requesters' caps (`--expected-cost` is repeatable) |
 | `mech prepare-metadata --name <name> -c <chain> --terms-url <url>` | Same as above, also publishes the operator's terms link in the metadata and on off-chain responses |
 | `mech prepare-metadata --name <name> -c <chain> --erc8004-agent-id <id>` | Same as above, with the ERC-8004 agent id set by hand instead of resolved from the marketplace |
 | `mech update-metadata -c <chain>` | Update the metadata hash on-chain via Safe transaction |

@@ -35,6 +35,11 @@ INIT_PY = "__init__.py"
 COMPONENT_YAML = "component.yaml"
 TOOLS_IDENTIFIERS = frozenset(["ALLOWED_TOOLS", "AVAILABLE_TOOLS"])
 BENCHMARK_WINDOWS = ("7d", "30d", "90d", "all")
+# The asset an expected cost is stated in, as readers compare it against
+# the mech's payment type: native for NATIVE and NATIVE_NVM mechs, olas for
+# OLAS_TOKEN mechs, usdc for USDC_TOKEN and TOKEN_NVM_USDC mechs.
+PAYMENT_ASSETS = ("native", "olas", "usdc")
+UINT256_MAX = 2**256 - 1
 MAX_HOSTNAME_LENGTH = 253
 _HOSTNAME_LABEL = re.compile(r"^(?!-)[a-z0-9-]{1,63}(?<!-)$")
 METADATA_TEMPLATE: Dict[str, Any] = {
@@ -234,6 +239,61 @@ class Benchmark:
         )
 
 
+def _amount_error(amount: str) -> Optional[str]:
+    """Return why ``amount`` is not a canonical positive uint256 decimal string, or None."""
+    if not amount.isascii() or not amount.isdecimal():
+        return "it must be a decimal integer string with digits only"
+    if str(int(amount)) != amount:
+        return "it must not have leading zeros"
+    if int(amount) == 0:
+        return "it must be greater than zero"
+    if int(amount) > UINT256_MAX:
+        return "it must fit a uint256"
+    return None
+
+
+@dataclass(frozen=True)
+class ExpectedCost:
+    """What a tool usually costs, as guidance for a requester's cap; never a charge.
+
+    ``asset`` is one of ``PAYMENT_ASSETS`` and must name the asset the mech is
+    paid in. ``amount`` is a decimal integer string in that asset's base units,
+    kept as a string so no reader rounds it through a float.
+    """
+
+    asset: str
+    amount: str
+
+    def __post_init__(self) -> None:
+        """Validate the block."""
+        if self.asset not in PAYMENT_ASSETS:
+            raise ValueError(
+                f"Expected cost asset must be one of {', '.join(PAYMENT_ASSETS)}, "
+                f"got {self.asset!r}"
+            )
+        error = _amount_error(self.amount)
+        if error is not None:
+            raise ValueError(
+                f"Expected cost amount {self.amount!r} is not a positive decimal "
+                f"integer string in base units: {error}"
+            )
+
+    def to_dict(self) -> Dict[str, str]:
+        """Return the manifest ``expectedCost`` object."""
+        return {"asset": self.asset, "amount": self.amount}
+
+    @classmethod
+    def from_dict(cls, data: Any) -> "ExpectedCost":
+        """Build from a manifest ``expectedCost`` object, rejecting unknown or mistyped fields."""
+        fields = _require_fields(
+            data,
+            "Expected cost",
+            required={"asset": (str,), "amount": (str,)},
+            optional={},
+        )
+        return cls(asset=fields["asset"], amount=fields["amount"])
+
+
 def _import_module_from_path(module_name: str, file_path: Path) -> ModuleType:
     """Import a module from path."""
     spec = importlib.util.spec_from_file_location(module_name, str(file_path))
@@ -301,6 +361,7 @@ def _build_metadata(
     name: str,
     operator: Optional[Operator] = None,
     benchmarks: Optional[Mapping[str, Benchmark]] = None,
+    expected_costs: Optional[Mapping[str, ExpectedCost]] = None,
 ) -> Dict[str, Any]:
     """Build metadata document from tools data.
 
@@ -309,6 +370,8 @@ def _build_metadata(
     :param operator: optional operator block.
     :param benchmarks: optional per-tool benchmarks keyed by tool name; every
         key must be a tool present in the generated manifest.
+    :param expected_costs: optional per-tool expected costs keyed by tool
+        name; every key must be a tool present in the generated manifest.
     :return: the manifest as a JSON-serialisable dict.
     """
     result: Dict[str, Any] = {"name": name, **METADATA_TEMPLATE}
@@ -328,13 +391,18 @@ def _build_metadata(
                 "output": OUTPUT_SCHEMA,
             }
 
-    for tool, benchmark in (benchmarks or {}).items():
-        if tool not in result["toolMetadata"]:
-            raise ValueError(
-                f"Benchmark given for unknown tool {tool!r}. "
-                f"Tools in this manifest: {', '.join(result['tools']) or '(none)'}"
-            )
-        result["toolMetadata"][tool]["benchmark"] = benchmark.to_dict()
+    per_tool_blocks = (
+        ("benchmark", "Benchmark", benchmarks or {}),
+        ("expectedCost", "Expected cost", expected_costs or {}),
+    )
+    for key, what, blocks in per_tool_blocks:
+        for tool, block in blocks.items():
+            if tool not in result["toolMetadata"]:
+                raise ValueError(
+                    f"{what} given for unknown tool {tool!r}. Tools in this "
+                    f"manifest: {', '.join(result['tools']) or '(none)'}"
+                )
+            result["toolMetadata"][tool][key] = block.to_dict()
 
     return result
 
@@ -347,6 +415,7 @@ def generate_metadata(  # pylint: disable=too-many-arguments
     operator: Optional[Operator] = None,
     benchmarks: Optional[Mapping[str, Benchmark]] = None,
     terms_url: str = "",
+    expected_costs: Optional[Mapping[str, ExpectedCost]] = None,
 ) -> Path:
     """Generate metadata from package customs and write to path.
 
@@ -357,10 +426,12 @@ def generate_metadata(  # pylint: disable=too-many-arguments
     :param operator: optional operator block.
     :param benchmarks: optional per-tool benchmarks keyed by tool name.
     :param terms_url: link to the operator's terms, written as ``termsUrl``, or empty.
+    :param expected_costs: optional per-tool expected costs keyed by tool
+        name, written as ``toolMetadata.<tool>.expectedCost``.
     :return: ``metadata_path``.
     :raises FileNotFoundError: when ``packages_dir`` does not exist.
-    :raises ValueError: when ``name`` is blank, a benchmark names an unknown
-        tool, or ``terms_url`` is not an https URL with a host.
+    :raises ValueError: when ``name`` is blank, a benchmark or expected cost
+        names an unknown tool, or ``terms_url`` is not an https URL with a host.
     """
     if not name.strip():
         raise ValueError("Mech name must not be empty")
@@ -376,7 +447,11 @@ def generate_metadata(  # pylint: disable=too-many-arguments
 
     tools_data = _build_tools_data(packages_dir=packages_dir)
     metadata = _build_metadata(
-        tools_data=tools_data, name=name, operator=operator, benchmarks=benchmarks
+        tools_data=tools_data,
+        name=name,
+        operator=operator,
+        benchmarks=benchmarks,
+        expected_costs=expected_costs,
     )
     if offchain_url:
         metadata["url"] = offchain_url
