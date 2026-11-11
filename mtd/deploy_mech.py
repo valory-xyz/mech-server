@@ -126,6 +126,32 @@ MECH_TYPE_PAYMENT_TYPE: Dict[str, str] = {
 }
 
 
+def _read_marketplace(
+    contract: Any,
+    chain_name: str,
+    marketplace_address: str,
+    function_name: str,
+    argument: Any,
+) -> Any:
+    """Call a read-only MechMarketplace view, reporting transport failures.
+
+    :param contract: web3 contract bound to the configured MechMarketplace.
+    :param chain_name: home chain name, used in the error message.
+    :param marketplace_address: configured MechMarketplace address.
+    :param function_name: name of the view to call.
+    :param argument: single argument the view takes.
+    :return: whatever the view returned.
+    :raises ClickException: if the call could not be completed.
+    """
+    try:
+        return getattr(contract.functions, function_name)(argument).call()
+    except Exception as exc:  # pylint: disable=broad-except
+        raise click.ClickException(
+            f"Failed to read {function_name} from the mech marketplace "
+            f"'{marketplace_address}' on chain '{chain_name}': {exc}"
+        ) from exc
+
+
 def _select_mech_factory(
     contract: Any,
     chain_name: str,
@@ -144,9 +170,13 @@ def _select_mech_factory(
     :raises ClickException: if the marketplace has none of the candidates enabled.
     """
     for candidate in candidates:
-        enabled = contract.functions.mapMechFactories(
-            Web3.to_checksum_address(candidate)
-        ).call()
+        enabled = _read_marketplace(
+            contract=contract,
+            chain_name=chain_name,
+            marketplace_address=marketplace_address,
+            function_name="mapMechFactories",
+            argument=Web3.to_checksum_address(candidate),
+        )
         if enabled:
             return candidate
     raise click.ClickException(
@@ -173,7 +203,13 @@ def _check_balance_tracker(
     payment_type = MECH_TYPE_PAYMENT_TYPE.get(mech_type)
     if payment_type is None:
         return
-    tracker = contract.functions.mapPaymentTypeBalanceTrackers(payment_type).call()
+    tracker = _read_marketplace(
+        contract=contract,
+        chain_name=chain_name,
+        marketplace_address=marketplace_address,
+        function_name="mapPaymentTypeBalanceTrackers",
+        argument=payment_type,
+    )
     if int(str(tracker), 16) != 0:
         return
     raise click.ClickException(

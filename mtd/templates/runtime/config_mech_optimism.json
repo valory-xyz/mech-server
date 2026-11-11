@@ -42,7 +42,7 @@
     "MECH_MARKETPLACE_ADDRESS": {
       "name": "Mech Marketplace address",
       "description": "The contract address of the mech marketplace, where your mech should be created.",
-      "value": "0x8Bc0a5c5B1612A16983B01ecd7ae130E728390CB",
+      "value": "0x46C0D07F55d4F9B5Eed2Fc9680B5953e5fd7b461",
       "provision_type": "fixed"
     },
     "API_KEYS": {

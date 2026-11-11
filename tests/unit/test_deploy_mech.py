@@ -20,6 +20,7 @@
 """Tests for mtd.deploy_mech module."""
 
 import json
+from importlib import resources
 from types import SimpleNamespace
 from typing import Any, Iterable, List
 from unittest.mock import MagicMock, patch
@@ -59,6 +60,7 @@ OPTIMISM_NATIVE_FACTORY_NEW = "0xaaFBeef195BDAb1Bb6f3Dc9cEbA875Cd72499230"
 
 A_BALANCE_TRACKER = "0x21cE6799A22A3Da84B7c44a814a9c79ab1d2A50D"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+RPC_ERROR = "rpc endpoint unreachable"
 
 DEFAULT_MECH_REQUEST_PRICE = 10000000000000000
 
@@ -68,6 +70,7 @@ def _make_mock_sftxb(
     agent_id: str = "42",
     enabled_factories: Iterable[str] = (),
     balance_tracker: str = A_BALANCE_TRACKER,
+    failing_read: str = "",
 ) -> MagicMock:
     """Create a mock EthSafeTxBuilder whose marketplace reads are configurable.
 
@@ -75,6 +78,7 @@ def _make_mock_sftxb(
     :param agent_id: canonical agent id reported for the service.
     :param enabled_factories: factory addresses the marketplace reports as enabled.
     :param balance_tracker: address returned for any queried payment type.
+    :param failing_read: name of the marketplace view whose call() raises instead.
     :return: the configured mock.
     """
     enabled = {address.lower() for address in enabled_factories}
@@ -84,12 +88,36 @@ def _make_mock_sftxb(
 
     mock_contract = MagicMock()
     mock_contract.encode_abi.return_value = "0xdeadbeef"
-    mock_contract.functions.mapMechFactories.side_effect = lambda address: (
-        SimpleNamespace(call=lambda: address.lower() in enabled)
-    )
-    mock_contract.functions.mapPaymentTypeBalanceTrackers.side_effect = lambda _: (
-        SimpleNamespace(call=lambda: balance_tracker)
-    )
+
+    def _raise_rpc_error() -> None:
+        """Stand in for a failing RPC call.
+
+        :raises ConnectionError: always, as the configured transport failure.
+        """
+        raise ConnectionError(RPC_ERROR)
+
+    def _factories_call(address: str) -> SimpleNamespace:
+        """Serve mapMechFactories for one candidate.
+
+        :param address: candidate factory address being probed.
+        :return: object whose call() answers the probe.
+        """
+        if failing_read == "mapMechFactories":
+            return SimpleNamespace(call=_raise_rpc_error)
+        return SimpleNamespace(call=lambda: address.lower() in enabled)
+
+    def _trackers_call(_payment_type: str) -> SimpleNamespace:
+        """Serve mapPaymentTypeBalanceTrackers for one payment type.
+
+        :param _payment_type: payment type being looked up.
+        :return: object whose call() answers the lookup.
+        """
+        if failing_read == "mapPaymentTypeBalanceTrackers":
+            return SimpleNamespace(call=_raise_rpc_error)
+        return SimpleNamespace(call=lambda: balance_tracker)
+
+    mock_contract.functions.mapMechFactories.side_effect = _factories_call
+    mock_contract.functions.mapPaymentTypeBalanceTrackers.side_effect = _trackers_call
     mock_sftxb.ledger_api.api.eth.contract.return_value = mock_contract
 
     mock_event = {"args": {"mech": mech_address, "serviceId": 1}}
@@ -454,6 +482,54 @@ class TestBalanceTrackerPrecondition:
         mock_sftxb.new_tx.assert_called_once()
 
 
+class TestMarketplaceReadFailures:
+    """Tests for surfacing a failed marketplace read as a CLI error."""
+
+    @patch(f"{MOD}.requests")
+    def test_refuses_when_factory_probe_cannot_be_read(
+        self, mock_requests: MagicMock
+    ) -> None:
+        """A failed mapMechFactories read is reported, not raised as a traceback."""
+        mock_requests.get.return_value.json.return_value = {"abi": []}
+        mock_service = _make_mock_service()
+        mock_sftxb = _make_mock_sftxb(
+            enabled_factories=[GNOSIS_NATIVE_FACTORY_NEW],
+            failing_read="mapMechFactories",
+        )
+
+        with pytest.raises(click.ClickException) as exc_info:
+            deploy_mech(sftxb=mock_sftxb, service=mock_service)
+
+        message = str(exc_info.value)
+        assert "mapMechFactories" in message
+        assert "gnosis" in message
+        assert GNOSIS_MARKETPLACE in message
+        assert RPC_ERROR in message
+        mock_sftxb.new_tx.assert_not_called()
+
+    @patch(f"{MOD}.requests")
+    def test_refuses_when_balance_tracker_cannot_be_read(
+        self, mock_requests: MagicMock
+    ) -> None:
+        """A failed mapPaymentTypeBalanceTrackers read is reported the same way."""
+        mock_requests.get.return_value.json.return_value = {"abi": []}
+        mock_service = _make_mock_service()
+        mock_sftxb = _make_mock_sftxb(
+            enabled_factories=[GNOSIS_NATIVE_FACTORY_NEW],
+            failing_read="mapPaymentTypeBalanceTrackers",
+        )
+
+        with pytest.raises(click.ClickException) as exc_info:
+            deploy_mech(sftxb=mock_sftxb, service=mock_service)
+
+        message = str(exc_info.value)
+        assert "mapPaymentTypeBalanceTrackers" in message
+        assert "gnosis" in message
+        assert GNOSIS_MARKETPLACE in message
+        assert RPC_ERROR in message
+        mock_sftxb.new_tx.assert_not_called()
+
+
 class TestDeployMech:
     """Tests for the deploy_mech function."""
 
@@ -593,6 +669,23 @@ class TestMechFactoryAddress:
         for payment_type in MECH_TYPE_PAYMENT_TYPE.values():
             assert len(payment_type) == 66
             assert int(payment_type, 16) != 0
+
+    @pytest.mark.parametrize(
+        "chain", [Chain.GNOSIS, Chain.BASE, Chain.POLYGON, Chain.OPTIMISM]
+    )
+    def test_shipped_template_marketplace_is_in_the_table(self, chain: Chain) -> None:
+        """Each runtime template ships a marketplace address the table knows.
+
+        :param chain: chain whose runtime config template is checked.
+        """
+        template = json.loads(
+            (
+                resources.files("mtd.templates.runtime")
+                / f"config_mech_{chain.value}.json"
+            ).read_text(encoding="utf-8")
+        )
+        configured = template["env_variables"]["MECH_MARKETPLACE_ADDRESS"]["value"]
+        assert configured in MECH_FACTORY_ADDRESS[chain]
 
 
 class TestNeedsMechDeployment:
