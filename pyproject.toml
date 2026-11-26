@@ -92,6 +92,23 @@ upstream_pins = ["valory-xyz/mech@v0.35.9", "valory-xyz/kv-store@0.7.1"]
 # Appended to the extras in the tox template render
 # (`tomte[<extras>]$TOMTE_DEP_PIN`), so it carries its own operator.
 tomte_dep_pin = "==0.7.3"
+# filelock advisories in the safety scanner's own venv (safety requires
+# filelock<4.0), on top of tomte's fleet list. None reach this package.
+safety_ignores = [
+    "SFTY-20261017-72390",
+    "SFTY-20261017-54654",
+    "SFTY-20261017-57659",
+    "SFTY-20261020-34461",
+    "SFTY-20261020-18367",
+    "SFTY-20261020-13394",
+    "SFTY-20261020-91319",
+    "SFTY-20261020-81101",
+    "SFTY-20261020-25530",
+    "SFTY-20261020-11422",
+    "SFTY-20261023-10299",
+    "SFTY-20261023-16869",
+    "SFTY-20261023-24590",
+]
 
 [tool.uv.build-backend]
 module-name = ["mtd", "packages"]
