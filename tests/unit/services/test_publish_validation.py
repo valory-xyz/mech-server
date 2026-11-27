@@ -77,6 +77,8 @@ VALID_BENCHMARK = {
     "url": "https://analytics.example/v1/metrics/mech/100/0xabc",
 }
 
+VALID_EXPECTED_COST = {"asset": "native", "amount": "12000000000000000"}
+
 
 def _write(tmp_path: Path, data: dict) -> Path:
     """Write dict as JSON and return path."""
@@ -195,6 +197,38 @@ def test_validate_tool_with_invalid_benchmark(
     ok, msg = _validate_metadata_file(_write(tmp_path, data))
     assert ok is False
     assert msg.startswith("Invalid benchmark for echo")
+    assert reason in msg
+
+
+def test_validate_valid_tool_with_expected_cost(tmp_path: Path) -> None:
+    """A well-formed optional expectedCost inside toolMetadata.<tool> passes."""
+    tool = {**VALID_TOOL, "expectedCost": VALID_EXPECTED_COST}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": tool}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is True
+    assert msg == ""
+
+
+@pytest.mark.parametrize(
+    "expected_cost, reason",
+    [
+        ({**VALID_EXPECTED_COST, "asset": "xdai"}, "asset must be one of"),
+        ({**VALID_EXPECTED_COST, "amount": 12}, "'amount' must be str"),
+        ({**VALID_EXPECTED_COST, "amount": "1.5"}, "digits only"),
+        ({**VALID_EXPECTED_COST, "amount": "0"}, "greater than zero"),
+        ({"asset": "native"}, "Missing expected cost field 'amount'"),
+        ("12", "must be an object"),
+    ],
+)
+def test_validate_tool_with_invalid_expected_cost(
+    tmp_path: Path, expected_cost: object, reason: str
+) -> None:
+    """Return (False, error) naming the tool and the expected cost problem."""
+    tool = {**VALID_TOOL, "expectedCost": expected_cost}
+    data = {**VALID_METADATA, "toolMetadata": {"echo": tool}}
+    ok, msg = _validate_metadata_file(_write(tmp_path, data))
+    assert ok is False
+    assert msg.startswith("Invalid expectedCost for echo")
     assert reason in msg
 
 

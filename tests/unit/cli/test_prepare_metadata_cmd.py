@@ -35,18 +35,21 @@ import requests
 from click.testing import CliRunner
 from mtd.commands.prepare_metadata_cmd import (
     _build_benchmarks,
+    _build_expected_costs,
     _build_operator,
     _clean_packages_dir,
     _compute_tools_to_package_hash,
     _lock_packages,
     _push_all_packages,
+    _read_mech_type,
+    _read_tool_floors,
     _resolve_erc8004_agent_id,
     _resolve_offchain_url,
     _resolve_terms_url,
     _update_chain_config,
     prepare_metadata,
 )
-from mtd.services.metadata import Benchmark, Operator
+from mtd.services.metadata import Benchmark, ExpectedCost, Operator
 
 MOCK_PATH = "mtd.commands.prepare_metadata_cmd"
 MECH_NAME = "Test Mech"
@@ -61,6 +64,9 @@ BENCHMARK_ARGS = [
     "accuracy",
     "30d",
 ]
+EXPECTED_COST_WEI = "12000000000000000"
+EXPECTED_COST_ARGS = ["--expected-cost", "openai-gpt-4", EXPECTED_COST_WEI]
+CHAIN_ARGS = ["-c", "gnosis"]
 # Pipeline steps that touch the filesystem, IPFS or the chain; stubbed in
 # every command-level test so only argument handling runs for real.
 PIPELINE_STEPS = (
@@ -92,6 +98,7 @@ def _patched_pipeline(tmp_path: Path) -> Iterator[SimpleNamespace]:
         context.packages_dir = tmp_path / "packages"
         context.workspace_path = tmp_path
         context.metadata_path = tmp_path / "metadata.json"
+        context.config_dir = tmp_path / "config"
         context.chain_env_path.return_value = tmp_path / ".env.gnosis"
         mocks.get_mtd_context.return_value = context
         mocks.context = context
@@ -102,6 +109,19 @@ def _generate_kwargs(mocks: SimpleNamespace) -> dict:
     """Return the keyword arguments the command passed to generate_metadata."""
     mocks.generate_metadata.assert_called_once()
     return mocks.generate_metadata.call_args.kwargs
+
+
+def _write_chain_config(config_dir: Path, mech_type: Optional[str]) -> Path:
+    """Write a gnosis chain config template holding ``MECH_TYPE``, or none when None."""
+    config_dir.mkdir(parents=True, exist_ok=True)
+    env_variables = {"METADATA_HASH": {"value": "", "provision_type": "fixed"}}
+    if mech_type is not None:
+        env_variables["MECH_TYPE"] = {"value": mech_type, "provision_type": "user"}
+    config_path = config_dir / "config_mech_gnosis.json"
+    config_path.write_text(
+        json.dumps({"env_variables": env_variables}), encoding="utf-8"
+    )
+    return config_path
 
 
 class TestPrepareMetadataCommand:
@@ -155,6 +175,7 @@ class TestPrepareMetadataCommand:
             operator=None,
             benchmarks={},
             terms_url="",
+            expected_costs={},
         )
         mock_publish.assert_called_once()
         mock_set_key.assert_called_once_with(str(env_path), "METADATA_HASH", "f0170abc")
@@ -348,6 +369,7 @@ class TestPrepareMetadataCommand:
             operator=None,
             benchmarks={},
             terms_url="",
+            expected_costs={},
         )
         mock_set_key.assert_any_call(
             str(env_path), "MECH_OFFCHAIN_URL", "https://mech.example.com/"
@@ -408,6 +430,7 @@ class TestPrepareMetadataCommand:
             operator=None,
             benchmarks={},
             terms_url="",
+            expected_costs={},
         )
 
 
@@ -605,6 +628,278 @@ class TestPrepareMetadataBenchmarkFlags:
         mocks.lock_packages.assert_not_called()
         mocks.push_all_packages.assert_not_called()
         mocks.publish_metadata_to_ipfs.assert_not_called()
+
+
+class TestPrepareMetadataExpectedCostFlags:
+    """``--expected-cost`` builds per-tool expected costs in the mech's payment asset."""
+
+    @pytest.mark.parametrize(
+        "mech_type, asset",
+        [("Native", "native"), ("Token", "olas"), ("TokenUSDC", "usdc")],
+    )
+    def test_asset_is_read_from_the_chain_config_mech_type(
+        self, tmp_path: Path, mech_type: str, asset: str
+    ) -> None:
+        """Each MECH_TYPE maps to the label readers match against the mech's payment type."""
+        with _patched_pipeline(tmp_path) as mocks:
+            _write_chain_config(mocks.context.config_dir, mech_type)
+            args = [
+                *NAME_ARGS,
+                *CHAIN_ARGS,
+                *EXPECTED_COST_ARGS,
+                "--expected-cost",
+                "claude",
+                "7",
+            ]
+            result = CliRunner().invoke(prepare_metadata, args)
+
+        assert result.exit_code == 0, result.output
+        assert f"Expected cost asset: {asset}" in result.output
+        assert _generate_kwargs(mocks)["expected_costs"] == {
+            "openai-gpt-4": ExpectedCost(asset=asset, amount=EXPECTED_COST_WEI),
+            "claude": ExpectedCost(asset=asset, amount="7"),
+        }
+
+    def test_explicit_asset_wins_over_the_chain_config(self, tmp_path: Path) -> None:
+        """--expected-cost-asset is written as given, whatever MECH_TYPE says."""
+        with _patched_pipeline(tmp_path) as mocks:
+            _write_chain_config(mocks.context.config_dir, "Native")
+            args = [
+                *NAME_ARGS,
+                *CHAIN_ARGS,
+                *EXPECTED_COST_ARGS,
+                "--expected-cost-asset",
+                "usdc",
+            ]
+            result = CliRunner().invoke(prepare_metadata, args)
+
+        assert result.exit_code == 0, result.output
+        assert _generate_kwargs(mocks)["expected_costs"] == {
+            "openai-gpt-4": ExpectedCost(asset="usdc", amount=EXPECTED_COST_WEI)
+        }
+
+    def test_no_flags_means_no_expected_costs(self, tmp_path: Path) -> None:
+        """Without the flags the generator gets an empty mapping and no asset is resolved."""
+        with _patched_pipeline(tmp_path) as mocks:
+            result = CliRunner().invoke(prepare_metadata, [*NAME_ARGS, *CHAIN_ARGS])
+
+        assert result.exit_code == 0, result.output
+        assert _generate_kwargs(mocks)["expected_costs"] == {}
+        assert "Expected cost asset" not in result.output
+
+    @pytest.mark.parametrize(
+        "mech_type, args, reason",
+        [
+            (
+                "Nevermined",
+                [*CHAIN_ARGS, *EXPECTED_COST_ARGS],
+                "MECH_TYPE 'Nevermined' in the gnosis config does not name one",
+            ),
+            (
+                None,
+                [*CHAIN_ARGS, *EXPECTED_COST_ARGS],
+                "no chain config with MECH_TYPE was found",
+            ),
+            ("Native", EXPECTED_COST_ARGS, "no chain config with MECH_TYPE was found"),
+            (
+                "Native",
+                [*CHAIN_ARGS, "--expected-cost-asset", "native"],
+                "--expected-cost-asset requires at least one --expected-cost",
+            ),
+            (
+                "Native",
+                [
+                    *CHAIN_ARGS,
+                    *EXPECTED_COST_ARGS,
+                    "--expected-cost",
+                    "openai-gpt-4",
+                    "5",
+                ],
+                "given more than once in --expected-cost",
+            ),
+            (
+                "Native",
+                [*CHAIN_ARGS, "--expected-cost", "openai-gpt-4", "0.012"],
+                "Invalid --expected-cost for 'openai-gpt-4'",
+            ),
+            (
+                "Native",
+                [*CHAIN_ARGS, "--expected-cost", "openai-gpt-4", "0"],
+                "greater than zero",
+            ),
+        ],
+    )
+    def test_invalid_expected_cost_flags_fail_before_locking(
+        self, tmp_path: Path, mech_type: Optional[str], args: List[str], reason: str
+    ) -> None:
+        """An unknown asset, missing chain, repeated tool or bad amount exits 1 before any IPFS work."""
+        with _patched_pipeline(tmp_path) as mocks:
+            _write_chain_config(mocks.context.config_dir, mech_type)
+            result = CliRunner().invoke(prepare_metadata, [*NAME_ARGS, *args])
+
+        assert result.exit_code == 1, result.output
+        assert reason in result.output
+        mocks.lock_packages.assert_not_called()
+        mocks.generate_metadata.assert_not_called()
+
+    def test_asset_flag_rejects_other_labels(self, tmp_path: Path) -> None:
+        """A label readers would not match is a usage error, exit 2."""
+        args = [*NAME_ARGS, *EXPECTED_COST_ARGS, "--expected-cost-asset", "xdai"]
+        with _patched_pipeline(tmp_path) as mocks:
+            result = CliRunner().invoke(prepare_metadata, args)
+
+        assert result.exit_code == 2
+        mocks.generate_metadata.assert_not_called()
+
+    def test_amount_below_the_configured_price_fails_before_locking(
+        self, tmp_path: Path
+    ) -> None:
+        """TOOLS_TO_PRICING in the chain .env is a floor the expected cost must reach."""
+        floor = str(int(EXPECTED_COST_WEI) + 1)
+        with _patched_pipeline(tmp_path) as mocks:
+            _write_chain_config(mocks.context.config_dir, "Native")
+            (tmp_path / ".env.gnosis").write_text(
+                f'TOOLS_TO_PRICING=\'{{"openai-gpt-4": {floor}, "claude": 1}}\'\n',
+                encoding="utf-8",
+            )
+            args = [*NAME_ARGS, *CHAIN_ARGS, *EXPECTED_COST_ARGS]
+            result = CliRunner().invoke(prepare_metadata, args)
+
+        assert result.exit_code == 1, result.output
+        assert f"below the tool's configured price {floor}" in result.output
+        mocks.lock_packages.assert_not_called()
+        mocks.generate_metadata.assert_not_called()
+
+    def test_amount_at_the_configured_price_passes(self, tmp_path: Path) -> None:
+        """An expected cost equal to the floor is accepted; a tool without a floor is not checked."""
+        with _patched_pipeline(tmp_path) as mocks:
+            _write_chain_config(mocks.context.config_dir, "Native")
+            (tmp_path / ".env.gnosis").write_text(
+                f'TOOLS_TO_PRICING=\'{{"openai-gpt-4": "{EXPECTED_COST_WEI}"}}\'\n',
+                encoding="utf-8",
+            )
+            args = [
+                *NAME_ARGS,
+                *CHAIN_ARGS,
+                *EXPECTED_COST_ARGS,
+                "--expected-cost",
+                "claude",
+                "1",
+            ]
+            result = CliRunner().invoke(prepare_metadata, args)
+
+        assert result.exit_code == 0, result.output
+        assert set(_generate_kwargs(mocks)["expected_costs"]) == {
+            "openai-gpt-4",
+            "claude",
+        }
+
+    @pytest.mark.parametrize(
+        "raw",
+        ["not json", "[1, 2]", '{"openai-gpt-4": "ten"}', '{"openai-gpt-4": null}'],
+    )
+    def test_malformed_tools_to_pricing_fails_before_locking(
+        self, tmp_path: Path, raw: str
+    ) -> None:
+        """A TOOLS_TO_PRICING that is not a JSON object of tool to integer is refused."""
+        with _patched_pipeline(tmp_path) as mocks:
+            _write_chain_config(mocks.context.config_dir, "Native")
+            (tmp_path / ".env.gnosis").write_text(
+                f"TOOLS_TO_PRICING='{raw}'\n", encoding="utf-8"
+            )
+            args = [*NAME_ARGS, *CHAIN_ARGS, *EXPECTED_COST_ARGS]
+            result = CliRunner().invoke(prepare_metadata, args)
+
+        assert result.exit_code == 1, result.output
+        assert (
+            "TOOLS_TO_PRICING in the gnosis .env is not a JSON object" in result.output
+        )
+        mocks.generate_metadata.assert_not_called()
+
+
+class TestBuildExpectedCosts:
+    """Tests for _build_expected_costs."""
+
+    def test_returns_empty_when_no_flag_given(self) -> None:
+        """No entries means no expected costs."""
+        assert len(_build_expected_costs((), "native", {"openai-gpt-4": 5})) == 0
+
+    def test_uses_the_floor_of_the_matching_tool_only(self) -> None:
+        """Another tool's higher floor does not apply."""
+        result = _build_expected_costs(
+            (("a", "5"), ("b", "500")), "olas", {"a": 5, "b": 400, "c": 10**30}
+        )
+
+        assert result == {
+            "a": ExpectedCost(asset="olas", amount="5"),
+            "b": ExpectedCost(asset="olas", amount="500"),
+        }
+
+
+class TestReadMechType:
+    """Tests for _read_mech_type."""
+
+    @staticmethod
+    def _context(tmp_path: Path) -> MagicMock:
+        """Build a context whose config dir is ``tmp_path``."""
+        context = MagicMock()
+        context.config_dir = tmp_path
+        return context
+
+    def test_reads_the_value(self, tmp_path: Path) -> None:
+        """The MECH_TYPE value is returned stripped."""
+        _write_chain_config(tmp_path, " Token ")
+
+        assert _read_mech_type(self._context(tmp_path), "gnosis") == "Token"
+
+    def test_empty_without_a_chain(self, tmp_path: Path) -> None:
+        """No chain means no config to read."""
+        _write_chain_config(tmp_path, "Token")
+
+        assert _read_mech_type(self._context(tmp_path), None) == ""
+
+    def test_empty_when_the_config_is_missing(self, tmp_path: Path) -> None:
+        """A chain without a config template yields no type."""
+        assert _read_mech_type(self._context(tmp_path), "gnosis") == ""
+
+    def test_empty_when_the_entry_is_missing(self, tmp_path: Path) -> None:
+        """A config without MECH_TYPE yields no type."""
+        _write_chain_config(tmp_path, None)
+
+        assert _read_mech_type(self._context(tmp_path), "gnosis") == ""
+
+    def test_empty_when_the_entry_is_not_an_object(self, tmp_path: Path) -> None:
+        """A MECH_TYPE that is not an env-variable object yields no type."""
+        (tmp_path / "config_mech_gnosis.json").write_text(
+            json.dumps({"env_variables": {"MECH_TYPE": "Native"}}), encoding="utf-8"
+        )
+
+        assert _read_mech_type(self._context(tmp_path), "gnosis") == ""
+
+
+class TestReadToolFloors:
+    """Tests for _read_tool_floors."""
+
+    def test_empty_when_unset(self, tmp_path: Path) -> None:
+        """No TOOLS_TO_PRICING means no floors."""
+        context = MagicMock()
+        env_path = tmp_path / ".env.gnosis"
+        env_path.write_text("MECH_TERMS_URL=https://x.example/t\n", encoding="utf-8")
+        context.chain_env_path.return_value = env_path
+
+        assert _read_tool_floors(context, "gnosis") == {}
+
+    def test_parses_integer_and_string_prices(self, tmp_path: Path) -> None:
+        """Prices given as JSON numbers or digit strings both become ints."""
+        context = MagicMock()
+        env_path = tmp_path / ".env.gnosis"
+        env_path.write_text(
+            'TOOLS_TO_PRICING=\'{"a": 5, "b": "12000000000000000"}\'\n',
+            encoding="utf-8",
+        )
+        context.chain_env_path.return_value = env_path
+
+        assert _read_tool_floors(context, "gnosis") == {"a": 5, "b": 12000000000000000}
 
 
 class TestBuildOperator:

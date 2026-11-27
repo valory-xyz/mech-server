@@ -161,7 +161,7 @@ uv run pytest -m "not integration and not e2e" tests/   # skip slow tests
 uv run pytest tests/ --cov=mtd --cov-report=term-missing # coverage report
 ```
 
-Current state: **170 tests, 100% line coverage (880/880 statements).** Maintain 100% when adding new code — run the coverage command to verify before committing.
+Current state: **484 tests, 100% line coverage (1345/1345 statements).** Maintain 100% when adding new code — run the coverage command to verify before committing.
 
 Pytest config in `tox.ini`: log level DEBUG, asyncio mode strict. Markers: `integration`, `e2e`.
 
@@ -200,12 +200,11 @@ Also update `SECURITY.md` to reflect the new supported version.
 
 ## Key Integrations
 
-- `open-autonomy==0.21.11` — FSM agent framework
-- `olas-operate-middleware>=0.14.16` — service/workspace orchestration
-- `mech-client==0.19.1` — mech interaction client
-- `safe-eth-py^7.18.0` — Gnosis Safe on-chain operations
-- `ipfshttpclient==0.8.0a2` — IPFS uploads
-- `click==8.1.8` — CLI framework
+- `open-autonomy[all]==0.21.31` — FSM agent framework
+- `olas-operate-middleware>=0.15.2,<0.16` — service/workspace orchestration
+- `mech-client>=0.27,<0.28` — mech interaction client
+- `safe-eth-py>=7.18.0,<8` — Gnosis Safe on-chain operations
+- `click<9,>=8.1` — CLI framework
 
 ---
 
@@ -286,19 +285,28 @@ Standalone module for on-chain mech registration. Key data structure:
 
 ```python
 MECH_FACTORY_ADDRESS = {
-    Chain.GNOSIS: { marketplace_address: { mech_type: factory_address } },
+    Chain.GNOSIS: { marketplace_address: { mech_type: (factory_address, ...) } },
     Chain.BASE:   { ... },
     ...
 }
 ```
 
+Each leaf is an ordered tuple of candidate factory addresses, newest deployment first, because a
+marketplace only accepts a factory it has enabled and that set changes with marketplace upgrades.
+
 `deploy_mech()` flow:
 1. Validates `service.home_chain` → `Chain` enum; checks chain is in the factory map.
 2. Fetches the `MechMarketplace` ABI from GitHub (with error handling).
-3. Looks up `mech_factory_address` from the table (falls back to first known address if the
-   configured marketplace address is unrecognised).
-4. Builds and sends a `create` call to the marketplace contract via `EthSafeTxBuilder`.
-5. Parses the `CreateMech` event from the receipt to extract `mech_address` and `agent_id`.
+3. Looks up the candidate list for the configured marketplace address and `MECH_TYPE`; an
+   unrecognised marketplace address or an unconfigured mech type raises `ClickException`.
+4. Reads `mapMechFactories` on the marketplace for each candidate in order and takes the first
+   enabled one; raises `ClickException` naming chain, marketplace, mech type and candidates if
+   none is enabled.
+5. Reads `mapPaymentTypeBalanceTrackers` for the mech type's payment type where
+   `MECH_TYPE_PAYMENT_TYPE` pins one, and raises `ClickException` if no balance tracker is
+   registered, which `create` would otherwise reject.
+6. Builds and sends a `create` call to the marketplace contract via `EthSafeTxBuilder`.
+7. Parses the `CreateMech` event from the receipt to extract `mech_address` and `agent_id`.
 
 ### Metadata pipeline (`mtd/services/metadata/`)
 

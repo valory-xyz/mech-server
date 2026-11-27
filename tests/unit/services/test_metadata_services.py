@@ -27,7 +27,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from mtd.services.metadata.generate import (
     Benchmark,
+    ExpectedCost,
     Operator,
+    PAYMENT_ASSETS,
+    UINT256_MAX,
     _import_module_from_path,
     generate_metadata,
 )
@@ -43,6 +46,8 @@ SAMPLE_OPERATOR = Operator(
 SAMPLE_BENCHMARK = Benchmark(
     metric="accuracy", value=0.83, window="30d", url=BENCHMARK_URL
 )
+EXPECTED_COST_WEI = "12000000000000000"
+SAMPLE_EXPECTED_COST = ExpectedCost(asset="native", amount=EXPECTED_COST_WEI)
 # QmYwAP... is a CIDv0, which is always dag-pb; its sha2-256 digest follows.
 DAG_PB_CID_V0 = "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
 DAG_PB_DIGEST_HEX = "9d6c2be50f706953479ab9df2ce3edca90b68053c00b3004b7f0accbe1e8eedf"
@@ -229,6 +234,36 @@ def test_generate_metadata_rejects_benchmark_for_unknown_tool(tmp_path: Path) ->
     """A benchmark keyed by a tool the manifest does not list is an error."""
     with pytest.raises(ValueError, match="unknown tool 'missing'"):
         _generate(tmp_path, benchmarks={"missing": SAMPLE_BENCHMARK})
+
+
+def test_generate_metadata_writes_per_tool_expected_cost(tmp_path: Path) -> None:
+    """The expected cost lands inside toolMetadata.<tool> with the reader's field names."""
+    metadata = _generate(tmp_path, expected_costs={ECHO_TOOL: SAMPLE_EXPECTED_COST})
+
+    assert metadata["toolMetadata"][ECHO_TOOL]["expectedCost"] == {
+        "asset": "native",
+        "amount": EXPECTED_COST_WEI,
+    }
+    assert isinstance(
+        metadata["toolMetadata"][ECHO_TOOL]["expectedCost"]["amount"], str
+    )
+
+
+def test_generate_metadata_omits_expected_cost_by_default(tmp_path: Path) -> None:
+    """Without expected costs no tool entry carries the key."""
+    metadata = _generate(tmp_path, benchmarks={ECHO_TOOL: SAMPLE_BENCHMARK})
+
+    assert "expectedCost" not in metadata["toolMetadata"][ECHO_TOOL]
+
+
+def test_generate_metadata_rejects_expected_cost_for_unknown_tool(
+    tmp_path: Path,
+) -> None:
+    """An expected cost keyed by a tool the manifest does not list is an error."""
+    with pytest.raises(
+        ValueError, match="Expected cost given for unknown tool 'missing'"
+    ):
+        _generate(tmp_path, expected_costs={"missing": SAMPLE_EXPECTED_COST})
 
 
 @pytest.mark.parametrize("name", ["", "   "])
@@ -527,6 +562,84 @@ def test_benchmark_from_dict_rejects_malformed_input(data: Any, reason: str) -> 
     """Hand-written benchmark objects fail for missing, extra, mistyped or out-of-range fields."""
     with pytest.raises(ValueError, match=reason):
         Benchmark.from_dict(data)
+
+
+# ---------------------------------------------------------------------------
+# ExpectedCost
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("asset", PAYMENT_ASSETS)
+def test_expected_cost_accepts_the_payment_assets(asset: str) -> None:
+    """Every asset a reader matches against a mech's payment type is accepted as is."""
+    assert ExpectedCost(asset=asset, amount="1").asset == asset
+
+
+@pytest.mark.parametrize("asset", ["", "Native", "NATIVE", "xdai", "eth", "olas "])
+def test_expected_cost_rejects_other_assets(asset: str) -> None:
+    """Only the exact lowercase labels are written, since readers compare the label."""
+    with pytest.raises(ValueError, match="asset must be one of native, olas, usdc"):
+        ExpectedCost(asset=asset, amount="1")
+
+
+@pytest.mark.parametrize("amount", ["1", EXPECTED_COST_WEI, str(UINT256_MAX)])
+def test_expected_cost_accepts_positive_uint256_strings(amount: str) -> None:
+    """Canonical positive decimal strings up to the uint256 maximum pass unchanged."""
+    assert ExpectedCost(asset="usdc", amount=amount).amount == amount
+
+
+@pytest.mark.parametrize(
+    "amount, reason",
+    [
+        ("", "digits only"),
+        ("1.5", "digits only"),
+        ("-1", "digits only"),
+        ("+1", "digits only"),
+        (" 12", "digits only"),
+        ("1e3", "digits only"),
+        ("0x10", "digits only"),
+        ("1_000", "digits only"),
+        ("１２", "digits only"),
+        ("007", "leading zeros"),
+        ("0", "greater than zero"),
+        ("00", "leading zeros"),
+        (str(UINT256_MAX + 1), "fit a uint256"),
+    ],
+)
+def test_expected_cost_rejects_amounts_that_are_not_canonical(
+    amount: str, reason: str
+) -> None:
+    """Signs, fractions, exponents, spaces, non-ASCII digits, zero and overflow are refused."""
+    with pytest.raises(ValueError, match=reason):
+        ExpectedCost(asset="native", amount=amount)
+
+
+def test_expected_cost_from_dict_round_trips() -> None:
+    """to_dict and from_dict are inverses."""
+    assert (
+        ExpectedCost.from_dict(SAMPLE_EXPECTED_COST.to_dict()) == SAMPLE_EXPECTED_COST
+    )
+
+
+@pytest.mark.parametrize(
+    "data, reason",
+    [
+        ("12", "must be an object"),
+        ({"amount": "12"}, "Missing expected cost field 'asset'"),
+        ({"asset": "native"}, "Missing expected cost field 'amount'"),
+        ({"asset": "native", "amount": 12}, "'amount' must be str, got int"),
+        ({"asset": "native", "amount": 12.0}, "'amount' must be str, got float"),
+        ({"asset": 1, "amount": "12"}, "'asset' must be str, got int"),
+        ({"asset": "native", "amount": "12", "n": 1}, "Unknown expected cost field"),
+        ({"asset": "olas", "amount": "0"}, "greater than zero"),
+    ],
+)
+def test_expected_cost_from_dict_rejects_malformed_input(
+    data: Any, reason: str
+) -> None:
+    """Hand-written expected cost objects fail for missing, extra, mistyped or invalid fields."""
+    with pytest.raises(ValueError, match=reason):
+        ExpectedCost.from_dict(data)
 
 
 # ---------------------------------------------------------------------------

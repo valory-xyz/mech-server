@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, Tuple
 from aea.helpers.cid import CID, to_v1
 from aea.helpers.multiformat import multibase_decode, multicodec_remove_prefix
 from aea_cli_ipfs.ipfs_utils import IPFSTool
-from mtd.services.metadata.generate import Benchmark, Operator
+from mtd.services.metadata.generate import Benchmark, ExpectedCost, Operator
 
 PREFIX = "f01701220"
 DAG_PB_CODEC = "dag-pb"
@@ -218,6 +218,11 @@ def _validate_tool_entry(tool: str, data: Dict) -> Optional[str]:
             Benchmark.from_dict(data["benchmark"])
         except ValueError as exc:
             return f"Invalid benchmark for {tool}: {exc}"
+    if "expectedCost" in data:
+        try:
+            ExpectedCost.from_dict(data["expectedCost"])
+        except ValueError as exc:
+            return f"Invalid expectedCost for {tool}: {exc}"
     return None
 
 
