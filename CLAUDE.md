@@ -161,7 +161,7 @@ uv run pytest -m "not integration and not e2e" tests/   # skip slow tests
 uv run pytest tests/ --cov=mtd --cov-report=term-missing # coverage report
 ```
 
-Current state: **170 tests, 100% line coverage (880/880 statements).** Maintain 100% when adding new code — run the coverage command to verify before committing.
+Current state: **484 tests, 100% line coverage (1345/1345 statements).** Maintain 100% when adding new code — run the coverage command to verify before committing.
 
 Pytest config in `tox.ini`: log level DEBUG, asyncio mode strict. Markers: `integration`, `e2e`.
 
@@ -200,12 +200,11 @@ Also update `SECURITY.md` to reflect the new supported version.
 
 ## Key Integrations
 
-- `open-autonomy==0.21.11` — FSM agent framework
-- `olas-operate-middleware>=0.14.16` — service/workspace orchestration
-- `mech-client==0.19.1` — mech interaction client
-- `safe-eth-py^7.18.0` — Gnosis Safe on-chain operations
-- `ipfshttpclient==0.8.0a2` — IPFS uploads
-- `click==8.1.8` — CLI framework
+- `open-autonomy[all]==0.21.31` — FSM agent framework
+- `olas-operate-middleware>=0.15.2,<0.16` — service/workspace orchestration
+- `mech-client>=0.27,<0.28` — mech interaction client
+- `safe-eth-py>=7.18.0,<8` — Gnosis Safe on-chain operations
+- `click<9,>=8.1` — CLI framework
 
 ---
 
