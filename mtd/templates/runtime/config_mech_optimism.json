@@ -1,9 +1,9 @@
 {
   "name": "Mech on Optimism",
-  "hash": "bafybeidrlcm367sbqg46fzdctdt2smzf6tyvqnkgm75ercgph7wfw7ksty",
+  "hash": "bafybeicptfcdkiegxmorsri5flcws2zzd4nhcynnywxq25xmy577pd2y4i",
   "description": "The mech executes AI tasks requested on-chain and delivers the results to the requester.",
   "image": "https://gateway.autonolas.tech/ipfs/bafybeidzpenez565d7vp7jexfrwisa2wijzx6vwcffli57buznyyqkrceq",
-  "service_version": "v0.35.9",
+  "service_version": "v0.37.0",
   "allow_different_service_public_id": true,
   "home_chain": "optimism",
   "configurations": {
@@ -175,6 +175,36 @@
       "name": "Mech terms URL",
       "description": "Link to the operator's terms, advertised on off-chain responses and in the metadata. Set by `mech prepare-metadata --terms-url`.",
       "value": "",
+      "provision_type": "fixed"
+    },
+    "CAP_AND_ACTUAL_ENABLED": {
+      "name": "Charge actual cost",
+      "description": "When true, an off-chain delivery is charged what the run actually cost, capped by the rate the requester signed. When false, every off-chain delivery is charged the full signed cap.",
+      "value": "false",
+      "provision_type": "fixed"
+    },
+    "TOOLS_TO_MINIMUM_CAP": {
+      "name": "Tools to minimum cap",
+      "description": "Per-tool minimum signed cap in base units of the payment asset, as a JSON object. A request that signs less than a tool's entry is refused.",
+      "value": "{}",
+      "provision_type": "fixed"
+    },
+    "FIXED_COST_PER_REQUEST": {
+      "name": "Fixed cost per request",
+      "description": "Operator overhead charged on every run on top of the measured tool cost, in USD with 6 decimals. Only read when CAP_AND_ACTUAL_ENABLED is true.",
+      "value": "0",
+      "provision_type": "fixed"
+    },
+    "MARKETPLACE_FEE_BP": {
+      "name": "Marketplace fee",
+      "description": "The marketplace's fee in basis points, used to gross up the charge so the mech keeps its cost after the fee. 1500 matches the current marketplace.",
+      "value": "1500",
+      "provision_type": "fixed"
+    },
+    "PAYMENT_TOKEN_DECIMALS": {
+      "name": "Payment token decimals",
+      "description": "Decimals of the asset the mech is paid in: 18 for native and OLAS, 6 for USDC. A wrong value misprices every actual-cost charge.",
+      "value": "18",
       "provision_type": "fixed"
     }
   },
